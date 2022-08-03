@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.27","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.28","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -15,7 +15,7 @@ end
 --- @return string
 local function getPassage(chapterURL)
 	local document = GETDocument(expandURL(chapterURL))
-	local chap = document:selectFirst("chapter-content")
+	local chap = document:selectFirst(".chapter-content")
 	local title = document:selectFirst(".chapter-header h2"):text()
 	-- Adds Chapter Title
 	chap:child(0):before("<h1>" .. title .. "</h1>")
