@@ -1,7 +1,15 @@
--- {"id":1,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04"}
 
-local baseURL = "https://www.readwn.com/"
+local baseURL = "https://www.readwn.com"
 local settings = {}
+
+local function shrinkURL(url)
+	return url:gsub("^.-readwn%.com", "")
+end
+
+local function expandURL(url)
+	return baseURL .. url
+end
 
 --- @param chapterURL string
 --- @return string
@@ -79,5 +87,8 @@ return {
 	search = search,
 	updateSetting = function(id, value)
 		settings[id] = value
-	end
+	end,
+
+	shrinkURL = shrinkURL,
+	expandURL = expandURL
 }
