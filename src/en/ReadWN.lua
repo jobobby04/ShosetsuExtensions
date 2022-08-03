@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.10","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.11","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -24,7 +24,7 @@ local function parseNovel(novelURL, loadChapters)
 	local fullUrl = expandURL(novelURL)
 	local content = GETDocument(fullUrl)
 
-	--[[local categories = map(content:select(".novel-header .novel-info .categories ul li a"), function(v)
+	local categories = map(content:select(".novel-header .novel-info .categories ul li a"), function(v)
 		return v:text()
 	end)
 	local tags = map(content:select("#info .tags ul li a"), function(v)
@@ -32,7 +32,7 @@ local function parseNovel(novelURL, loadChapters)
 	end)
 	for _,v in ipairs(tags) do
 		table.insert(categories, v)
-	end]]
+	end
 
 
 	local info = NovelInfo {
@@ -44,7 +44,7 @@ local function parseNovel(novelURL, loadChapters)
 		})[content:selectLast(".novel-header .novel-info .header-stats span strong"):text()],]]
 		description = content:selectFirst("#info .summary"):text(),
 		--authors = { content:selectLast(".novel-header .novel-info .author span"):text() },
-		--genres = categories
+		genres = categories
 	}
 
 	local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
