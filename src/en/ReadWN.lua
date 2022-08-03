@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.14","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.15","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -69,9 +69,10 @@ local function parseNovel(novelURL, loadChapters)
 
 		for i = 1, lastChapterPage do
 			for _,v in ipairs(selectChapters(GETDocument("https://www.readwn.com/e/extend/fy.php?page=" .. i .. "&wjm=" .. novelId), chapters.size)) do
-				table.insert(categories, v)
+				table.insert(chapters, v)
 			end
 		end
+		info:setChapters(chapters)
 	end
 
 	return info
