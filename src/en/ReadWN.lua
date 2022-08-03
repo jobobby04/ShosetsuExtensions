@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.5","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.6","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -34,7 +34,7 @@ end
 --- @param selector string
 --- @return Novel[]
 local function parseBrowseWithSelector(document,selector)
-	return map(document.select(selector), function(v)
+	return map(document:select(selector), function(v)
 		return Novel {
 			title = v:attr("title"),
 			link = shrinkURL(v:attr("href")),
