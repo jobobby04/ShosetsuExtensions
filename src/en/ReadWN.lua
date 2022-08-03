@@ -57,7 +57,7 @@ local function parseNovel(novelURL, loadChapters)
 
 	local info = NovelInfo {
 		title = content:selectFirst(".novel-header .novel-info h1"):text(),
-		imageURL = content:selectFirst(".novel-header .fixed-img img"):attr("data-src"),
+		imageURL = expandURL(content:selectFirst(".novel-header .fixed-img img"):attr("data-src")),
 		--[[status = ({
 			Completed = NovelStatus.COMPLETED,
 			Ongoing = NovelStatus.PUBLISHING
