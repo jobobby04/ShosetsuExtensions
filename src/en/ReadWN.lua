@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.30","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.31","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -100,13 +100,6 @@ local function parseNovel(novelURL, loadChapters)
 	return info
 end
 
---- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @param reporter fun(v : string | any)
---- @return Novel[]
-local function search(filters, reporter)
-	return {}
-end
-
 --- @param document Document
 --- @param selector string
 --- @return Novel[]
@@ -126,6 +119,31 @@ local function parseBrowse(document)
 	return parseBrowseWithSelector(document, ".novel-item a")
 end
 
+--- @param filters table @of applied filter values [QUERY] is the search query, may be empty
+--- @param reporter fun(v : string | any)
+--- @return Novel[]
+local function search(filters, reporter)
+	local query = filters[QUERY]
+	local page = data[PAGE]
+	if query ~= "" then
+		local request = POST(
+				"https://www.readwn.com/e/search/index.php",
+				DEFAULT_HEADERS(),
+				FormBodyBuilder()
+						:add("show", "title")
+						:add("tempid", "1")
+						:add("tbname", "news")
+						:add("keyboard", query:gsub(" ", "+"))
+						:build(),
+				DEFAULT_CACHE_CONTROL()
+		)
+		local response = Request(request)
+		local location = response:headers():get("location")
+		return parseBrowseWithSelector(GETDocument("https://www.readwn.com/e/search/" .. location .. "&page=" .. page), ".novel-item a")
+	end
+	return {}
+end
+
 return {
 	id = 1308639964,
 	name = "ReadWN",
@@ -135,8 +153,9 @@ return {
 
 	-- Optional values to change
 	--[[imageURL = "",
-	hasCloudFlare = false,
-	hasSearch = true,]]
+	hasCloudFlare = false,]]
+	hasSearch = true,
+	isSearchIncrementing = true,
 
 
 	-- Must have at least one value
