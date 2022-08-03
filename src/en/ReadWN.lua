@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.8","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.9","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -20,7 +20,36 @@ end
 --- @param novelURL string
 --- @return NovelInfo
 local function parseNovel(novelURL)
-	return NovelInfo()
+	local fullUrl = expandURL(novelURL)
+	local content = GETDocument(fullUrl)
+
+	local categories = map(content:select(".novel-header .novel-info .categories ul li a"), function(v)
+		return v:text()
+	end)
+	local tags = map(content:select("#info .tags ul li a"), function(v)
+		return v:text()
+	end)
+	for _,v in ipairs(tags) do
+		table.insert(categories, v)
+	end
+
+
+	local info = NovelInfo {
+		title = content:selectFirst(".novel-header .novel-info h1"):text(),
+		imageURL = content:selectFirst(".novel-header .fixed-img img"):attr("data-src"),
+		status = ({
+			Completed = NovelStatus.COMPLETED,
+			Ongoing = NovelStatus.PUBLISHING
+		})[content:selectLast(".novel-header .novel-info .header-stats span strong"):text()],
+		description = content:selectFirst("#info .summary"):text(),
+		authors = { content:selectLast(".novel-header .novel-info .author span"):text() },
+		genres = categories
+	}
+
+	local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
+
+	local chapterList1 = GETDocument("https://www.readwn.com/e/extend/fy.php?page=0&wjm=" .. novelId)
+	return info
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
@@ -62,6 +91,9 @@ return {
 
 	-- Must have at least one value
 	listings = {
+		Listing("Recently Added Chapters", false, function(data)
+			return parseBrowseWithSelector(GETDocument(baseURL), "#latest-updates .novel-list.grid.col .novel-item a")
+		end),
 		Listing("Popular Daily Updates", true, function(data)
 			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"))
 		end),
@@ -70,9 +102,6 @@ return {
 		end),
 		Listing("New to Web Novels", true, function(data)
 			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"))
-		end),
-		Listing("Recently Added Chapters", false, function(data)
-			return parseBrowseWithSelector(GETDocument(baseURL), "#latest-updates .novel-list.grid.col .novel-item a")
 		end)
 	},
 
