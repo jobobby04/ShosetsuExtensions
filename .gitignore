@@ -1,0 +1,12 @@
+.idea
+*.iml
+*/test/*
+*/target/*
+target/*
+personal
+.gradle
+out/*
+gradlew
+gradlew.bat
+gradle
+/old/
