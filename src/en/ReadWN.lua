@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.16","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.18","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -69,7 +69,7 @@ local function parseNovel(novelURL, loadChapters)
 
 
 
-	--[[if loadChapters then
+	if loadChapters then
 		local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
 		local chapterList1 = GETDocument("https://www.readwn.com/e/extend/fy.php?page=0&wjm=" .. novelId)
 		local lastChapterPage = chapterList1:selectLast("ul.pagination a"):attr("href"):match(".*page=([0-9]*).*")
@@ -82,7 +82,7 @@ local function parseNovel(novelURL, loadChapters)
 			end
 		end
 		info:setChapters(chapters)
-	end]]
+	end
 
 	return info
 end
