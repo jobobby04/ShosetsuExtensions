@@ -1,4 +1,15 @@
 {
   "libraries": [],
-  "scripts": []
+  "scripts": [
+    {
+      "name": "ReadWN",
+      "fileName": "ReadWN",
+      "imageURL": "https://github.com/shosetsuorg/extensions/raw/dev/icons/MTLNovel.png",
+      "id": 1,
+      "lang": "en",
+      "ver": "1.0.0",
+      "libVer": "1.0.0",
+      "md5": ""
+    }
+  ]
 }
