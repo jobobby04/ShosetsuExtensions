@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.23","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.24","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -79,13 +79,13 @@ local function parseNovel(novelURL, loadChapters)
 		local lastChapterPage = selectLast(chapterList1:select("ul.pagination a")):attr("href"):match(".*page=([0-9]*).*")
 		local chapters = selectChapters(chapterList1, 0)
 
-		--[[for i = 1, lastChapterPage do
+		for i = 1, lastChapterPage do
 			local newChapters = selectChapters(GETDocument("https://www.readwn.com/e/extend/fy.php?page=" .. i .. "&wjm=" .. novelId), tableLength(chapters))
 			for _,v in ipairs(newChapters) do
 				table.insert(chapters, v)
 			end
 		end
-		info:setChapters(chapters)]]
+		info:setChapters(AsList(chapters))
 	end
 
 	return info
