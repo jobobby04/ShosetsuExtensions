@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.11","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.12","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -43,7 +43,7 @@ local function parseNovel(novelURL, loadChapters)
 			Ongoing = NovelStatus.PUBLISHING
 		})[content:selectLast(".novel-header .novel-info .header-stats span strong"):text()],]]
 		description = content:selectFirst("#info .summary"):text(),
-		--authors = { content:selectLast(".novel-header .novel-info .author span"):text() },
+		authors = { content:selectLast(".novel-header .novel-info .author span"):text() },
 		genres = categories
 	}
 
