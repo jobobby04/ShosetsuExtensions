@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.29","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.30","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -130,6 +130,8 @@ return {
 	id = 1308639964,
 	name = "ReadWN",
 	baseURL = baseURL,
+
+	chapterType = ChapterType.HTML,
 
 	-- Optional values to change
 	--[[imageURL = "",
