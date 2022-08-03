@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.2","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.3","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -57,7 +57,7 @@ return {
 				return Novel {
 					title = v:attr("title"),
 					link = shrinkURL(v:attr("href")),
-					imageURL = expandURL(v:selectFirst("img"):attr("src"))
+					imageURL = expandURL(v:selectFirst("img"):attr("data-src"))
 				}
 			end)
 		end)
