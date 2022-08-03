@@ -30,6 +30,13 @@ local function selectChapters(document, startIndex)
 	end)
 end
 
+
+local function tableLength(T)
+	local count = 0
+	for _ in pairs(T) do count = count + 1 end
+	return count
+end
+
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
@@ -68,7 +75,7 @@ local function parseNovel(novelURL, loadChapters)
 		local chapters = selectChapters(chapterList1, 0)
 
 		for i = 1, lastChapterPage do
-			for _,v in ipairs(selectChapters(GETDocument("https://www.readwn.com/e/extend/fy.php?page=" .. i .. "&wjm=" .. novelId), chapters.size)) do
+			for _,v in ipairs(selectChapters(GETDocument("https://www.readwn.com/e/extend/fy.php?page=" .. i .. "&wjm=" .. novelId), tableLength(chapters))) do
 				table.insert(chapters, v)
 			end
 		end
