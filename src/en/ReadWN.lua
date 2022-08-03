@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.9","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.10","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -18,12 +18,13 @@ local function getPassage(chapterURL)
 end
 
 --- @param novelURL string
+--- @param loadChapters boolean
 --- @return NovelInfo
-local function parseNovel(novelURL)
+local function parseNovel(novelURL, loadChapters)
 	local fullUrl = expandURL(novelURL)
 	local content = GETDocument(fullUrl)
 
-	local categories = map(content:select(".novel-header .novel-info .categories ul li a"), function(v)
+	--[[local categories = map(content:select(".novel-header .novel-info .categories ul li a"), function(v)
 		return v:text()
 	end)
 	local tags = map(content:select("#info .tags ul li a"), function(v)
@@ -31,19 +32,19 @@ local function parseNovel(novelURL)
 	end)
 	for _,v in ipairs(tags) do
 		table.insert(categories, v)
-	end
+	end]]
 
 
 	local info = NovelInfo {
 		title = content:selectFirst(".novel-header .novel-info h1"):text(),
 		imageURL = content:selectFirst(".novel-header .fixed-img img"):attr("data-src"),
-		status = ({
+		--[[status = ({
 			Completed = NovelStatus.COMPLETED,
 			Ongoing = NovelStatus.PUBLISHING
-		})[content:selectLast(".novel-header .novel-info .header-stats span strong"):text()],
+		})[content:selectLast(".novel-header .novel-info .header-stats span strong"):text()],]]
 		description = content:selectFirst("#info .summary"):text(),
-		authors = { content:selectLast(".novel-header .novel-info .author span"):text() },
-		genres = categories
+		--authors = { content:selectLast(".novel-header .novel-info .author span"):text() },
+		--genres = categories
 	}
 
 	local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
