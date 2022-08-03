@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.24","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.25","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -14,7 +14,15 @@ end
 --- @param chapterURL string
 --- @return string
 local function getPassage(chapterURL)
-	return ""
+	local document = GETDocument(expandURL(chapterURL))
+	local chap = document:selectFirst("chapter-content")
+	local title = document:selectFirst(".chapter-header h2"):text()
+	chap:select("br:nth-child(even)"):remove()
+	chap = tostring(chap):gsub('<div', '<p'):gsub('</div', '</p'):gsub('<br>', '</p><p>')
+	chap = Document(chap):selectFirst('body')
+	-- Adds Chapter Title
+	chap:child(0):before("<h1>" .. title .. "</h1>")
+	return pageOfElem(chap, true)
 end
 
 --- @param document Document
