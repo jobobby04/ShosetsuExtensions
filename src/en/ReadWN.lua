@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.31","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.32","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -124,7 +124,7 @@ end
 --- @return Novel[]
 local function search(filters, reporter)
 	local query = filters[QUERY]
-	local page = data[PAGE]
+	local page = filters[PAGE]
 	if query ~= "" then
 		local request = POST(
 				"https://www.readwn.com/e/search/index.php",
