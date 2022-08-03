@@ -67,21 +67,22 @@ local function parseNovel(novelURL, loadChapters)
 		genres = categories
 	}
 
-	local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
 
-	if loadChapters then
+
+	--[[if loadChapters then
+		local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
 		local chapterList1 = GETDocument("https://www.readwn.com/e/extend/fy.php?page=0&wjm=" .. novelId)
 		local lastChapterPage = chapterList1:selectLast("ul.pagination a"):attr("href"):match(".*page=([0-9]*).*")
 		local chapters = selectChapters(chapterList1, 0)
 
-		--[[for i = 1, lastChapterPage do
+		for i = 1, lastChapterPage do
 			local newChapters = selectChapters(GETDocument("https://www.readwn.com/e/extend/fy.php?page=" .. i .. "&wjm=" .. novelId), tableLength(chapters))
 			for _,v in ipairs(newChapters) do
 				table.insert(chapters, v)
 			end
-		end]]
+		end
 		info:setChapters(chapters)
-	end
+	end]]
 
 	return info
 end
