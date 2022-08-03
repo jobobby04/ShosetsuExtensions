@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.7","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.8","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -62,14 +62,14 @@ return {
 
 	-- Must have at least one value
 	listings = {
-		Listing("Popular Daily Updates", true, function(data, index)
-			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-lastdotime-" .. (index ~= nil and index or 0) .. ".html"))
+		Listing("Popular Daily Updates", true, function(data)
+			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"))
 		end),
-		Listing("Most Popular", true, function(data, index)
-			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-onclick-" .. (index ~= nil and index or 0) .. ".html"))
+		Listing("Most Popular", true, function(data)
+			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"))
 		end),
-		Listing("New to Web Novels", true, function(data, index)
-			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-newstime-" .. (index ~= nil and index or 0) .. ".html"))
+		Listing("New to Web Novels", true, function(data)
+			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"))
 		end),
 		Listing("Recently Added Chapters", false, function(data)
 			return parseBrowseWithSelector(GETDocument(baseURL), "#latest-updates .novel-list.grid.col .novel-item a")
