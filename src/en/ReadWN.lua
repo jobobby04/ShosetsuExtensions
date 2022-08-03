@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.28","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.29","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -17,6 +17,10 @@ local function getPassage(chapterURL)
 	local document = GETDocument(expandURL(chapterURL))
 	local chap = document:selectFirst(".chapter-content")
 	local title = document:selectFirst(".chapter-header h2"):text()
+	-- This is for the sake of consistant styling
+	chap:select("br:nth-child(even)"):remove()
+	chap = tostring(chap):gsub('<div', '<p'):gsub('</div', '</p'):gsub('<br>', '</p><p>')
+	chap = Document(chap):selectFirst('body')
 	-- Adds Chapter Title
 	chap:child(0):before("<h1>" .. title .. "</h1>")
 	return pageOfElem(chap, true)
@@ -74,7 +78,7 @@ local function parseNovel(novelURL, loadChapters)
 			Ongoing = NovelStatus.PUBLISHING
 		})[selectLast(content:select(".novel-header .novel-info .header-stats span strong")):text()],]]
 		description = content:selectFirst("#info .summary"):text(),
-		--authors = { selectLast(content:select(".novel-header .novel-info .author span")):text() },
+		authors = { selectLast(content:select(".novel-header .novel-info .author span")):text() },
 		genres = categories
 	}
 
