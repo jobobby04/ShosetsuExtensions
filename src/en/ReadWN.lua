@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.18","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.19","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -37,6 +37,12 @@ local function tableLength(T)
 	return count
 end
 
+--- @param elements Elements
+--- @return Element
+local function getLast(elements)
+	return elements:get(elements:size() - 1)
+end
+
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
@@ -58,21 +64,19 @@ local function parseNovel(novelURL, loadChapters)
 	local info = NovelInfo {
 		title = content:selectFirst(".novel-header .novel-info h1"):text(),
 		imageURL = expandURL(content:selectFirst(".novel-header .fixed-img img"):attr("data-src")),
-		--[[status = ({
+		status = ({
 			Completed = NovelStatus.COMPLETED,
 			Ongoing = NovelStatus.PUBLISHING
-		})[content:selectLast(".novel-header .novel-info .header-stats span strong"):text()],]]
+		})[getLast(content:select(".novel-header .novel-info .header-stats span strong")):text()],
 		description = content:selectFirst("#info .summary"):text(),
-		--authors = { content:selectLast(".novel-header .novel-info .author span"):text() },
+		authors = { getLast(content:select(".novel-header .novel-info .author span")):text() },
 		genres = categories
 	}
-
-
 
 	if loadChapters then
 		local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
 		local chapterList1 = GETDocument("https://www.readwn.com/e/extend/fy.php?page=0&wjm=" .. novelId)
-		local lastChapterPage = chapterList1:selectLast("ul.pagination a"):attr("href"):match(".*page=([0-9]*).*")
+		local lastChapterPage = getLast(chapterList1:select("ul.pagination a")):attr("href"):match(".*page=([0-9]*).*")
 		local chapters = selectChapters(chapterList1, 0)
 
 		for i = 1, lastChapterPage do
