@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.12","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.13","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -38,18 +38,22 @@ local function parseNovel(novelURL, loadChapters)
 	local info = NovelInfo {
 		title = content:selectFirst(".novel-header .novel-info h1"):text(),
 		imageURL = content:selectFirst(".novel-header .fixed-img img"):attr("data-src"),
-		--[[status = ({
+		status = ({
 			Completed = NovelStatus.COMPLETED,
 			Ongoing = NovelStatus.PUBLISHING
-		})[content:selectLast(".novel-header .novel-info .header-stats span strong"):text()],]]
+		})[content:selectLast(".novel-header .novel-info .header-stats span strong"):text()],
 		description = content:selectFirst("#info .summary"):text(),
-		authors = { content:selectLast(".novel-header .novel-info .author span"):text() },
+		--authors = { content:selectLast(".novel-header .novel-info .author span"):text() },
 		genres = categories
 	}
 
 	local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
 
-	local chapterList1 = GETDocument("https://www.readwn.com/e/extend/fy.php?page=0&wjm=" .. novelId)
+	if loadChapters then
+		local chapterList1 = GETDocument("https://www.readwn.com/e/extend/fy.php?page=0&wjm=" .. novelId)
+		local lastChapterPage = chapterList1:selectLast("ul.pagination a"):attr("href"):match(".*page=([0-9]*).*")
+	end
+
 	return info
 end
 
