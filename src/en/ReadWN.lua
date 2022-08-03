@@ -23,7 +23,7 @@ local function search(filters, reporter)
 end
 
 return {
-	id = 1,
+	id = 1308639964,
 	name = "ReadWN",
 	baseURL = baseURL,
 
