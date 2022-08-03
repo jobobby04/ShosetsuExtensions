@@ -4,10 +4,10 @@
     {
       "name": "ReadWN",
       "fileName": "ReadWN",
-      "imageURL": "https://github.com/shosetsuorg/extensions/raw/dev/icons/MTLNovel.png",
+      "imageURL": "",
       "id": 1308639964,
       "lang": "en",
-      "ver": "1.0.1",
+      "ver": "1.0.2",
       "libVer": "1.0.0",
       "md5": ""
     }

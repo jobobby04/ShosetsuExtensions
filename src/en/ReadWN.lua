@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.2","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -56,8 +56,8 @@ return {
 			return map(GETDocument(baseURL):select("#latest-updates .novel-list.grid.col .novel-item a"), function(v)
 				return Novel {
 					title = v:attr("title"),
-					link = v:attr("href"),
-					imageURL = v:selectFirst("img"):attr("src")
+					link = shrinkURL(v:attr("href")),
+					imageURL = expandURL(v:selectFirst("img"):attr("src"))
 				}
 			end)
 		end)
