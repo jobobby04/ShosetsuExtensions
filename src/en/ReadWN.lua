@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.4","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.5","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -31,12 +31,7 @@ local function search(filters, reporter)
 end
 
 --- @param document Document
---- @return Novel[]
-local function parseBrowse(document)
-	return parseBrowseWithSelector(document, ".novel-item a")
-end
-
---- @param document Document
+--- @param selector string
 --- @return Novel[]
 local function parseBrowseWithSelector(document,selector)
 	return map(document.select(selector), function(v)
@@ -46,6 +41,12 @@ local function parseBrowseWithSelector(document,selector)
 			imageURL = expandURL(v:selectFirst("img"):attr("data-src"))
 		}
 	end)
+end
+
+--- @param document Document
+--- @return Novel[]
+local function parseBrowse(document)
+	return parseBrowseWithSelector(document, ".novel-item a")
 end
 
 return {
