@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.3","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.4","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -30,6 +30,24 @@ local function search(filters, reporter)
 	return {}
 end
 
+--- @param document Document
+--- @return Novel[]
+local function parseBrowse(document)
+	return parseBrowseWithSelector(document, ".novel-item a")
+end
+
+--- @param document Document
+--- @return Novel[]
+local function parseBrowseWithSelector(document,selector)
+	return map(document.select(selector), function(v)
+		return Novel {
+			title = v:attr("title"),
+			link = shrinkURL(v:attr("href")),
+			imageURL = expandURL(v:selectFirst("img"):attr("data-src"))
+		}
+	end)
+end
+
 return {
 	id = 1308639964,
 	name = "ReadWN",
@@ -44,22 +62,16 @@ return {
 	-- Must have at least one value
 	listings = {
 		Listing("Popular Daily Updates", true, function(data, index)
-			return {}
+			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-lastdotime-" .. index .. ".html"))
 		end),
 		Listing("Most Popular", true, function(data, index)
-			return {}
+			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-onclick-" .. index .. ".html"))
 		end),
 		Listing("New to Web Novels", true, function(data, index)
-			return {}
+			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-newstime-" .. index .. ".html"))
 		end),
 		Listing("Recently Added Chapters", false, function(data)
-			return map(GETDocument(baseURL):select("#latest-updates .novel-list.grid.col .novel-item a"), function(v)
-				return Novel {
-					title = v:attr("title"),
-					link = shrinkURL(v:attr("href")),
-					imageURL = expandURL(v:selectFirst("img"):attr("data-src"))
-				}
-			end)
+			return parseBrowseWithSelector(GETDocument(baseURL), "#latest-updates .novel-list.grid.col .novel-item a")
 		end)
 	},
 
