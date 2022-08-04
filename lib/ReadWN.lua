@@ -1,11 +1,12 @@
--- {"ver":"1.0.3","author":"Jobobby04"}
+-- {"ver":"1.0.4","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
 ---@type fun(tbl: table , url: string): string
 
 local defaults = {
-    shrinkURLNovel = ""
+    shrinkURLNovel = "",
+    listingsMap = {}
 }
 
 local GENRE_SELECT = 2
@@ -189,7 +190,7 @@ end
 --- @param genres string[]
 --- @param f fun(): Novel[]
 --- @return Novel[]
-function defaults:getListings(filters, genres, f)
+function defaults:getListings(filters, f)
     local genre = filters[GENRE_SELECT]
     local status = filters[STATUS_SELECT]
     local sortBy = filters[SORT_BY_SELECT]
@@ -202,7 +203,7 @@ function defaults:getListings(filters, genres, f)
     else
         local part1 = "all"
         if genre ~= nil and genre ~= 0 then
-            part1 = genres[genre+1]:lower():gsub(" ", "-")
+            part1 = self.genres[genre+1]:lower():gsub(" ", "-")
         end
         local part2 = "all"
         if status ~= nil and status ~= 0 then
@@ -233,10 +234,24 @@ return function(baseURL, _self)
 
     _self["hasSearch"] = true
     _self["isSearchIncrementing"] = true
-    _self["search"] = search
     _self["searchFilters"] = {
         DropdownFilter(GENRE_SELECT, "Genre / Category", _self.genres),
         DropdownFilter(STATUS_SELECT, "Status", STATUS_VALUES),
         DropdownFilter(SORT_BY_SELECT, "Sort by", SORT_BY_VALUES)
     }
+
+    _self["listings"] = map(AsList(_self.listingsMap), function(v)
+        return Listing(v["name"], v["increments"], function(data)
+            return _self.getListings(data, function()
+                local selector = v["selector"]
+                if selector ~= nil then
+                    return _self.parseBrowseWithSelector(GETDocument(v["url"](data)), selector)
+                else
+                    return _self.parseBrowse(GETDocument(v["url"](data)))
+                end
+            end)
+        end)
+    end)
+
+    return _self
 end

@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.3"]}
+-- {"id":1,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.4"]}
 
 local GENRES = {
 	"All",
@@ -49,28 +49,37 @@ return Require("ReadWN")("https://www.lightnovelmeta.com", {
 	name = "LightNovelMeta",
 	shrinkURLNovel = "^.-lightnovelmeta%.com",
 
-	listings = {
-		Listing("Recently Added Chapters", false, function(data)
-			return getListings(data, function()
-				return parseBrowseWithSelector(GETDocument(baseURL), "#latest-updates .novel-list.grid.col .novel-item a")
-			end)
-		end),
-		Listing("Popular Daily Updates", true, function(data)
-			return getListings(data, GENRES, function()
-				return parseBrowse(GETDocument("https://www.lightnovelmeta.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"))
-			end)
-		end),
-		Listing("Most Popular", true, function(data)
-			return getListings(data, GENRES, function()
-				return parseBrowse(GETDocument("https://www.lightnovelmeta.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"))
-			end)
-		end),
-		Listing("New to Web Novels", true, function(data)
-			return getListings(data, GENRES, function()
-				return parseBrowse(GETDocument("https://www.lightnovelmeta.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"))
-			end)
-		end)
-	},
+	genres = GENRES,
 
-	genres = GENRES
+	listingsMap = {
+		{
+			name = "Recently Added Chapters",
+			increments = false,
+			selector = "#latest-updates .novel-list.grid.col .novel-item a",
+			url = function(data)
+				return "https://www.readwn.com"
+			end
+		},
+		{
+			name = "Popular Daily Updates",
+			increments = true,
+			url = function(data)
+				return "https://www.readwn.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"
+			end
+		},
+		{
+			name = "Most Popular",
+			increments = true,
+			url = function(data)
+				return "https://www.readwn.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"
+			end
+		},
+		{
+			name = "New to Web Novels",
+			increments = true,
+			url = function(data)
+				return "https://www.readwn.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"
+			end
+		}
+	},
 })
