@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.35","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.36","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -140,9 +140,9 @@ local function search(filters, reporter)
 		if page == 1 then
 			return parseBrowse(document)
 		else
-			local pages = document:select("ul.pagination a")
+			local pages = document:select(".pagination a")
 			if pages:size() > 0 then
-				local searchId = selectLast(document:select("ul.pagination a")):attr("href"):match(".*searchid=([0-9]*).*")
+				local searchId = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
 				return parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
 			else
 				return {}
