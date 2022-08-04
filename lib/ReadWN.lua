@@ -1,4 +1,4 @@
--- {"ver":"1.0.6","author":"Jobobby04"}
+-- {"ver":"1.0.7","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
@@ -165,7 +165,7 @@ function defaults:search(filters)
                             :add("show", "title")
                             :add("tempid", "1")
                             :add("tbname", "news")
-                            :add("keyboard", query:gsub(" ", "+"))
+                            :add("keyboard", query)
                             :build()
             )
             local document = RequestDocument(request)
