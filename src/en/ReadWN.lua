@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.32","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.33","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -128,18 +128,21 @@ local function search(filters, reporter)
 	if query ~= "" then
 		local request = POST(
 				"https://www.readwn.com/e/search/index.php",
-				DEFAULT_HEADERS(),
+				nil,
 				FormBodyBuilder()
 						:add("show", "title")
 						:add("tempid", "1")
 						:add("tbname", "news")
 						:add("keyboard", query:gsub(" ", "+"))
-						:build(),
-				DEFAULT_CACHE_CONTROL()
+						:build()
 		)
-		local response = Request(request)
-		local location = response:headers():get("location")
-		return parseBrowseWithSelector(GETDocument("https://www.readwn.com/e/search/" .. location .. "&page=" .. page), ".novel-item a")
+		local document = RequestDocument(request)
+		if page == 1 then
+			return parseBrowse(document)
+		else
+			local searchId = document:selectFirst("ul.pagination a"):attr("href"):match(".*searchid=([0-9]*).*")
+			return parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
+		end
 	end
 	return {}
 end
