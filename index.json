@@ -1,5 +1,10 @@
 {
-  "libraries": [],
+  "libraries": [
+    {
+      "name": "ReadWN",
+      "ver": "1.0.0"
+    }
+  ],
   "scripts": [
     {
       "name": "ReadWN",
