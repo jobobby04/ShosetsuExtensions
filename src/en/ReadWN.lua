@@ -195,9 +195,8 @@ end
 local searchMap = {}
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @param reporter fun(v : string | any)
 --- @return Novel[]
-local function search(filters, reporter)
+local function search(filters)
 	local query = filters[QUERY]
 	local page = filters[PAGE]
 	if query ~= "" then
