@@ -1,4 +1,4 @@
--- {"ver":"1.0.1","author":"Jobobby04"}
+-- {"ver":"1.0.2","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
@@ -184,9 +184,10 @@ function defaults:search(filters)
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
+--- @param genres string[]
 --- @param f fun(): Novel[]
 --- @return Novel[]
-function defaults:getListings(filters, f)
+function defaults:getListings(filters, genres, f)
     local genre = filters[GENRE_SELECT]
     local status = filters[STATUS_SELECT]
     local sortBy = filters[SORT_BY_SELECT]
@@ -199,7 +200,7 @@ function defaults:getListings(filters, f)
     else
         local part1 = "all"
         if genre ~= nil and genre ~= 0 then
-            part1 = GENRE_VALUES[genre+1]:lower():gsub(" ", "-")
+            part1 = genres[genre+1]:lower():gsub(" ", "-")
         end
         local part2 = "all"
         if status ~= nil and status ~= 0 then
