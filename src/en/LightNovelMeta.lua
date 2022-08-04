@@ -47,6 +47,7 @@ local GENRES = {
 return Require("ReadWN")("https://www.lightnovelmeta.com", {
 	id = 1308639965,
 	name = "LightNovelMeta",
+	shrinkURLNovel = "^.-lightnovelmeta%.com",
 
 	listings = {
 		Listing("Recently Added Chapters", false, function(data)

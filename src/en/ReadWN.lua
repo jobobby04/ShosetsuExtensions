@@ -61,6 +61,7 @@ local GENRES = {
 return Require("ReadWN")("https://www.readwn.com", {
 	id = 1308639964,
 	name = "ReadWN",
+	shrinkURLNovel = "^.-readwn%.com",
 
 	listings = {
 		Listing("Recently Added Chapters", false, function(data)

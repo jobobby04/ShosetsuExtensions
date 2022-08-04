@@ -4,7 +4,9 @@
 
 ---@type fun(tbl: table , url: string): string
 
-local defaults = {}
+local defaults = {
+    shrinkURLNovel = ""
+}
 
 local GENRE_SELECT = 2
 local STATUS_SELECT = 3
@@ -23,17 +25,17 @@ local SORT_BY_VALUES = {
 
 
 function defaults:shrinkURL(url)
-    return url:gsub("^.-readwn%.com", "")
+    return url:gsub(self.shrinkURLNovel, "")
 end
 
 function defaults:expandURL(url)
-    return baseURL .. url
+    return self.baseURL .. url
 end
 
 --- @param chapterURL string
 --- @return string
 function defaults:getPassage(chapterURL)
-    local document = GETDocument(expandURL(chapterURL))
+    local document = GETDocument(self.expandURL(chapterURL))
     local chap = document:selectFirst(".chapter-content")
     local title = document:selectFirst(".chapter-header h2"):text()
     -- This is for the sake of consistant styling
@@ -53,7 +55,7 @@ function defaults:selectChapters(document, startIndex)
         return NovelChapter {
             order = startIndex + i,
             title = v:selectFirst("strong"):text(),
-            link = shrinkURL(v:attr("href"))
+            link = self.shrinkURL(v:attr("href"))
         }
     end)
 end
@@ -75,7 +77,7 @@ end
 --- @param loadChapters boolean
 --- @return NovelInfo
 function defaults:parseNovel(novelURL, loadChapters)
-    local fullUrl = expandURL(novelURL)
+    local fullUrl = self.expandURL(novelURL)
     local content = GETDocument(fullUrl)
 
     local categories = map(content:select(".novel-header .novel-info .categories ul li a"), function(v)
@@ -91,24 +93,24 @@ function defaults:parseNovel(novelURL, loadChapters)
 
     local info = NovelInfo {
         title = content:selectFirst(".novel-header .novel-info h1"):text(),
-        imageURL = expandURL(content:selectFirst(".novel-header .fixed-img img"):attr("data-src")),
+        imageURL = self.expandURL(content:selectFirst(".novel-header .fixed-img img"):attr("data-src")),
         --[[status = ({
             Completed = NovelStatus.COMPLETED,
             Ongoing = NovelStatus.PUBLISHING
         })[selectLast(content:select(".novel-header .novel-info .header-stats span strong")):text()],]]
         description = content:selectFirst("#info .summary"):text(),
-        authors = { selectLast(content:select(".novel-header .novel-info .author span")):text() },
+        authors = { self.selectLast(content:select(".novel-header .novel-info .author span")):text() },
         genres = categories
     }
 
     if loadChapters then
         local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
         local chapterList1 = GETDocument(self.baseURL .. "/e/extend/fy.php?page=0&wjm=" .. novelId)
-        local lastChapterPage = selectLast(chapterList1:select("ul.pagination a")):attr("href"):match(".*page=([0-9]*).*")
-        local chapters = selectChapters(chapterList1, 0)
+        local lastChapterPage = self.selectLast(chapterList1:select("ul.pagination a")):attr("href"):match(".*page=([0-9]*).*")
+        local chapters = self.selectChapters(chapterList1, 0)
 
         for i = 1, lastChapterPage do
-            local newChapters = selectChapters(GETDocument(self.baseURL .. "/e/extend/fy.php?page=" .. i .. "&wjm=" .. novelId), tableLength(chapters))
+            local newChapters = self.selectChapters(GETDocument(self.baseURL .. "/e/extend/fy.php?page=" .. i .. "&wjm=" .. novelId), self.tableLength(chapters))
             for _,v in ipairs(newChapters) do
                 table.insert(chapters, v)
             end
@@ -126,8 +128,8 @@ function defaults:parseBrowseWithSelector(document,selector)
     return map(document:select(selector), function(v)
         return Novel {
             title = v:attr("title"),
-            link = shrinkURL(v:attr("href")),
-            imageURL = expandURL(v:selectFirst("img"):attr("data-src"))
+            link = self.shrinkURL(v:attr("href")),
+            imageURL = self.expandURL(v:selectFirst("img"):attr("data-src"))
         }
     end)
 end
@@ -135,7 +137,7 @@ end
 --- @param document Document
 --- @return Novel[]
 function defaults:parseBrowse(document)
-    return parseBrowseWithSelector(document, ".novel-item a")
+    return self.parseBrowseWithSelector(document, ".novel-item a")
 end
 
 local searchMap = {}
@@ -148,7 +150,7 @@ function defaults:search(filters)
     if query ~= "" then
         local searchId = searchMap[query]
         if searchId ~= nil then
-            return parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
+            return self.parseBrowse(GETDocument(self.expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
         else
             local request = POST(
                     self.baseURL .. "/e/search/index.php",
@@ -164,15 +166,15 @@ function defaults:search(filters)
             if page == 1 then
                 local pages = document:select("ul.pagination a")
                 if pages:size() > 0 then
-                    searchMap[query] = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
+                    searchMap[query] = self.selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
                 end
-                return parseBrowse(document)
+                return self.parseBrowse(document)
             else
                 local pages = document:select("ul.pagination a")
                 if pages:size() > 0 then
-                    searchMap[query] = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
+                    searchMap[query] = self.selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
                     searchId = searchMap[query]
-                    return parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
+                    return self.parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
                 else
                     return {}
                 end
@@ -215,7 +217,7 @@ function defaults:getListings(filters, genres, f)
                 part3 = "lastdotime"
             end
         end
-        return parseBrowse(GETDocument(self.baseURL .. "/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (filters[PAGE] - 1) .. ".html"))
+        return self.parseBrowse(GETDocument(self.baseURL .. "/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (filters[PAGE] - 1) .. ".html"))
     end
 end
 
@@ -224,6 +226,7 @@ return function(baseURL, _self)
         local d = defaults[k]
         return (type(d) == "function" and wrap(_self, d) or d)
     end })
+
     _self["baseURL"] = baseURL
 
     _self["chapterType"] = ChapterType.HTML
