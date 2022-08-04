@@ -71,7 +71,7 @@ return Require("ReadWN")("https://www.readwn.com", {
 		Listing("Popular Daily Updates", true, function(data)
 			return getListings(data, GENRES, function()
 				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"))
-			end, )
+			end)
 		end),
 		Listing("Most Popular", true, function(data)
 			return getListings(data, GENRES, function()
