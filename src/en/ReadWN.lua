@@ -245,7 +245,11 @@ local function getListings(filters, f)
 	local genre = filters[GENRE_SELECT]
 	local status = filters[STATUS_SELECT]
 	local sortBy = filters[SORT_BY_SELECT]
-	if (genre == nil or genre == 0) and (status == nil or status == 0) and (sortBy == nil or sortBy == 0) then
+
+	local genreFailed = genre == nil or genre == 0
+	local statusFailed = status == nil or status == 0
+	local sortByFailed = sortBy == nil or sortBy == 0
+	if genreFailed and statusFailed and sortByFailed then
 		return f()
 	else
 		local part1 = "all"
