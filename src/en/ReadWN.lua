@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.36","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.37","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -119,6 +119,8 @@ local function parseBrowse(document)
 	return parseBrowseWithSelector(document, ".novel-item a")
 end
 
+local searchMap = {}
+
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
 --- @param reporter fun(v : string | any)
 --- @return Novel[]
@@ -126,26 +128,35 @@ local function search(filters, reporter)
 	local query = filters[QUERY]
 	local page = filters[PAGE]
 	if query ~= "" then
-		local request = POST(
-				"https://www.readwn.com/e/search/index.php",
-				nil,
-				FormBodyBuilder()
-						:add("show", "title")
-						:add("tempid", "1")
-						:add("tbname", "news")
-						:add("keyboard", query:gsub(" ", "+"))
-						:build()
-		)
-		local document = RequestDocument(request)
-		if page == 1 then
-			return parseBrowse(document)
+		local searchId = searchMap[query]
+		if searchId ~= nil then
+			return parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
 		else
-			local pages = document:select(".pagination a")
-			if pages:size() > 0 then
-				local searchId = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
-				return parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
+			local request = POST(
+					"https://www.readwn.com/e/search/index.php",
+					nil,
+					FormBodyBuilder()
+							:add("show", "title")
+							:add("tempid", "1")
+							:add("tbname", "news")
+							:add("keyboard", query:gsub(" ", "+"))
+							:build()
+			)
+			local document = RequestDocument(request)
+			if page == 1 then
+				local pages = document:select("ul.pagination a")
+				if pages:size() > 0 then
+					searchId = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
+				end
+				return parseBrowse(document)
 			else
-				return {}
+				local pages = document:select("ul.pagination a")
+				if pages:size() > 0 then
+					searchId = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
+					return parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
+				else
+					return {}
+				end
 			end
 		end
 	end
