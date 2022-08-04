@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.40","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.41","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -295,17 +295,17 @@ return {
 			end)
 		end),
 		Listing("Popular Daily Updates", true, function(data)
-			getListings(data, function()
+			return getListings(data, function()
 				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"))
 			end)
 		end),
 		Listing("Most Popular", true, function(data)
-			getListings(data, function()
+			return getListings(data, function()
 				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"))
 			end)
 		end),
 		Listing("New to Web Novels", true, function(data)
-			getListings(data, function()
+			return getListings(data, function()
 				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"))
 			end)
 		end)
