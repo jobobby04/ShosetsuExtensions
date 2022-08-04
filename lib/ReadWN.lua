@@ -1,4 +1,4 @@
--- {"ver":"1.0.5","author":"Jobobby04"}
+-- {"ver":"1.0.6","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
@@ -6,7 +6,8 @@
 
 local defaults = {
     shrinkURLNovel = "",
-    listingsMap = {}
+    listingsMap = {},
+    hasCloudFlare = false,
 }
 
 local GENRE_SELECT = 2
