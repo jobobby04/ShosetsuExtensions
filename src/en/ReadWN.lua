@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.39","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.40","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -269,7 +269,7 @@ local function getListings(filters, f)
 				part3 = "lastdotime"
 			end
 		end
-		return parseBrowse(GETDocument("https://www.readwn.com/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (page - 1) .. ".html"))
+		return parseBrowse(GETDocument("https://www.readwn.com/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (filters[PAGE] - 1) .. ".html"))
 	end
 end
 
