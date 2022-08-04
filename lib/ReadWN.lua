@@ -1,4 +1,4 @@
--- {"ver":"1.0.8","author":"Jobobby04"}
+-- {"ver":"1.0.9","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
@@ -96,10 +96,10 @@ function defaults:parseNovel(novelURL, loadChapters)
     local info = NovelInfo {
         title = content:selectFirst(".novel-header .novel-info h1"):text(),
         imageURL = self.expandURL(content:selectFirst(".novel-header .fixed-img img"):attr("data-src")),
-        --[[status = ({
+        status = ({
             Completed = NovelStatus.COMPLETED,
             Ongoing = NovelStatus.PUBLISHING
-        })[selectLast(content:select(".novel-header .novel-info .header-stats span strong")):text()],]]
+        })[self.selectLast(content:select(".novel-header .novel-info .header-stats span strong")):text()],
         description = content:selectFirst("#info .summary"):text(),
         authors = { self.selectLast(content:select(".novel-header .novel-info .author span")):text() },
         genres = categories
