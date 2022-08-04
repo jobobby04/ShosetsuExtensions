@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.38","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.39","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
@@ -71,8 +71,8 @@ local STATUS_VALUES = {
 
 local SORT_BY_SELECT = 4
 local SORT_BY_VALUES = {
-	"Popular",
 	"New",
+	"Popular",
 	"Updates"
 }
 
@@ -235,28 +235,38 @@ local function search(filters, reporter)
 		end
 	end
 
+	return{}
+end
+
+--- @param filters table @of applied filter values [QUERY] is the search query, may be empty
+--- @param f fun(): Novel[]
+--- @return Novel[]
+local function getListings(filters, f)
 	local genre = filters[GENRE_SELECT]
 	local status = filters[STATUS_SELECT]
 	local sortBy = filters[SORT_BY_SELECT]
-
-	local part1 = "all"
-	if genre ~= nil and genre ~= 0 then
-		part1 = GENRE_VALUES[genre+1]:lower():gsub(" ", "-")
-	end
-	local part2 = "all"
-	if status ~= nil and status ~= 0 then
-		part2 = STATUS_VALUES[status+1]
-	end
-
-	local part3 = "newstime"
-	if sortBy ~= nil and sortBy ~= 1 then
-		if sortBy == 0 then
-			part3 = "onclick"
-		elseif sortBy == 2 then
-			part3 = "lastdotime"
+	if (genre == nil | genre == 0) & (status == nil | status == 0) & (sortBy == nil | sortBy == 0) then
+		return f()
+	else
+		local part1 = "all"
+		if genre ~= nil and genre ~= 0 then
+			part1 = GENRE_VALUES[genre+1]:lower():gsub(" ", "-")
 		end
+		local part2 = "all"
+		if status ~= nil and status ~= 0 then
+			part2 = STATUS_VALUES[status+1]
+		end
+
+		local part3 = "newstime"
+		if sortBy ~= nil and sortBy ~= 0 then
+			if sortBy == 1 then
+				part3 = "onclick"
+			elseif sortBy == 2 then
+				part3 = "lastdotime"
+			end
+		end
+		return parseBrowse(GETDocument("https://www.readwn.com/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (page - 1) .. ".html"))
 	end
-	return parseBrowse(GETDocument("https://www.readwn.com/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (page - 1) .. ".html"))
 end
 
 return {
@@ -276,16 +286,24 @@ return {
 	-- Must have at least one value
 	listings = {
 		Listing("Recently Added Chapters", false, function(data)
-			return parseBrowseWithSelector(GETDocument(baseURL), "#latest-updates .novel-list.grid.col .novel-item a")
+			return getListings(data, function()
+				return parseBrowseWithSelector(GETDocument(baseURL), "#latest-updates .novel-list.grid.col .novel-item a")
+			end)
 		end),
 		Listing("Popular Daily Updates", true, function(data)
-			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"))
+			getListings(data, function()
+				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"))
+			end)
 		end),
 		Listing("Most Popular", true, function(data)
-			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"))
+			getListings(data, function()
+				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"))
+			end)
 		end),
 		Listing("New to Web Novels", true, function(data)
-			return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"))
+			getListings(data, function()
+				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"))
+			end)
 		end)
 	},
 
