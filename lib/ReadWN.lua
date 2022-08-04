@@ -1,4 +1,4 @@
--- {"ver":"1.0.0","author":"Jobobby04"}
+-- {"ver":"1.0.1","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
@@ -231,7 +231,7 @@ return function(baseURL, _self)
     _self["isSearchIncrementing"] = true
     _self["search"] = search
     _self["searchFilters"] = {
-        DropdownFilter(_self.genres, "Genre / Category", GENRE_VALUES),
+        DropdownFilter(GENRE_SELECT, "Genre / Category", _self.genres),
         DropdownFilter(STATUS_SELECT, "Status", STATUS_VALUES),
         DropdownFilter(SORT_BY_SELECT, "Sort by", SORT_BY_VALUES)
     }
