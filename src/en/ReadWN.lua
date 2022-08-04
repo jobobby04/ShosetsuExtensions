@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.41","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.0"]}
+-- {"id":1,"ver":"1.0.42","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.0"]}
 
 return Require("ReadWN")("https://www.readwn.com", {
 	id = 1308639964,
