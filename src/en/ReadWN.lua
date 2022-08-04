@@ -289,10 +289,9 @@ return {
 		end)
 	},
 
-	-- Optional if usable
 	searchFilters = {
 		DropdownFilter(GENRE_SELECT, "Genre / Category", GENRE_VALUES),
-		DropdownFilter(STATUS_SELECT, "Status", SELECT_VALUES),
+		DropdownFilter(STATUS_SELECT, "Status", STATUS_VALUES),
 		DropdownFilter(SORT_BY_SELECT, "Sort by", SORT_BY_VALUES)
 	},
 
