@@ -1,4 +1,4 @@
--- {"ver":"1.0.4","author":"Jobobby04"}
+-- {"ver":"1.0.5","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
@@ -107,7 +107,11 @@ function defaults:parseNovel(novelURL, loadChapters)
     if loadChapters then
         local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
         local chapterList1 = GETDocument(self.baseURL .. "/e/extend/fy.php?page=0&wjm=" .. novelId)
-        local lastChapterPage = self.selectLast(chapterList1:select("ul.pagination a")):attr("href"):match(".*page=([0-9]*).*")
+        local pageList = chapterList1:select("ul.pagination a")
+        local lastChapterPage = 1
+        if pageList:size() > 0 then
+            lastChapterPage = self.selectLast(pageList):attr("href"):match(".*page=([0-9]*).*")
+        end
         local chapters = self.selectChapters(chapterList1, 0)
 
         for i = 1, lastChapterPage do
