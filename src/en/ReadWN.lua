@@ -235,7 +235,7 @@ local function search(filters, reporter)
 		end
 	end
 
-	return{}
+	return {}
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
@@ -245,7 +245,7 @@ local function getListings(filters, f)
 	local genre = filters[GENRE_SELECT]
 	local status = filters[STATUS_SELECT]
 	local sortBy = filters[SORT_BY_SELECT]
-	if ((genre == nil | genre == 0) & (status == nil | status == 0) & (sortBy == nil | sortBy == 0)) then
+	if (genre == nil or genre == 0) and (status == nil or status == 0) and (sortBy == nil or sortBy == 0) then
 		return f()
 	else
 		local part1 = "all"
