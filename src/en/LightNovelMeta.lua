@@ -1,4 +1,4 @@
--- {"id":1,"ver":"1.0.45","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.3"]}
+-- {"id":1,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.3"]}
 
 local GENRES = {
 	"All",
@@ -41,26 +41,12 @@ local GENRES = {
 	"Xianxia",
 	"Xuanhuan",
 	"Yaoi",
-	"Two-dimensional",
-	"Erciyuan",
-	"Fan-Fiction",
-	"Game",
-	"Military",
-	"Urban Life",
-	"Yuri",
-	"Chinese",
-	"Korean",
-	"Japanese",
-	"Isekai",
-	"Magic",
-	"Shoujo Ai",
-	"Urban",
-	"Virtual Reality"
+	"Game"
 }
 
-return Require("ReadWN")("https://www.readwn.com", {
-	id = 1308639964,
-	name = "ReadWN",
+return Require("ReadWN")("https://www.lightnovelmeta.com", {
+	id = 1308639965,
+	name = "LightNovelMeta",
 
 	listings = {
 		Listing("Recently Added Chapters", false, function(data)
@@ -70,17 +56,17 @@ return Require("ReadWN")("https://www.readwn.com", {
 		end),
 		Listing("Popular Daily Updates", true, function(data)
 			return getListings(data, GENRES, function()
-				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"))
+				return parseBrowse(GETDocument("https://www.lightnovelmeta.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"))
 			end)
 		end),
 		Listing("Most Popular", true, function(data)
 			return getListings(data, GENRES, function()
-				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"))
+				return parseBrowse(GETDocument("https://www.lightnovelmeta.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"))
 			end)
 		end),
 		Listing("New to Web Novels", true, function(data)
 			return getListings(data, GENRES, function()
-				return parseBrowse(GETDocument("https://www.readwn.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"))
+				return parseBrowse(GETDocument("https://www.lightnovelmeta.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"))
 			end)
 		end)
 	},

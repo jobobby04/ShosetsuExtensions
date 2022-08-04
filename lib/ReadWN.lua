@@ -1,4 +1,4 @@
--- {"ver":"1.0.2","author":"Jobobby04"}
+-- {"ver":"1.0.3","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
@@ -103,12 +103,12 @@ function defaults:parseNovel(novelURL, loadChapters)
 
     if loadChapters then
         local novelId = novelURL:gsub("^.-novel/", ""):gsub("%.html", "")
-        local chapterList1 = GETDocument("https://www.readwn.com/e/extend/fy.php?page=0&wjm=" .. novelId)
+        local chapterList1 = GETDocument(self.baseURL .. "/e/extend/fy.php?page=0&wjm=" .. novelId)
         local lastChapterPage = selectLast(chapterList1:select("ul.pagination a")):attr("href"):match(".*page=([0-9]*).*")
         local chapters = selectChapters(chapterList1, 0)
 
         for i = 1, lastChapterPage do
-            local newChapters = selectChapters(GETDocument("https://www.readwn.com/e/extend/fy.php?page=" .. i .. "&wjm=" .. novelId), tableLength(chapters))
+            local newChapters = selectChapters(GETDocument(self.baseURL .. "/e/extend/fy.php?page=" .. i .. "&wjm=" .. novelId), tableLength(chapters))
             for _,v in ipairs(newChapters) do
                 table.insert(chapters, v)
             end
@@ -151,7 +151,7 @@ function defaults:search(filters)
             return parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
         else
             local request = POST(
-                    "https://www.readwn.com/e/search/index.php",
+                    self.baseURL .. "/e/search/index.php",
                     nil,
                     FormBodyBuilder()
                             :add("show", "title")
@@ -215,7 +215,7 @@ function defaults:getListings(filters, genres, f)
                 part3 = "lastdotime"
             end
         end
-        return parseBrowse(GETDocument("https://www.readwn.com/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (filters[PAGE] - 1) .. ".html"))
+        return parseBrowse(GETDocument(self.baseURL .. "/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (filters[PAGE] - 1) .. ".html"))
     end
 end
 
