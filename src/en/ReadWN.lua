@@ -146,13 +146,14 @@ local function search(filters, reporter)
 			if page == 1 then
 				local pages = document:select("ul.pagination a")
 				if pages:size() > 0 then
-					searchId = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
+					searchMap[query] = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
 				end
 				return parseBrowse(document)
 			else
 				local pages = document:select("ul.pagination a")
 				if pages:size() > 0 then
-					searchId = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
+					searchMap[query] = selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
+					searchId = searchMap[query]
 					return parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
 				else
 					return {}
