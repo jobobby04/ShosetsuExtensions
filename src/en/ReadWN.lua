@@ -256,7 +256,7 @@ local function search(filters, reporter)
 			part3 = "lastdotime"
 		end
 	end
-	return parseBrowse(GETDocument("https://www.readwn.com/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (page - 1) ..".html"))
+	return parseBrowse(GETDocument("https://www.readwn.com/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (page - 1) .. ".html"))
 end
 
 return {
