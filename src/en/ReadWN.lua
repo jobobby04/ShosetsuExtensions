@@ -279,14 +279,6 @@ return {
 
 	chapterType = ChapterType.HTML,
 
-	-- Optional values to change
-	--[[imageURL = "",
-	hasCloudFlare = false,]]
-	hasSearch = true,
-	isSearchIncrementing = true,
-
-
-	-- Must have at least one value
 	listings = {
 		Listing("Recently Added Chapters", false, function(data)
 			return getListings(data, function()
@@ -310,19 +302,18 @@ return {
 		end)
 	},
 
+	-- Default functions that have to be set
+	getPassage = getPassage,
+	parseNovel = parseNovel,
+
+	hasSearch = true,
+	isSearchIncrementing = true,
+	search = search,
 	searchFilters = {
 		DropdownFilter(GENRE_SELECT, "Genre / Category", GENRE_VALUES),
 		DropdownFilter(STATUS_SELECT, "Status", STATUS_VALUES),
 		DropdownFilter(SORT_BY_SELECT, "Sort by", SORT_BY_VALUES)
 	},
-
-	-- Default functions that have to be set
-	getPassage = getPassage,
-	parseNovel = parseNovel,
-	search = search,
-	updateSetting = function(id, value)
-		settings[id] = value
-	end,
 
 	shrinkURL = shrinkURL,
 	expandURL = expandURL
