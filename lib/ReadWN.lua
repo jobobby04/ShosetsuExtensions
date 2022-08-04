@@ -192,7 +192,6 @@ function defaults:search(filters)
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @param genres string[]
 --- @param f fun(): Novel[]
 --- @return Novel[]
 function defaults:getListings(filters, f)
