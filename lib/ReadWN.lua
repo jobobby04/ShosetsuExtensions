@@ -1,4 +1,4 @@
--- {"ver":"1.0.7","author":"Jobobby04"}
+-- {"ver":"1.0.8","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
@@ -245,7 +245,7 @@ return function(baseURL, _self)
         DropdownFilter(SORT_BY_SELECT, "Sort by", SORT_BY_VALUES)
     }
 
-    _self["listings"] = map(AsList(_self.listingsMap), function(v)
+    _self["listings"] = map(_self.listingsMap, function(v)
         return Listing(v["name"], v["increments"], function(data)
             return _self.getListings(data, function()
                 local selector = v["selector"]
