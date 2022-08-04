@@ -1,7 +1,80 @@
--- {"id":1,"ver":"1.0.37","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1,"ver":"1.0.38","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.readwn.com"
 local settings = {}
+
+local GENRE_SELECT = 2
+local GENRE_VALUES = {
+	"All",
+	"Action",
+	"Adult",
+	"Adventure",
+	"Comedy",
+	"Contemporary Romance",
+	"Drama",
+	"Eastern Fantasy",
+	"Ecchi",
+	"Fantasy",
+	"Fantasy Romance",
+	"Gender Bender",
+	"Harem",
+	"Historical",
+	"Horror",
+	"Josei",
+	"Lolicon",
+	"Magical Realism",
+	"Martial Arts",
+	"Mature",
+	"Mecha",
+	"Mystery",
+	"Psychological",
+	"Romance",
+	"School Life",
+	"Sci-fi",
+	"Seinen",
+	"Shoujo",
+	"Shounen",
+	"Shounen Ai",
+	"Slice of Life",
+	"Smut",
+	"Sports",
+	"Supernatural",
+	"Tragedy",
+	"Video Games",
+	"Wuxia",
+	"Xianxia",
+	"Xuanhuan",
+	"Yaoi",
+	"Two-dimensional",
+	"Erciyuan",
+	"Fan-Fiction",
+	"Game",
+	"Military",
+	"Urban Life",
+	"Yuri",
+	"Chinese",
+	"Korean",
+	"Japanese",
+	"Isekai",
+	"Magic",
+	"Shoujo Ai",
+	"Urban",
+	"Virtual Reality"
+}
+
+local STATUS_SELECT = 3
+local STATUS_VALUES = {
+	"All",
+	"Completed",
+	"Ongoing"
+}
+
+local SORT_BY_SELECT = 4
+local SORT_BY_VALUES = {
+	"Popular",
+	"New",
+	"Updates"
+}
 
 local function shrinkURL(url)
 	return url:gsub("^.-readwn%.com", "")
@@ -161,7 +234,29 @@ local function search(filters, reporter)
 			end
 		end
 	end
-	return {}
+
+	local genre = filters[GENRE_SELECT]
+	local status = filters[STATUS_SELECT]
+	local sortBy = filters[SORT_BY_SELECT]
+
+	local part1 = "all"
+	if genre ~= nil and genre ~= 0 then
+		part1 = GENRE_VALUES[genre+1]:lower():gsub(" ", "-")
+	end
+	local part2 = "all"
+	if status ~= nil and status ~= 0 then
+		part2 = STATUS_VALUES[status+1]
+	end
+
+	local part3 = "newstime"
+	if sortBy ~= nil and sortBy ~= 1 then
+		if sortBy == 0 then
+			part3 = "onclick"
+		elseif sortBy == 2 then
+			part3 = "lastdotime"
+		end
+	end
+	return parseBrowse(GETDocument("https://www.readwn.com/list/" .. part1 .. "/" .. part2 .. "-" .. part3 .. "-" .. (page - 1) ..".html"))
 end
 
 return {
@@ -195,22 +290,11 @@ return {
 	},
 
 	-- Optional if usable
-	--[[searchFilters = {
-		TextFilter(1, "RANDOM STRING INPUT"),
-		SwitchFilter(2, "RANDOM SWITCH INPUT"),
-		CheckboxFilter(3, "RANDOM CHECKBOX INPUT"),
-		TriStateFilter(4, "RANDOM TRISTATE CHECKBOX INPUT"),
-		RadioGroupFilter(5, "RANDOM RGROUP INPUT", { "A","B","C" }),
-		DropdownFilter(6, "RANDOM DDOWN INPUT", { "A","B","C" })
-	},]]
-	--[[settings = {
-		TextFilter(1, "RANDOM STRING INPUT"),
-		SwitchFilter(2, "RANDOM SWITCH INPUT"),
-		CheckboxFilter(3, "RANDOM CHECKBOX INPUT"),
-		TriStateFilter(4, "RANDOM TRISTATE CHECKBOX INPUT"),
-		RadioGroupFilter(5, "RANDOM RGROUP INPUT", { "A","B","C" }),
-		DropdownFilter(6, "RANDOM DDOWN INPUT", { "A","B","C" })
-	},]]
+	searchFilters = {
+		DropdownFilter(GENRE_SELECT, "Genre / Category", GENRE_VALUES),
+		DropdownFilter(STATUS_SELECT, "Status", SELECT_VALUES),
+		DropdownFilter(SORT_BY_SELECT, "Sort by", SORT_BY_VALUES)
+	},
 
 	-- Default functions that have to be set
 	getPassage = getPassage,
