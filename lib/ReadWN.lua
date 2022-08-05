@@ -1,4 +1,4 @@
--- {"ver":"1.0.9","author":"Jobobby04"}
+-- {"ver":"1.0.10","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
@@ -92,6 +92,11 @@ function defaults:parseNovel(novelURL, loadChapters)
         table.insert(categories, v)
     end
 
+    local summary = Document(tostring(content:selectFirst("#info .summary .content")))
+    summary:select("br"):prepend("\\n")
+    summary:select("p"):prepend("\\n\\n")
+    summary = summary:wholeText():gsub("\\n", "\n"):gsub('^%s*(.-)%s*$', '%1')
+
 
     local info = NovelInfo {
         title = content:selectFirst(".novel-header .novel-info h1"):text(),
@@ -100,7 +105,7 @@ function defaults:parseNovel(novelURL, loadChapters)
             Completed = NovelStatus.COMPLETED,
             Ongoing = NovelStatus.PUBLISHING
         })[self.selectLast(content:select(".novel-header .novel-info .header-stats span strong")):text()],
-        description = content:selectFirst("#info .summary"):text(),
+        description = summary,
         authors = { self.selectLast(content:select(".novel-header .novel-info .author span")):text() },
         genres = categories
     }
