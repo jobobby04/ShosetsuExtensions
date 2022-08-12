@@ -78,7 +78,7 @@ local function parseNovel(novelURL, loadChapters)
 	if novelURL == "how" then
 		return NovelInfo {
 			title = "How to use this source",
-			description = "You can use this source by searching on the ArchiveOfOurOwn.org website and inputting the url of the wor k in the search bar."
+			description = "You can use this source by searching on the ArchiveOfOurOwn.org website and inputting the url of the work in the search bar."
 		}
 	end
 
