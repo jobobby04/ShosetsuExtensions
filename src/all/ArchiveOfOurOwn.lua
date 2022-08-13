@@ -1,4 +1,4 @@
--- {"id":-1,"ver":"1.0.0","libVer":"1.0.0","author":"","repo":"","dep":["foo","bar"]}
+-- {"id":1308639966,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -87,7 +87,10 @@ local function parseNovel(novelURL, loadChapters)
 	local summaryElement = document:selectFirst("#workskin div .userstuff:not([role])")
 	local summary = ""
 	if summaryElement ~= nil then
-		summary = summaryElement:text()
+		summary = Document(tostring(summaryElement))
+		summary:select("br"):prepend("\\n")
+		summary:select("p"):prepend("\\n\\n")
+		summary = summary:wholeText():gsub("\\n", "\n"):gsub('^%s*(.-)%s*$', '%1')
 	end
 	local genres = {}
 
@@ -113,8 +116,14 @@ local function parseNovel(novelURL, loadChapters)
 	end)
 
 	local status = NovelStatus.COMPLETED
-	if document:selectFirst(".stats dd.chapters"):text():sub(-#"?") == "?" then
+	local statusElement = document:selectFirst(".stats dd.chapters"):text()
+	if statusElement:sub(-#"?") == "?" then
 		status = NovelStatus.PUBLISHING
+	else
+		local chapterCount, finishedChapterCount = statusElement:match("^(.+)/(.+)$")
+		if chapterCount ~= finishedChapterCount then
+			status = NovelStatus.PUBLISHING
+		end
 	end
 
 	local info = NovelInfo {
