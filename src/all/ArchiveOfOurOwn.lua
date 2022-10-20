@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.2","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.3","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -23,6 +23,24 @@ local function GETDocumentAdult(url)
 	)
 end
 
+--- @param element Element
+--- @return Element
+local function cleanupDocument(element)
+	element = tostring(element):gsub('<div', '<p'):gsub('</div', '</p'):gsub('<br>', '</p><p>')
+	element = Document(element):selectFirst('body')
+	local removeJustifyAttributes = settings[1]
+	if removeJustifyAttributes ~= nil and removeJustifyAttributes then
+		local pElements = element:select("p[align]")
+		for i = 0, pElements:size() - 1 do
+			if pElements:get(i):attr("align") == "justify" then
+				pElements:get(i):removeAttr("align")
+			end
+		end
+	end
+
+	return element
+end
+
 --- @param chapterURL string
 --- @return string
 local function getPassage(chapterURL)
@@ -40,8 +58,7 @@ local function getPassage(chapterURL)
 	local endNotes = document:selectFirst("#workskin .chapter .end")
 	-- This is for the sake of consistant styling
 	chap:select(".landmark"):remove()
-	chap = tostring(chap):gsub('<div', '<p'):gsub('</div', '</p'):gsub('<br>', '</p><p>')
-	chap = Document(chap):selectFirst('body')
+	chap = cleanupDocument(chap)
 	-- Adds Chapter Title
 
 	if notes ~= nil then
@@ -208,6 +225,10 @@ return {
 	getPassage = getPassage,
 	parseNovel = parseNovel,
 	search = search,
+
+	settings = {
+		SwitchFilter(1, "Remove all Justify attributes"),
+	},
 	updateSetting = function(id, value)
 		settings[id] = value
 	end,
