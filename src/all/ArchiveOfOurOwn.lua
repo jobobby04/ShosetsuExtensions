@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.3","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.4","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -91,10 +91,10 @@ end
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
-	if novelURL == "how" then
+	if novelURL:match("^how") then
 		return NovelInfo {
-			title = "How to use this source",
-			description = "You can use this source by searching on the ArchiveOfOurOwn.org website and inputting the url of the work in the search bar."
+			title = "How to use this source v2",
+			description = "You can use this source by:\n1. searching on the ArchiveOfOurOwn.org website and inputting the url of the work in the search bar.\n2. Setting your queries on the ArchiveOfOurOwn.org website and copying the search to the search bar."
 		}
 	end
 
@@ -177,13 +177,26 @@ local function parseNovel(novelURL, loadChapters)
 	return info
 end
 
+local function removePage(url)
+	return url:gsub("&page=%d+", ""):gsub("?page=%d+&", "?"):gsub("?page=%d+", "")
+end
+
+local function addPage(url, page)
+	if url:match("?[^/]+$") then
+		return url .. "&page=" .. page
+	else
+		return url .. "?page=" .. page
+	end
+end
+
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
 --- @return Novel[]
 local function search(filters)
-	if filters[PAGE] == 1 then
-		local novelUrl = filters[QUERY]:gsub("url:", ""):gsub('^%s*(.-)%s*$', '%1'):gsub("/chapters.*$", "")
+	local page = filters[PAGE]
+	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+	if page == 1 and shrinkURL(url):match("/works/%d+") then
+		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
 		local novel = GETDocumentAdult(novelUrl)
-
 		return {
 			Novel {
 				title = novel:selectFirst(".title"):text(),
@@ -191,6 +204,35 @@ local function search(filters)
 				imageURL = ""
 			}
 		}
+	end
+
+	if shrinkURL(url):match("tags/.+/works") then
+		local newUrl = addPage(removePage(url), page)
+		local document = GETDocumentAdult(newUrl)
+		local works = document:select(".work > li")
+
+		return map(works, function(v)
+			local title = v:selectFirst("h4.heading > a")
+			return Novel {
+				title = title:text(),
+				link = shrinkURL(title:attr("href")),
+				imageURL = ""
+			}
+		end)
+	end
+	if shrinkURL(url):match("works") then
+		local newUrl = addPage(removePage(url), page)
+		local document = GETDocumentAdult(newUrl)
+		local works = document:select(".work > li")
+
+		return map(works, function(v)
+			local title = v:selectFirst("h4.heading > a")
+			return Novel {
+				title = title:text(),
+				link = shrinkURL(title:attr("href")),
+				imageURL = ""
+			}
+		end)
 	end
 	return {}
 end
@@ -214,7 +256,7 @@ return {
 			return {
 				Novel {
 					title = "How to use this source",
-					link = "how",
+					link = "how.v2",
 					imageURL = ""
 				}
 			}
