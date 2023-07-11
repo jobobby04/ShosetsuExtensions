@@ -128,7 +128,7 @@ local function parseNovel(novelURL, loadChapters)
 	end
 
 	local authors = map(document:select("#workskin h3.byline a[rel=\"author\"]"), function(v)
-		v:text()
+		return v:text()
 	end)
 
 	local status = NovelStatus.COMPLETED
