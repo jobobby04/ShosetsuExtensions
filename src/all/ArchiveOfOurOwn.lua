@@ -244,7 +244,7 @@ return {
 
 	-- Optional values to change
 	imageURL = "",
-	hasCloudFlare = false,
+	hasCloudFlare = true,
 	hasSearch = true,
 
 	chapterType = ChapterType.HTML,
