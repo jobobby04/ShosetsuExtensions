@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.4","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.5","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -18,7 +18,7 @@ local function GETDocumentAdult(url)
 			RequestBuilder()
 					:get()
 					:url(url)
-					:addHeader("Cookie", "view_adult=true")
+					--:addHeader("Cookie", "view_adult=true")
 					:build()
 	)
 end
