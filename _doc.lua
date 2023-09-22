@@ -100,6 +100,8 @@ do
     -- You shouldn't use methods of these classes manually in extension code unless you know what you're doing anyways,
     -- So I didn't bother making documentation for them. Refer to the existing kotlin okhttp documentation.
 
+    ---@class OkHttpClient
+    local OkHttpClient = {}
     ---@class Request
     local Request = {}
     ---@class Headers
@@ -110,6 +112,50 @@ do
     local CacheControl = {}
     ---@class MediaType
     local MediaType = {}
+    ---@class HttpUrl
+    local HttpUrl = {}
+    ---@class Interceptor
+    local Interceptor = {}
+
+    do
+        ---@class OkHttpClientBuilder
+        local OkHttpClientBuilder = {}
+        ---@return OkHttpClient
+        function OkHttpClientBuilder:build() return end
+
+        ---@param interceptor Interceptor
+        ---@return OkHttpClientBuilder
+        function OkHttpClientBuilder:addInterceptor(interceptor) return end
+
+        ---@param interceptor Interceptor
+        ---@return OkHttpClientBuilder
+        function OkHttpClientBuilder:addNetworkInterceptor(interceptor) return end
+    end
+
+    do
+        ---@return HttpUrl
+        function Request:url() return end
+
+        ---@return string
+        function Request:method() return end
+
+        ---@return Headers
+        function Request:headers() return end
+
+        ---@return RequestBody | nil
+        function Request:body() return end
+
+        ---@param name string
+        ---@return string | nil
+        function Request:header(name) return end
+
+        ---@param name string
+        ---@return string[] | Array | table
+        function Request:headers(name) return end
+
+        ---@return RequestBuilder
+        function Request:newBuilder() return end
+    end
 
     do
         ---@class RequestBuilder
@@ -179,7 +225,16 @@ do
         ---@class Response
         local Response = {}
         ---@return ResponseBody
-        function Response:getBody() return end
+        function Response:body() return end
+
+        ---@return int
+        function Response:code() return end
+
+        ---@return Headers
+        function Response:headers() return end
+
+        ---@return Request
+        function Response:request() return end
 
         ---@class ResponseBody
         local ResponseBody = {}
@@ -216,26 +271,67 @@ do
     ---@class Filter
     local Filter = {}
 
-    ---@class TextFilter
+    ---@class HeaderFilter : Filter
+    ---@field name string
+    local HeaderFilter = {}
+
+    ---@class SeparatorFilter : Filter
+    local SeparatorFilter = {}
+
+    ---@class TextFilter : Filter
+    ---@field id int
+    ---@field name string
+    ---@field state string
     local TextFilter = {}
 
-    ---@class SwitchFilter
+    ---@class PasswordFilter : Filter
+    ---@field id int
+    ---@field name string
+    ---@field state string
+    local PasswordFilter = {}
+
+    ---@class SwitchFilter : Filter
+    ---@field id int
+    ---@field name string
+    ---@field state boolean
     local SwitchFilter = {}
 
-    ---@class RadioGroupFilter
-    local RadioGroupFilter = {}
+    ---@class CheckboxFilter : Filter
+    ---@field id int
+    ---@field name string
+    ---@field state boolean
+    local CheckboxFilter = {}
 
-    ---@class DropdownFilter
+    ---@class TriStateFilter : Filter
+    ---@field id int
+    ---@field name string
+    ---@field state int "0 = Ignored, 1 = Included, 2 = Excluded"
+    local TriStateFilter = {}
+
+    ---@class DropdownFilter : Filter
+    ---@field id int
+    ---@field name string
+    ---@field choices string[] | Array | table
+    ---@field state int
     local DropdownFilter = {}
 
-    ---@class FilterGroup
+    ---@class RadioGroupFilter : Filter
+    ---@field id int
+    ---@field name string
+    ---@field choices string[] | Array | table
+    ---@field state int
+    local RadioGroupFilter = {}
+
+    ---@class FilterList : Filter
+    ---@field name string
+    ---@field filters Filter[] | Array | table
+    local FilterList = {}
+
+    ---@class FilterGroup : Filter
+    ---@type Filter
+    ---@field name string
+    ---@field filters Filter[] | Array | table
     local FilterGroup = {}
-
-    ---@class
-    local GenreGroup = {}
-
-    ---@class
-    local GenreCheckBoxFilter = {}
 
 end
 
@@ -250,22 +346,11 @@ do
     ---@class NovelStatus
     local NovelStatus = {}
 
-    ---@class Novel @Novel.Listing
-    local Novel = {}
-
-    ---@param title string
-    ---@return void
-    function Novel:setTitle(title) return end
-
-    ---@param link string
-    ---@return void
-    function Novel:setLink(link) return end
-
-    ---@param imageURL string
-    ---@return void
-    function Novel:setImageURL(imageURL) return end
-
     ---@class NovelChapter
+    ---@field release string
+    ---@field title string
+    ---@field link string
+    ---@field order number
     local NovelChapter = {}
 
     ---@param release string
@@ -285,6 +370,23 @@ do
     function NovelChapter:setOrder(order) return end
 
     ---@class NovelInfo
+    ---@field title string
+    ---@field alternativeTitles string[] | Array | table
+    ---@field link string
+    ---@field imageURL string
+    ---@field language string
+    ---@field description string
+    ---@field status NovelStatus
+    ---@field tags string[] | Array | table
+    ---@field genres string[] | Array | table
+    ---@field authors string[] | Array | table
+    ---@field artists string[] | Array | table
+    ---@field chapters NovelChapter[] | Array | table
+    ---@field chapterCount int | nil
+    ---@field wordCount int | nil
+    ---@field commentCount int | nil
+    ---@field viewCount int | nil
+    ---@field favoriteCount int | nil
     local NovelInfo = {}
 
     ---@param title string
@@ -294,6 +396,10 @@ do
     ---@param titles Array | table
     ---@return void
     function NovelInfo:setAlternativeTitles(titles) return end
+
+    ---@param link string
+    ---@return void
+    function NovelInfo:setLink(link) return end
 
     ---@param imageURL string|any
     ---@return void
@@ -330,6 +436,35 @@ do
     ---@param chapters ArrayList
     ---@return void
     function NovelInfo:setChapters(chapters) return end
+
+    ---@param chapterCount int | nil
+    ---@return void
+    function NovelInfo:setChapterCount(chapterCount) return end
+
+    ---@param wordCount int | nil
+    ---@return void
+    function NovelInfo:setWordCount(wordCount) return end
+
+    ---@param commentCount int | nil
+    ---@return void
+    function NovelInfo:setCommentCount(commentCount) return end
+
+    ---@param viewCount int | nil
+    ---@return void
+    function NovelInfo:setViewCount(viewCount) return end
+
+    ---@param favoriteCount int | nil
+    ---@return void
+    function NovelInfo:setFavoriteCount(favoriteCount) return end
+
+    ---@class ChapterType
+    local ChapterType = {}
+
+    ---@type ChapterType
+    ChapterType.STRING = {}
+
+    ---@type ChapterType
+    ChapterType.HTML = {}
 end
 
 -- ShosetsuLib
@@ -415,6 +550,10 @@ do
 
     -- OKHTTP3
     do
+
+        ---@return OkHttpClient
+        function HttpClient() return end
+
         ---@param url string
         ---@param headers Headers
         ---@param cacheControl CacheControl
@@ -428,6 +567,8 @@ do
         ---@return Request
         function POST(url, headers, body, cacheControl) return end
 
+        ---@return OkHttpClientBuilder
+        function HttpClientBuilder() return end
         ---@return RequestBuilder
         function RequestBuilder() return end
         ---@return HeadersBuilder
@@ -460,6 +601,11 @@ do
         function RequestDocument(req) return end
 
         --- Obtains a document from a url, using a GET request.
+        ---
+        --- No javascript is executed, you get the raw HTML.
+        --- If the site loads extra in with JS,
+        ---  you need to perform the post requests yourself.
+        ---
         ---@param url string
         ---@return Document
         function GETDocument(url) return end
@@ -472,24 +618,36 @@ do
         ---@param type MediaType
         ---@return RequestBody
         function RequestBody(data, type) return end
+
+        ---@param block function
+        ---@return Interceptor
+        function Interceptor(block) return end
+
+        ---@param url string
+        ---@return HttpUrl
+        function HttpUrl(url) return end
     end
 
     -- CONSTRUCTORS
     do
         ---@param name string
         ---@param increments boolean
-        ---@param func fun(): Novel[] | fun(data: table, inc: int): Novel[]
+        ---@param func fun(): NovelInfo[] | fun(data: table, inc: int): NovelInfo[]
         ---@return Listing
         function Listing(name, increments, func) return end
 
-        ---@return Novel
-        function Novel() return end
+        ---@deprecated Replace with NovelInfo
+        ---@return NovelInfo
+        ---@param t NovelInfo
+        function Novel(t) return end
 
         ---@return NovelInfo
-        function NovelInfo() return end
+        ---@param t NovelInfo
+        function NovelInfo(t) return end
 
         ---@return NovelChapter
-        function NovelChapter() return end
+        ---@param t NovelChapter
+        function NovelChapter(t) return end
 
         ---@param type int
         ---@return NovelStatus
@@ -498,38 +656,48 @@ do
         -- FILTERS
 
         ---@param name string
-        ---return TextFilter
+        ---@return HeaderFilter
+        function HeaderFilter(name) return end
+
+        ---@param name string
+        ---@return SeparatorFilter
+        function SeparatorFilter(name) return end
+
+        ---@param name string
+        ---@return TextFilter
         function TextFilter(id, name) return end
 
         ---@param name string
-        ---return SwitchFilter
+        ---@return SwitchFilter
         function SwitchFilter(id, name) return end
 
         ---@param name string
-        ---return CheckBoxFilter
+        ---@return CheckboxFilter
         function CheckboxFilter(id, name) return end
 
         ---@param name string
-        ---return TriStateFilter
+        ---@return TriStateFilter
         function TriStateFilter(id, name) return end
 
         ---@param name string
         ---@param choices string[] | Array | table
-        ---return RadioGroupFilter
-        function RadioGroupFilter(id, name, choices) return end
-
-        ---@param name string
-        ---@param choices string[] | Array | table
-        ---return DropdownFilter
+        ---@return DropdownFilter
         function DropdownFilter(id, name, choices) return end
 
         ---@param name string
-        ---@param choices Filter[] | Array
-        ---return FilterGroup
-        function FilterGroup(name, choices) return end
+        ---@param choices string[] | Array | table
+        ---@return RadioGroupFilter
+        function RadioGroupFilter(id, name, choices) return end
 
         ---@param name string
         ---@param filters Filter[] | Array
+        ---@return FilterList
         function FilterList(name, filters) return end
+
+        ---@param name string
+        ---@param choices Filter[] | Array
+        ---@return FilterGroup
+        function FilterGroup(name, choices) return end
+
     end
 end
