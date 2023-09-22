@@ -134,10 +134,10 @@ end
 
 --- @param document Document
 --- @param selector string
---- @return Novel[]
+--- @return NovelInfo[]
 function defaults:parseBrowseWithSelector(document,selector)
     return map(document:select(selector), function(v)
-        return Novel {
+        return NovelInfo {
             title = v:attr("title"),
             link = self.shrinkURL(v:attr("href")),
             imageURL = self.expandURL(v:selectFirst("img"):attr("data-src"))
@@ -146,7 +146,7 @@ function defaults:parseBrowseWithSelector(document,selector)
 end
 
 --- @param document Document
---- @return Novel[]
+--- @return NovelInfo[]
 function defaults:parseBrowse(document)
     return self.parseBrowseWithSelector(document, ".novel-item a")
 end
@@ -154,7 +154,7 @@ end
 local searchMap = {}
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @return Novel[]
+--- @return NovelInfo[]
 function defaults:search(filters)
     local query = filters[QUERY]
     local page = filters[PAGE]
@@ -197,8 +197,8 @@ function defaults:search(filters)
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @param f fun(): Novel[]
---- @return Novel[]
+--- @param f fun(): NovelInfo[]
+--- @return NovelInfo[]
 function defaults:getListings(filters, f)
     local genre = filters[GENRE_SELECT]
     local status = filters[STATUS_SELECT]

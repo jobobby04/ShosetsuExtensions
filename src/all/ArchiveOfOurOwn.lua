@@ -190,7 +190,7 @@ local function addPage(url, page)
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @return Novel[]
+--- @return NovelInfo[]
 local function search(filters)
 	local page = filters[PAGE]
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
@@ -198,7 +198,7 @@ local function search(filters)
 		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
 		local novel = GETDocumentAdult(novelUrl)
 		return {
-			Novel {
+			NovelInfo {
 				title = novel:selectFirst(".title"):text(),
 				link = shrinkURL(novelUrl),
 				imageURL = ""
@@ -213,7 +213,7 @@ local function search(filters)
 
 		return map(works, function(v)
 			local title = v:selectFirst("h4.heading > a")
-			return Novel {
+			return NovelInfo {
 				title = title:text(),
 				link = shrinkURL(title:attr("href")),
 				imageURL = ""
@@ -227,7 +227,7 @@ local function search(filters)
 
 		return map(works, function(v)
 			local title = v:selectFirst("h4.heading > a")
-			return Novel {
+			return NovelInfo {
 				title = title:text(),
 				link = shrinkURL(title:attr("href")),
 				imageURL = ""
@@ -254,7 +254,7 @@ return {
 	listings = {
 		Listing("Nothing", false, function(data)
 			return {
-				Novel {
+				NovelInfo {
 					title = "How to use this source",
 					link = "how.v2",
 					imageURL = ""

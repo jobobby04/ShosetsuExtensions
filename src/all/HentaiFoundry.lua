@@ -1,7 +1,49 @@
--- {"id":1308639967,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639967,"ver":"1.0.0","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.hentai-foundry.com"
 local settings = {}
+
+local enterAgreeInterceptor = Interceptor(
+	function(chain)
+		---@type Request
+		local request = chain:request()
+		if request:method() == "GET" then
+			local newUrl = request:url():newBuilder():addQueryParameter("enterAgree", "1"):build()
+			return chain:proceed(request:newBuilder():url(newUrl):build())
+		else
+			return chain:proceed(request)
+		end
+
+	end
+)
+
+---@type OkHttpClient
+local client = HttpClientBuilder()
+	:addInterceptor(enterAgreeInterceptor)
+	:build()
+
+---@param request Request
+---@return Response
+local function ClientRequest(request)
+	return client:newCall(request):execute()
+end
+
+---@param request Request
+---@return string
+local function ClientRequestDocument(request)
+	local response = ClientRequest(request)
+	local status = response:code()
+	if status >= 200 and status <= 299 then
+		return response:body():string()
+	else
+		error("Http error " .. status)
+	end
+end
+
+---@return Document
+local function ClientGetDocument(url)
+	return Document(ClientRequestDocument(GET(url)))
+end
 
 local function shrinkURL(url)
 	return url:gsub("^.-hentai-foundry%.com", "")
@@ -10,18 +52,6 @@ end
 local function expandURL(url)
 	return baseURL .. url
 end
-
---[[--- @param url string
---- @return Document
-local function GETDocument(url)
-	return RequestDocument(
-			RequestBuilder()
-					:get()
-					:url(url)
-					:addHeader("Cookie", "YII_CSRF_TOKEN=???;PHPSESSID=???")
-					:build()
-	)
-end]]
 
 --- @param element Element
 --- @return Element
@@ -34,7 +64,7 @@ end
 --- @param chapterURL string
 --- @return string
 local function getPassage(chapterURL)
-	local document = GETDocument(expandURL(chapterURL))
+	local document = ClientGetDocument(expandURL(chapterURL))
 	local chap = document:selectFirst(".container #viewChapter .boxbody")
 	local title = document:selectFirst(".titlebar > a"):text()
 
@@ -58,13 +88,13 @@ end
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
 	if novelURL:match("^how") then
-		return NovelInfo {
+		local how = NovelInfo {
 			title = "How to use this source",
 			description = "Make sure your logged into webview!!\n\n You can use this source by:\n1. searching on the hentai-foundry.com website and inputting the url of the story in the search bar."
 		}
 	end
 
-	local document = GETDocument(expandURL(novelURL))
+	local document = ClientGetDocument(expandURL(novelURL))
 	local title = document:selectFirst(".titlebar > a"):text()
 	local summaryElement = document:selectFirst(".story  .storyDescript")
 	local summary = ""
@@ -112,15 +142,15 @@ local function parseNovel(novelURL, loadChapters)
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @return Novel[]
+--- @return NovelInfo[]
 local function search(filters)
 	local page = filters[PAGE]
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 	if page == 1 and shrinkURL(url):match("/stories/user/%a+/%d+") then
 		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
-		local novel = GETDocument(novelUrl):selectFirst(".titlebar > a")
+		local novel = ClientGetDocument(novelUrl):selectFirst(".titlebar > a")
 		return {
-			Novel {
+			NovelInfo {
 				title = novel:text(),
 				link = novel:attr("href"),
 				imageURL = ""
@@ -147,7 +177,7 @@ return {
 	listings = {
 		Listing("Nothing", false, function(data)
 			return {
-				Novel {
+				NovelInfo {
 					title = "How to use this source",
 					link = "how",
 					imageURL = ""
