@@ -3,24 +3,40 @@
 local baseURL = "https://archiveofourown.org"
 local settings = {}
 
+---@type OkHttpClient
+local client = HttpClientBuilder()
+		--:addInterceptor(enterAgreeInterceptor)
+		:build()
+
+---@param request Request
+---@return Response
+local function ClientRequest(request)
+	return client:newCall(request):execute()
+end
+
+---@param request Request
+---@return string
+local function ClientRequestDocument(request)
+	local response = ClientRequest(request)
+	local status = response:code()
+	if status >= 200 and status <= 299 then
+		return response:body():string()
+	else
+		error("Http error " .. status)
+	end
+end
+
+---@return Document
+local function ClientGetDocument(url)
+	return Document(ClientRequestDocument(GET(url)))
+end
+
 local function shrinkURL(url)
 	return url:gsub("^.-archiveofourown%.org", "")
 end
 
 local function expandURL(url)
 	return baseURL .. url
-end
-
---- @param url string
---- @return Document
-local function GETDocumentAdult(url)
-	return RequestDocument(
-			RequestBuilder()
-					:get()
-					:url(url)
-					--:addHeader("Cookie", "view_adult=true")
-					:build()
-	)
 end
 
 --- @param element Element
@@ -44,7 +60,7 @@ end
 --- @param chapterURL string
 --- @return string
 local function getPassage(chapterURL)
-	local document = GETDocumentAdult(expandURL(chapterURL))
+	local document = ClientGetDocument(expandURL(chapterURL))
 	local chap = document:selectFirst("#workskin div.userstuff")
 	local title
 	local titleDoc = document:selectFirst("#workskin .chapter .title")
@@ -75,7 +91,7 @@ local function getPassage(chapterURL)
 end
 
 --- @param genres string[]
---- @param document Document
+--- @param document Node
 --- @param selector string
 --- @param prefix string
 local function addTags(genres, document, selector, prefix)
@@ -85,6 +101,20 @@ local function addTags(genres, document, selector, prefix)
 			table.insert(genres, prefix .. tags:get(i):text())
 		end
 	end
+end
+
+local function readStatus(document)
+	local status = NovelStatus.COMPLETED
+	local statusElement = document:selectFirst(".stats dd.chapters"):text()
+	if statusElement:sub(-#"?") == "?" then
+		status = NovelStatus.PUBLISHING
+	else
+		local chapterCount, finishedChapterCount = statusElement:match("^(.+)/(.+)$")
+		if chapterCount ~= finishedChapterCount then
+			status = NovelStatus.PUBLISHING
+		end
+	end
+	return status
 end
 
 --- @param novelURL string
@@ -98,7 +128,7 @@ local function parseNovel(novelURL, loadChapters)
 		}
 	end
 
-	local document = GETDocumentAdult(expandURL(novelURL))
+	local document = ClientGetDocument(expandURL(novelURL) .. "?view_adult=true")
 	local title = document:selectFirst(".title"):text()
 	local summaryElement = document:selectFirst("#workskin div .userstuff:not([role])")
 	local summary = ""
@@ -106,7 +136,7 @@ local function parseNovel(novelURL, loadChapters)
 		summary = Document(tostring(summaryElement))
 		summary:select("br"):prepend("\\n")
 		summary:select("p"):prepend("\\n\\n")
-		summary = summary:wholeText():gsub("\\n", "\n"):gsub('^%s*(.-)%s*$', '%1')
+		summary = summary:wholeText():gsub("\\n", "\n"):gsub('^%s*(.-)%s*$', '%1'):gsub('\n%s+', '\n')
 	end
 	local genres = {}
 
@@ -131,16 +161,7 @@ local function parseNovel(novelURL, loadChapters)
 		return v:text()
 	end)
 
-	local status = NovelStatus.COMPLETED
-	local statusElement = document:selectFirst(".stats dd.chapters"):text()
-	if statusElement:sub(-#"?") == "?" then
-		status = NovelStatus.PUBLISHING
-	else
-		local chapterCount, finishedChapterCount = statusElement:match("^(.+)/(.+)$")
-		if chapterCount ~= finishedChapterCount then
-			status = NovelStatus.PUBLISHING
-		end
-	end
+	local status = readStatus(document)
 
 	local info = NovelInfo {
 		title = title,
@@ -189,6 +210,65 @@ local function addPage(url, page)
 	end
 end
 
+---@param element Element
+---@return NovelInfo
+local function parseBrowseNovel(element)
+	local title = element:selectFirst("h4.heading > a:first-child")
+	local authors = map(element:select("h4.heading > a[rel=\"author\"]"), function(v)
+		return v:text()
+	end)
+
+	local genres = {}
+
+	local language = element:selectFirst(".stats dd.language")
+	if language ~= nil then
+		table.insert(genres, language:text())
+	end
+
+	addTags(genres, element, ".required-tags .rating span", "")
+	addTags(genres, element, ".required-tags .category span", "")
+	addTags(genres, element, ".fandoms a.tag", "")
+	addTags(genres, element, "li.warnings", "")
+	addTags(genres, element, "li.relationships", "")
+	addTags(genres, element, "li.characters", "")
+	addTags(genres, element, "li.freeforms", "")
+
+	local words = element:selectFirst(".stats dd.words"):text():gsub(',', ''):gsub("%s", '')
+	local chapters = element:selectFirst(".stats dd.chapters a"):text():gsub(',', ''):gsub("%s", '')
+	local comments = element:selectFirst(".stats dd.words"):text():gsub(',', ''):gsub("%s", '')
+	local faves = element:selectFirst(".stats dd.bookmarks"):text():gsub(',', ''):gsub("%s", '')
+	local views = element:selectFirst(".stats dd.hits"):text():gsub(',', ''):gsub("%s", '')
+
+	local status = readStatus(element)
+
+	local summaryElement = element:selectFirst(".summary")
+	local summary = ""
+	if summaryElement ~= nil then
+		summary = Document(tostring(summaryElement))
+		summary = summary:wholeText():gsub("\\n", "\n"):gsub('^%s*(.-)%s*$', '%1'):gsub('\n%s+', '\n')
+	end
+
+	local seriesElement = element:selectFirst(".series")
+	if seriesElement ~= nil then
+		summary = summary .. "\n" .. seriesElement:text()
+	end
+
+	return NovelInfo {
+		title = title:text(),
+		link = shrinkURL(title:attr("href")),
+		imageURL = "",
+		description = summary,
+		genres = genres,
+		status = status,
+		authors = authors,
+		wordCount = tonumber(words),
+		chapterCount = tonumber(chapters),
+		commentCount = tonumber(comments),
+		favoriteCount = tonumber(faves),
+		viewCount = tonumber(views)
+	}
+end
+
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
 --- @return NovelInfo[]
 local function search(filters)
@@ -196,7 +276,7 @@ local function search(filters)
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 	if page == 1 and shrinkURL(url):match("/works/%d+") then
 		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
-		local novel = GETDocumentAdult(novelUrl)
+		local novel = ClientGetDocument(novelUrl)
 		return {
 			NovelInfo {
 				title = novel:selectFirst(".title"):text(),
@@ -208,30 +288,20 @@ local function search(filters)
 
 	if shrinkURL(url):match("tags/.+/works") then
 		local newUrl = addPage(removePage(url), page)
-		local document = GETDocumentAdult(newUrl)
+		local document = ClientGetDocument(newUrl)
 		local works = document:select(".work > li")
 
 		return map(works, function(v)
-			local title = v:selectFirst("h4.heading > a")
-			return NovelInfo {
-				title = title:text(),
-				link = shrinkURL(title:attr("href")),
-				imageURL = ""
-			}
+			return parseBrowseNovel(v)
 		end)
 	end
 	if shrinkURL(url):match("works") then
 		local newUrl = addPage(removePage(url), page)
-		local document = GETDocumentAdult(newUrl)
+		local document = ClientGetDocument(newUrl)
 		local works = document:select(".work > li")
 
 		return map(works, function(v)
-			local title = v:selectFirst("h4.heading > a")
-			return NovelInfo {
-				title = title:text(),
-				link = shrinkURL(title:attr("href")),
-				imageURL = ""
-			}
+			return parseBrowseNovel(v)
 		end)
 	end
 	return {}
