@@ -94,8 +94,6 @@ local function getNovel(document)
 	if storyVote then
 		storyVote:remove()
 	end
-	summary:select("br"):prepend("\\n")
-	summary:select("p"):prepend("\\n")
 	summary = summary:wholeText():gsub("\\n", "\n"):gsub('^%s*(.-)%s*$', '%1')
 
 	local genres = { summaryElement:selectFirst(".storyCategoryRating .categoryBreadcrumbs"):text() }
