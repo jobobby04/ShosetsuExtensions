@@ -235,7 +235,7 @@ local function parseBrowseNovel(element)
 	addTags(genres, element, "li.freeforms", "")
 
 	local words = element:selectFirst(".stats dd.words"):text():gsub(',', ''):gsub("%s", '')
-	local chapters = element:selectFirst(".stats dd.chapters a"):text():gsub(',', ''):gsub("%s", '')
+	local chapters = element:selectFirst(".stats dd.chapters"):text():gsub(',', ''):gsub("/?.*$", ''):gsub("%s", '')
 	local comments = element:selectFirst(".stats dd.comments"):text():gsub(',', ''):gsub("%s", '')
 	local faves = element:selectFirst(".stats dd.bookmarks"):text():gsub(',', ''):gsub("%s", '')
 	local views = element:selectFirst(".stats dd.hits"):text():gsub(',', ''):gsub("%s", '')
