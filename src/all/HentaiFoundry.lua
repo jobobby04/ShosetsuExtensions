@@ -204,12 +204,12 @@ end
 
 --- @param filters table
 local function createFormBody(token, filters)
-	local nudity = filters[2]
-	local violence = filters[3]
-	local racism = filters[4]
-	local profanity = filters[5]
-	local sexualContent = filters[6]
-	local spoilerWarning = filters[7]
+	local nudity = filters[2] or (#ratings - 1)
+	local violence = filters[3] or (#ratings - 1)
+	local racism = filters[4] or (#ratings - 1)
+	local profanity = filters[5] or (#ratings - 1)
+	local sexualContent = filters[6] or (#ratings - 1)
+	local spoilerWarning = filters[7] or (#ratings - 1)
 	local yaoi = filters[8]
 	local yuri = filters[9]
 	local teen = filters[10]
