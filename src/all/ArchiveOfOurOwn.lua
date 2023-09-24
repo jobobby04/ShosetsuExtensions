@@ -220,9 +220,10 @@ local function parseBrowseNovel(element)
 
 	local genres = {}
 
-	local language = element:selectFirst(".stats dd.language")
-	if language ~= nil then
-		table.insert(genres, language:text())
+	local languageElement = element:selectFirst(".stats dd.language")
+	local language = ""
+	if languageElement ~= nil then
+		language = languageElement:text()
 	end
 
 	addTags(genres, element, ".required-tags .rating span", "")
@@ -235,7 +236,7 @@ local function parseBrowseNovel(element)
 
 	local words = element:selectFirst(".stats dd.words"):text():gsub(',', ''):gsub("%s", '')
 	local chapters = element:selectFirst(".stats dd.chapters a"):text():gsub(',', ''):gsub("%s", '')
-	local comments = element:selectFirst(".stats dd.words"):text():gsub(',', ''):gsub("%s", '')
+	local comments = element:selectFirst(".stats dd.comments"):text():gsub(',', ''):gsub("%s", '')
 	local faves = element:selectFirst(".stats dd.bookmarks"):text():gsub(',', ''):gsub("%s", '')
 	local views = element:selectFirst(".stats dd.hits"):text():gsub(',', ''):gsub("%s", '')
 
@@ -261,6 +262,7 @@ local function parseBrowseNovel(element)
 		genres = genres,
 		status = status,
 		authors = authors,
+		language = language,
 		wordCount = tonumber(words),
 		chapterCount = tonumber(chapters),
 		commentCount = tonumber(comments),
