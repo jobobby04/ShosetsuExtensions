@@ -1,4 +1,4 @@
--- {"id":1308639964,"ver":"1.1.4","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
+-- {"id":1308639964,"ver":"1.1.5","libVer":"1.3.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
 
 local GENRES = {
 	"All",

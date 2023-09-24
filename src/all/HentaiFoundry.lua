@@ -1,4 +1,4 @@
--- {"id":1308639967,"ver":"1.0.0","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639967,"ver":"1.0.1","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.hentai-foundry.com"
 local settings = {}
