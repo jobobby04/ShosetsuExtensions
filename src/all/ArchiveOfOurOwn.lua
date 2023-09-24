@@ -210,6 +210,14 @@ local function addPage(url, page)
 	end
 end
 
+local function getSubItemOrNil(selector, element)
+	local item = element:selectFirst(".stats dd.chapters")
+	if item then
+		local text = item:text():gsub(',', ''):gsub("/?.*$", ''):gsub("%s", '')
+		return tonumber(text)
+	end
+end
+
 ---@param element Element
 ---@return NovelInfo
 local function parseBrowseNovel(element)
@@ -234,11 +242,11 @@ local function parseBrowseNovel(element)
 	addTags(genres, element, "li.characters", "")
 	addTags(genres, element, "li.freeforms", "")
 
-	local words = element:selectFirst(".stats dd.words"):text():gsub(',', ''):gsub("%s", '')
-	local chapters = element:selectFirst(".stats dd.chapters"):text():gsub(',', ''):gsub("/?.*$", ''):gsub("%s", '')
-	local comments = element:selectFirst(".stats dd.comments"):text():gsub(',', ''):gsub("%s", '')
-	local faves = element:selectFirst(".stats dd.bookmarks"):text():gsub(',', ''):gsub("%s", '')
-	local views = element:selectFirst(".stats dd.hits"):text():gsub(',', ''):gsub("%s", '')
+	local words = getSubItemOrNil(".stats dd.words", element)
+	local chapters = getSubItemOrNil(".stats dd.chapters", element)
+	local comments = getSubItemOrNil(".stats dd.comments", element)
+	local faves = getSubItemOrNil(".stats dd.bookmarks", element)
+	local views = getSubItemOrNil(".stats dd.hits", element)
 
 	local status = readStatus(element)
 
@@ -263,11 +271,11 @@ local function parseBrowseNovel(element)
 		status = status,
 		authors = authors,
 		language = language,
-		wordCount = tonumber(words),
-		chapterCount = tonumber(chapters),
-		commentCount = tonumber(comments),
-		favoriteCount = tonumber(faves),
-		viewCount = tonumber(views)
+		wordCount = words,
+		chapterCount = chapters,
+		commentCount = comments,
+		favoriteCount = faves,
+		viewCount = views
 	}
 end
 
