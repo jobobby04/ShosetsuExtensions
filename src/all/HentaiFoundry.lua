@@ -204,26 +204,26 @@ end
 
 --- @param filters table
 local function createFormBody(token, filters)
-	local nudity = filters[2]:getState()
-	local violence = filters[3]:getState()
-	local racism = filters[4]:getState()
-	local profanity = filters[5]:getState()
-	local sexualContent = filters[6]:getState()
-	local spoilerWarning = filters[7]:getState()
-	local yaoi = filters[8]:getState()
-	local yuri = filters[9]:getState()
-	local teen = filters[10]:getState()
-	local guro = filters[11]:getState()
-	local furry = filters[12]:getState()
-	local beast = filters[13]:getState()
-	local male = filters[14]:getState()
-	local female = filters[15]:getState()
-	local futa = filters[16]:getState()
-	local other = filters[17]:getState()
-	local scat = filters[18]:getState()
-	local incest = filters[19]:getState()
-	local rape = filters[20]:getState()
-	local sortBy = filters[21]:getState()
+	local nudity = filters[2]
+	local violence = filters[3]
+	local racism = filters[4]
+	local profanity = filters[5]
+	local sexualContent = filters[6]
+	local spoilerWarning = filters[7]
+	local yaoi = filters[8]
+	local yuri = filters[9]
+	local teen = filters[10]
+	local guro = filters[11]
+	local furry = filters[12]
+	local beast = filters[13]
+	local male = filters[14]
+	local female = filters[15]
+	local futa = filters[16]
+	local other = filters[17]
+	local scat = filters[18]
+	local incest = filters[19]
+	local rape = filters[20]
+	local sortBy = filters[21]
 	for index, value in pairs(FilterOrderOption) do
 		if sortBy == index - 1 then
 			sortBy = value.value
