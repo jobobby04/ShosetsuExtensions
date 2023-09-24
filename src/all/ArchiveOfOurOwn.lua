@@ -211,9 +211,9 @@ local function addPage(url, page)
 end
 
 local function getSubItemOrNil(selector, element)
-	local item = element:selectFirst(".stats dd.chapters")
+	local item = element:selectFirst(selector)
 	if item then
-		local text = item:text():gsub(',', ''):gsub("/?.*$", ''):gsub("%s", '')
+		local text = item:text():gsub(',', ''):gsub("/.*$", ''):gsub("%s", '')
 		return tonumber(text)
 	end
 end
