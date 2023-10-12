@@ -11,4 +11,6 @@ https://raw.githubusercontent.com/jobobby04/ShosetsuExtensions/master
 - [ArchiveOfOurOwn](https://archiveofourown.org/)
 - [ReadWN](https://www.readwn.com/)
 - [LightNovelMeta](https://www.lightnovelmeta.com/)
+- [Wuxiap](https://www.wuxiap.com/)
+- [FanNovel](https://www.fannovel.com/)
 - [Hentai Foundry](https://www.hentai-foundry.com/)
