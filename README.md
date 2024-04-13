@@ -14,3 +14,4 @@ https://raw.githubusercontent.com/jobobby04/ShosetsuExtensions/master
 - [Wuxiap](https://www.wuxiap.com/)
 - [FanNovel](https://www.fannovel.com/)
 - [Hentai Foundry](https://www.hentai-foundry.com/)
+- [Literotica](https://www.literotica.com/)
