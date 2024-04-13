@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.0","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.1","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -51,7 +51,7 @@ local function getPassage(chapterURL)
 	local title = document:selectFirst(".headline.j_eQ"):text()
 	local summary = document:selectFirst("#tabpanel-info .bn_B"):text()
 	local tags = map(document:select("#tabpanel-tags > .bn_ar > a"),function(v)
-		v:text()
+		return v:text()
 	end)
 	local lastPage = selectLast(document:select("a.l_bJ")):attr("href")
 	local lastPageNumber = tonumber(lastPage:match("%d+$"))
@@ -68,10 +68,7 @@ local function getPassage(chapterURL)
 
 	-- Adds Chapter Info
 
-	local tagString = ""
-	for v in pairs(tags) do
-		tagString = tagString .. ", " .. tags[v]
-	end
+	local tagString = table.concat(tags, ", ")
 
 	if tagString ~= "" then
 		chap:child(0):before("<h4>" .. "Tags: " .. tagString .. "</h4>")
@@ -162,7 +159,7 @@ local function getNovel(document, novelUrl)
 	local title = document:selectFirst(".headline.j_eQ"):text()
 	local summary = document:selectFirst("#tabpanel-info .bn_B"):text()
 	local tags = map(document:select("#tabpanel-tags .bn_ar > a"),function(v)
-		v:text()
+		return v:text()
 	end)
 	local author = document:selectFirst(".y_eS > .y_eU"):text()
 	local words = document:selectFirst("span.bn_ap"):text()
