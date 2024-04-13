@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.1","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.2","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -53,17 +53,21 @@ local function getPassage(chapterURL)
 	local tags = map(document:select("#tabpanel-tags > .bn_ar > a"),function(v)
 		return v:text()
 	end)
-	local lastPage = selectLast(document:select("a.l_bJ")):attr("href")
-	local lastPageNumber = tonumber(lastPage:match("%d+$"))
 
 
 	-- This is for the sake of consistant styling
 	chap = cleanupDocument(chap)
-	for i = 2, lastPageNumber do
-		local nextDocument = ClientGetDocument(expandURL(chapterURL) .. "?page=" .. i)
-				:selectFirst(".aa_eQ.article > .aa_ht > div")
-		nextDocument = cleanupDocument(nextDocument):selectFirst('body')
-		chap:selectFirst('body'):lastChild():after(nextDocument)
+
+	local pagesElements = document:select("a.l_bJ")
+	if pagesElements:size() > 1 then
+		local lastPage = selectLast(document:select("a.l_bJ")):attr("href")
+		local lastPageNumber = tonumber(lastPage:match("%d+$"))
+		for i = 2, lastPageNumber do
+			local nextDocument = ClientGetDocument(expandURL(chapterURL) .. "?page=" .. i)
+					:selectFirst(".aa_eQ.article > .aa_ht > div")
+			nextDocument = cleanupDocument(nextDocument):selectFirst('body'):children()
+			chap:selectFirst('body'):lastChild():after(nextDocument)
+		end
 	end
 
 	-- Adds Chapter Info
