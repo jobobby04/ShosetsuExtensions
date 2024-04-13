@@ -1,4 +1,4 @@
--- {"id":1308639969,"ver":"1.0.1","libVer":"1.3.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
+-- {"id":1308639969,"ver":"1.0.2","libVer":"1.3.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
 
 local GENRES = {
     "All",
@@ -88,7 +88,7 @@ local GENRES = {
     "Other",
 }
 
-return Require("FanNovel")("https://www.fannovel.com", {
+return Require("ReadWN")("https://www.fannovel.com", {
     id = 1308639969,
     name = "FanNovel",
     shrinkURLNovel = "^.-fannovel%.com",
