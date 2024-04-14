@@ -1,7 +1,8 @@
--- {"id":1308639977,"ver":"1.0.1","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639977,"ver":"1.0.2","libVer":"1.3.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
 
 local baseURL = "https://www.mcstories.com"
 local settings = {}
+local dkjson = Require("dkjson")
 
 ---@param request Request
 ---@return string
@@ -42,6 +43,71 @@ local function getPassage(chapterURL)
 	local document = ClientGetDocument(expandURL(chapterURL))
 	local chap = cleanupDocument(document:selectFirst("#mcstories"))
 	return pageOfElem(chap, true)
+end
+
+local svengaliTags = {}
+local svengaliTagsFlattened = {}
+
+local function flatten(tagsTable, parents)
+	local children = tagsTable["children"]
+	if children == nil then
+		return
+	end
+	local tags = children["tag"]
+	if tags == nil then
+		return
+	end
+	for i, v in ipairs(tags) do
+		local item = {
+			name = v["name"],
+			id = tonumber(v["id"]),
+			parents = parents,
+		}
+		table.insert(
+			svengaliTagsFlattened,
+				item
+		)
+		local newParents = {}
+		for _, a in ipairs(parents) do
+			table.insert(newParents, a)
+		end
+		table.insert(newParents, item)
+		flatten(v, newParents)
+	end
+end
+
+local function SvengaliGETDocument(url)
+	local response = ClientRequestDocument(GET(url))
+	return dkjson.decode(response:gsub("^%(", ""):gsub("%)$", ""))
+end
+
+local function getSvengaliTagsIfNeeded()
+	if next(svengaliTags) == nil then
+		svengaliTags = SvengaliGETDocument("https://www.gregariousfrog.com/svengali/servers/GetTagList.php")
+		flatten(svengaliTags, {})
+	end
+end
+
+local function idToTag(id)
+	for _, tag in ipairs(svengaliTagsFlattened) do
+		if tag.id == id then
+			return tag
+		end
+	end
+	return nil
+end
+
+local function tagFullName(tag)
+	local names = {}
+	for i, v in ipairs(tag.parents) do
+		table.insert(names, v["name"])
+	end
+	local parents = table.concat(names, " > ")
+	if parents ~= "" then
+		return parents .. " > " .. tag.name
+	else
+		return tag.name
+	end
 end
 
 local Tags = {
@@ -98,9 +164,7 @@ local function parseNovel(novelURL, loadChapters)
 	local title = document:selectFirst("#mcstories > .title"):text()
 	local author = document:selectFirst("#mcstories > .byline > a"):text()
 	local description = document:selectFirst("#mcstories > section.synopsis"):wholeText()
-	local tags = map(document:select("#mcstories > .storyCodes > a"), function(v)
-		return mapTag(v:text())
-	end)
+	local tags = SvengaliGETDocument("https://www.gregariousfrog.com/svengali/servers/GetTitleTags.php?titleurl=" .. novelURL:match("/([^/]+)/index%.html$"))
 	local wordCount = 0
 
 	local chapter = document:selectFirst("#mcstories > div.chapter")
@@ -128,7 +192,9 @@ local function parseNovel(novelURL, loadChapters)
 		authors = { author },
 		link = novelURL,
 		description = description,
-		genres = tags,
+		genres = map(tags["TitleTags"], function(v)
+			return tagFullName(idToTag(v))
+		end),
 		wordCount = wordCount
 	}
 
@@ -158,8 +224,8 @@ local function search(filters)
 		}
 	end
 
-	if page == 2 then
-		return nil
+	if page > 1 then
+		return {}
 	end
 
 	local categoryNumber = tonumber(filters[2])
@@ -178,23 +244,9 @@ local function search(filters)
 				genres = tags
 			}
 		end)
-	else
-		local document = ClientGetDocument("https://mcstories.com/WhatsNew.html")
-		return map(document:select("div.story"), function(v)
-			local items = v:select("div")
-			local tags = {}
-			for i in items[1]:text():match("%((.-)%)"):gmatch("%S+") do
-				table.insert(tags, mapTag(i))
-			end
-			return NovelInfo {
-				title = items:get(0):select("a"):text(),
-				link = "/" .. items:get(0):select("a"):attr("href"),
-				authors = { items:get(1):select("a"):text() },
-				description = v:selectFirst("div.synopsis"):text(),
-				genres = tags
-			}
-		end)
 	end
+
+	return {}
 end
 
 
@@ -229,14 +281,23 @@ return {
 
 	-- Must have at least one value
 	listings = {
-		Listing("Nothing", false, function(data)
-			return {
-				NovelInfo {
-					title = "How to use this source",
-					link = "how",
-					imageURL = ""
+		Listing("Whats New", false, function(data)
+			getSvengaliTagsIfNeeded()
+			local document = ClientGetDocument("https://mcstories.com/WhatsNew.html")
+			return map(document:select("div.story"), function(v)
+				local items = v:select("div")
+				local tags = {}
+				for i in items:get(1):text():match("%((.-)%)"):gmatch("%S+") do
+					table.insert(tags, mapTag(i))
+				end
+				return NovelInfo {
+					title = items:get(0):select("a"):text(),
+					link = "/" .. items:get(0):select("a"):attr("href"),
+					authors = { items:get(1):select("a"):text() },
+					description = v:selectFirst("div.synopsis"):text(),
+					genres = tags
 				}
-			}
+			end)
 		end),
 	},
 
