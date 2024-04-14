@@ -3,6 +3,10 @@
     {
       "name": "ReadWN",
       "ver": "1.0.11"
+    },
+    {
+      "name": "dkjson",
+      "ver": "1.0.1"
     }
   ],
   "scripts": [
@@ -103,6 +107,16 @@
       "id": 1308639974,
       "lang": "en",
       "ver": "1.0.1",
+      "libVer": "1.0.0",
+      "md5": ""
+    },
+    {
+      "name": "MCStories",
+      "fileName": "MCStories",
+      "imageURL": "",
+      "id": 1308639977,
+      "lang": "en",
+      "ver": "1.0.0",
       "libVer": "1.0.0",
       "md5": ""
     }

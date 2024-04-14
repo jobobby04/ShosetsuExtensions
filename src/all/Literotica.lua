@@ -122,13 +122,11 @@ local function getChapters(authorPage, novelUrl)
 
 	-- Find the chapters of the selected story
 	local selectedStory
-	local tableKey
 
 	for a in pairs(stories) do
 		local story = stories[a]
 		for _, chapter in ipairs(story.chapters) do
 			if chapter.url == novelUrl then
-				tableKey = a
 				selectedStory = story
 				break
 				break
