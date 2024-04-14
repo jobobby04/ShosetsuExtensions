@@ -158,6 +158,10 @@ local function search(filters)
 		}
 	end
 
+	if page == 2 then
+		return nil
+	end
+
 	local categoryNumber = tonumber(filters[2])
 	if categoryNumber > 1 then
 		local category = Tags[categoryNumber]
