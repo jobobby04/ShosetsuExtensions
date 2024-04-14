@@ -1,4 +1,4 @@
--- {"id":1308639977,"ver":"1.0.0","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639977,"ver":"1.0.1","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.mcstories.com"
 local settings = {}
@@ -148,7 +148,7 @@ local function search(filters)
 
 	local categoryNumber = tonumber(filters[2])
 	if categoryNumber > 1 then
-		local category = Tags[categoryNumber - 1]
+		local category = Tags[categoryNumber]
 		local document = ClientGetDocument("https://mcstories.com/Tags/" .. category.name .. ".html")
 		return map(document:select("tbody > tr"), function(v)
 			local items = v:select("td")
