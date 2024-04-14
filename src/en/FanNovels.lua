@@ -1,4 +1,4 @@
--- {"id":1308639969,"ver":"1.0.2","libVer":"1.3.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
+-- {"id":1308639969,"ver":"1.0.3","libVer":"1.3.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
 
 local GENRES = {
     "All",
@@ -32,7 +32,6 @@ local GENRES = {
     "Drama",
     "Eastern Fantasy",
     "Ecchi",
-    "Adult",
     "Fantasy",
     "Fantasy Romance",
     "Game",
@@ -47,7 +46,6 @@ local GENRES = {
     "Magic",
     "Magical Realism",
     "Martial Arts",
-    "Mature",
     "Mecha",
     "Military",
     "Modern Life",
@@ -86,12 +84,14 @@ local GENRES = {
     "BG",
     "GL",
     "Other",
+    "Crossing",
+    "Rebirth",
 }
 
-return Require("ReadWN")("https://www.fannovel.com", {
+return Require("ReadWN")("https://www.fannovels.com", {
     id = 1308639969,
-    name = "FanNovel",
-    shrinkURLNovel = "^.-fannovel%.com",
+    name = "FanNovels",
+    shrinkURLNovel = "^.-fannovels%.com",
     hasCloudFlare = true,
 
     genres = GENRES,
@@ -102,28 +102,28 @@ return Require("ReadWN")("https://www.fannovel.com", {
             increments = false,
             selector = "#latest-updates .novel-list.grid.col .novel-item a",
             url = function(data)
-                return "https://www.fannovel.com"
+                return "https://www.fannovels.com"
             end
         },
         {
             name = "Popular Daily Updates",
             increments = true,
             url = function(data)
-                return "https://www.fannovel.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"
+                return "https://www.fannovels.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"
             end
         },
         {
             name = "Most Popular",
             increments = true,
             url = function(data)
-                return "https://www.fannovel.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"
+                return "https://www.fannovels.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"
             end
         },
         {
             name = "New to Web Novels",
             increments = true,
             url = function(data)
-                return "https://www.fannovel.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"
+                return "https://www.fannovels.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"
             end
         }
     },
