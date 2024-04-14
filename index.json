@@ -7,12 +7,12 @@
   ],
   "scripts": [
     {
-      "name": "ReadWN",
-      "fileName": "ReadWN",
+      "name": "WuxiaBox",
+      "fileName": "WuxiaBox",
       "imageURL": "",
       "id": 1308639964,
       "lang": "en",
-      "ver": "1.1.5",
+      "ver": "1.1.6",
       "libVer": "1.3.0",
       "md5": ""
     },
@@ -111,16 +111,6 @@
       "fileName": "WuxiaOne",
       "imageURL": "",
       "id": 1308639974,
-      "lang": "en",
-      "ver": "1.0.0",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "WuxiaBox",
-      "fileName": "WuxiaBox",
-      "imageURL": "",
-      "id": 1308639975,
       "lang": "en",
       "ver": "1.0.0",
       "libVer": "1.0.0",
