@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.2","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -166,10 +166,6 @@ local function getNovel(document, novelUrl)
 		return v:text()
 	end)
 	local author = document:selectFirst(".y_eS > .y_eU"):text()
-	local words = document:selectFirst("span.bn_ap"):text()
-	local views = document:selectFirst("div[title=Views] > span.aT_cl"):text()
-	local faves = document:selectFirst("div[title=Favorites] > span.aT_cl")
-	local comments = document:selectFirst("div[title=Comments] > span.aT_cl")
 
 	local info = NovelInfo {
 		title = title,
