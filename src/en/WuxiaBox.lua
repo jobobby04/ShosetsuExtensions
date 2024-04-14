@@ -1,4 +1,4 @@
--- {"id":1308639975,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
+-- {"id":1308639975,"ver":"1.1.5","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
 
 local GENRES = {
     "All",
@@ -62,7 +62,7 @@ local GENRES = {
 }
 
 return Require("ReadWN")("https://www.wuxiabox.com", {
-    id = 1308639975,
+    id = 1308639964,
     name = "WuxiaBox",
     shrinkURLNovel = "^.-wuxiabox%.com",
     hasCloudFlare = true,
