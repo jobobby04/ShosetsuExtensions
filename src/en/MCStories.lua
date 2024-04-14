@@ -164,6 +164,7 @@ local function parseNovel(novelURL, loadChapters)
 	local title = document:selectFirst("#mcstories > .title"):text()
 	local author = document:selectFirst("#mcstories > .byline > a"):text()
 	local description = document:selectFirst("#mcstories > section.synopsis"):wholeText()
+	getSvengaliTagsIfNeeded()
 	local tags = SvengaliGETDocument("https://www.gregariousfrog.com/svengali/servers/GetTitleTags.php?titleurl=" .. novelURL:match("/([^/]+)/index%.html$"))
 	local wordCount = 0
 
