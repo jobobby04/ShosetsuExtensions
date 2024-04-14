@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.2","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.3","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -167,7 +167,7 @@ local function getNovel(document, novelUrl)
 	end)
 	local author = document:selectFirst(".y_eS > .y_eU"):text()
 	local words = document:selectFirst("span.bn_ap"):text()
-	local views = document:selectFirst("div[title=Views] > span.aT_cl"):text()
+	local views = document:selectFirst("div[title=Views] > span.aT_cl")
 	local faves = document:selectFirst("div[title=Favorites] > span.aT_cl")
 	local comments = document:selectFirst("div[title=Comments] > span.aT_cl")
 
@@ -178,8 +178,11 @@ local function getNovel(document, novelUrl)
 		genres = tags,
 		authors = { author },
 		wordCount = textToInteger(words),
-		viewCount = textToInteger(views),
 	}
+
+	if views then
+		info:setViewCount(textToInteger(views:text()))
+	end
 
 	if faves then
 		info:setFavoriteCount(textToInteger(faves:text()))
@@ -361,11 +364,11 @@ local function search(filters)
 		local document = ClientGetDocument(searchUrl)
 
 		return map(document:select(".panel.ai_gJ"), function(v)
-			local comments = v:selectFirst("div[title=Comments] > span")
-			if comments == nil then
-				comments = "0"
+			local views = v:selectFirst("div[title=Views] > span")
+			if views == nil then
+				views = "0"
 			else
-				comments = comments:text()
+				views = views:text()
 			end
 			local favorites = v:selectFirst("div[title=Favorites] > span")
 			if favorites == nil then
@@ -373,13 +376,19 @@ local function search(filters)
 			else
 				favorites = favorites:text()
 			end
+			local comments = v:selectFirst("div[title=Comments] > span")
+			if comments == nil then
+				comments = "0"
+			else
+				comments = comments:text()
+			end
 			return NovelInfo {
 				title = v:selectFirst(".ai_ii h4"):text(),
 				link = shrinkURL(v:selectFirst(".ai_ii"):attr("href")),
 				description = v:selectFirst(".ai_ij p"):text(),
 				authors = { v:selectFirst(".ai_il > span.ai_im"):text() },
 				genres = { selectLast(v:select(".ai_il > span.ai_im")):text() },
-				viewCount = textToInteger(v:selectFirst("div[title=Views] > span"):text()),
+				viewCount = textToInteger(views),
 				favoriteCount = textToInteger(favorites),
 				commentCount = textToInteger(comments),
 			}
