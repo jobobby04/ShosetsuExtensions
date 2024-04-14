@@ -1,4 +1,4 @@
--- {"id":1308639971,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
+-- {"id":1308639971,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
 
 local GENRES = {
     "All",
@@ -49,6 +49,7 @@ local GENRES = {
 return Require("ReadWN")("https://www.fansmtl.com", {
     id = 1308639971,
     name = "FansMTL",
+    imageURL = "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/fans_mtl.png",
     shrinkURLNovel = "^.-fansmtl%.com",
     hasCloudFlare = true,
 

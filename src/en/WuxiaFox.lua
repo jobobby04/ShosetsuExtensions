@@ -1,4 +1,4 @@
--- {"id":1308639972,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
+-- {"id":1308639972,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
 
 local GENRES = {
     "All",
@@ -69,6 +69,7 @@ local GENRES = {
 return Require("ReadWN")("https://www.wuxiafox.com", {
     id = 1308639972,
     name = "WuxiaFox",
+    imageURL = "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/wuxia_one.png",
     shrinkURLNovel = "^.-wuxiafox%.com",
     hasCloudFlare = true,
 
