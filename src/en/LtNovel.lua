@@ -1,4 +1,4 @@
--- {"id":1308639973,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
+-- {"id":1308639973,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
 
 local GENRES = {
     "All",
@@ -47,6 +47,7 @@ local GENRES = {
 return Require("ReadWN")("https://www.ltnovels.com", {
     id = 1308639973,
     name = "LtNovel",
+    imageURL = "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/lt_novel.png",
     shrinkURLNovel = "^.-ltnovels%.com",
     hasCloudFlare = true,
 
