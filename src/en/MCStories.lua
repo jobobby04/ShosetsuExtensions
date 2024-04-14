@@ -103,13 +103,25 @@ local function parseNovel(novelURL, loadChapters)
 	end)
 	local wordCount = 0
 
-	local chapters = map(document:select("#mcstories > table > tbody > tr:not(:has(th))"), function(v)
-		wordCount = wordCount + tonumber(v:selectFirst("td:nth-child(2)"):text():match("%d+"))
-		return NovelChapter {
-			title = v:select("a"):text(),
-			link = shrinkURL(novelURL:gsub("index.html", "") .. v:select("a"):attr("href"))
+	local chapter = document:selectFirst("#mcstories > div.chapter")
+	local chapters
+	if chapter then
+		wordCount = tonumber(chapter:text():match("%((.-)%)"):match("%d+"))
+		chapters = {
+			NovelChapter {
+				title = chapter:select("a"):text(),
+				link = shrinkURL(novelURL:gsub("index.html", "") .. chapter:select("a"):attr("href"))
+			}
 		}
-	end)
+	else
+		chapters = map(document:select("#mcstories > table > tbody > tr:not(:has(th))"), function(v)
+			wordCount = wordCount + tonumber(v:selectFirst("td:nth-child(2)"):text():match("%d+"))
+			return NovelChapter {
+				title = v:select("a"):text(),
+				link = shrinkURL(novelURL:gsub("index.html", "") .. v:select("a"):attr("href"))
+			}
+		end)
+	end
 
 	local info = NovelInfo {
 		title = title,
