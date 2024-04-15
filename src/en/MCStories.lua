@@ -1,4 +1,4 @@
--- {"id":1308639977,"ver":"1.0.3","libVer":"1.3.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
+-- {"id":1308639977,"ver":"1.0.4","libVer":"1.3.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
 
 local baseURL = "https://www.mcstories.com"
 local settings = {}
@@ -89,30 +89,29 @@ local function flattenToFilters(tagsTable, layer)
 	for i, v in ipairs(tags) do
 		local name = v["name"]
 		for t = 2, layer do
-			name = " " .. name
+			name = "  " .. name
 		end
-		if layer == 1 then
-			local newFilters = {}
-			if v["tagable"] == "1" then
-				table.insert(newFilters, CheckboxFilter(tonumber(v["id"]) + 2, name))
-			end
-			local childFilters = flattenToFilters(v, layer + 1)
-			for _, y in ipairs(childFilters) do
-				table.insert(newFilters, y)
-			end
-			table.insert(filters, FilterGroup(v["name"], newFilters))
+		--if layer == 1 then
+		--	local newFilters = {}
+		--	if v["tagable"] == "1" then
+		--		table.insert(newFilters, CheckboxFilter(tonumber(v["id"]) + 2, name))
+		--	end
+		--	local childFilters = flattenToFilters(v, layer + 1)
+		--	for _, y in ipairs(childFilters) do
+		--		table.insert(newFilters, y)
+		--	end
+		--	table.insert(filters, FilterList(v["name"], newFilters))
+		--else
+		if v["tagable"] == "1" then
+			table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
 		else
-			if v["tagable"] == "1" then
-				table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
-			else
-				table.insert(filters, HeaderFilter(name))
-			end
-			local childFilters = flattenToFilters(v, layer + 1)
-			for _, y in ipairs(childFilters) do
-				table.insert(filters, y)
-			end
+			table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
 		end
-		
+		local childFilters = flattenToFilters(v, layer + 1)
+		for _, y in ipairs(childFilters) do
+			table.insert(filters, y)
+		end
+		--end
 	end
 	return filters
 end
@@ -279,7 +278,7 @@ local function search(filters)
 	end
 
 	local categoryNumber = tonumber(filters[2])
-	if categoryNumber > 1 then
+	if categoryNumber > 0 then
 		local category = Tags[categoryNumber]
 		local document = ClientGetDocument("https://mcstories.com/Tags/" .. category.name .. ".html")
 		return map(document:select("tbody > tr"), function(v)
@@ -339,7 +338,7 @@ local function searchFilters()
 			"Category",
 			categoryOptions
 		),
-		HeaderFilter("Below filters are ignored if Category is used"),
+        CheckboxFilter(-9999, "Below filters are ignored if Category is used"),
 		table.unpack(svengaliFilters)
 	}
 end
@@ -359,7 +358,6 @@ return {
 	-- Must have at least one value
 	listings = {
 		Listing("Whats New", false, function(data)
-			getSvengaliTagsIfNeeded()
 			local document = ClientGetDocument("https://mcstories.com/WhatsNew.html")
 			return map(document:select("div.story"), function(v)
 				local items = v:select("div")
