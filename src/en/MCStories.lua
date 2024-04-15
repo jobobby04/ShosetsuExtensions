@@ -308,10 +308,16 @@ local function search(filters)
 			for substr in v:gmatch("[^%%]+") do
 				table.insert(infoTable, substr)
 			end
+			local tags
+			if #infoTable == 4 then
+				tags = { mapTag(infoTable[3]), infoTable[4] .. "% match" }
+			else
+				tags = { infoTable[3] .. "% match" }
+			end
 			return NovelInfo {
 				title = infoTable[1],
 				link = "/" .. infoTable[2] .. "/index.html",
-				genres = { mapTag(infoTable[3]), infoTable[3] .. "% match" }
+				genres = tags
 			}
 		end)
 	end
@@ -338,7 +344,7 @@ local function searchFilters()
 			"Category",
 			categoryOptions
 		),
-        CheckboxFilter(9999, "Below filters are ignored if Category is used"),
+        CheckboxFilter(-9999, "Below filters are ignored if Category is used"),
 		table.unpack(svengaliFilters)
 	}
 end
@@ -362,13 +368,13 @@ return {
 			return map(document:select("div.story"), function(v)
 				local items = v:select("div")
 				local tags = {}
-				for i in items:get(1):text():match("%((.-)%)"):gmatch("%S+") do
+				for i in items:get(2):text():match("%((.-)%)"):gmatch("%S+") do
 					table.insert(tags, mapTag(i))
 				end
 				return NovelInfo {
-					title = items:get(0):select("a"):text(),
-					link = "/" .. items:get(0):select("a"):attr("href"),
-					authors = { items:get(1):select("a"):text() },
+					title = items:get(1):select("a"):text(),
+					link = "/" .. items:get(1):select("a"):attr("href"),
+					authors = { items:get(2):select("a"):text() },
 					description = v:selectFirst("div.synopsis"):text(),
 					genres = tags
 				}
