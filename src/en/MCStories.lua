@@ -1,4 +1,4 @@
--- {"id":1308639977,"ver":"1.0.2","libVer":"1.3.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
+-- {"id":1308639977,"ver":"1.0.3","libVer":"1.3.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
 
 local baseURL = "https://www.mcstories.com"
 local settings = {}
@@ -65,7 +65,7 @@ local function flatten(tagsTable, parents)
 		}
 		table.insert(
 			svengaliTagsFlattened,
-				item
+			item
 		)
 		local newParents = {}
 		for _, a in ipairs(parents) do
@@ -74,6 +74,47 @@ local function flatten(tagsTable, parents)
 		table.insert(newParents, item)
 		flatten(v, newParents)
 	end
+end
+
+local function flattenToFilters(tagsTable, layer)
+	local children = tagsTable["children"]
+	if children == nil then
+		return {}
+	end
+	local tags = children["tag"]
+	if tags == nil then
+		return {}
+	end
+	local filters = {}
+	for i, v in ipairs(tags) do
+		local name = v["name"]
+		for t = 2, layer do
+			name = " " .. name
+		end
+		if layer == 1 then
+			local newFilters = {}
+			if v["tagable"] == "1" then
+				table.insert(newFilters, CheckboxFilter(tonumber(v["id"]) + 2, name))
+			end
+			local childFilters = flattenToFilters(v, layer + 1)
+			for _, y in ipairs(childFilters) do
+				table.insert(newFilters, y)
+			end
+			table.insert(filters, FilterGroup(v["name"], newFilters))
+		else
+			if v["tagable"] == "1" then
+				table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
+			else
+				table.insert(filters, HeaderFilter(name))
+			end
+			local childFilters = flattenToFilters(v, layer + 1)
+			for _, y in ipairs(childFilters) do
+				table.insert(filters, y)
+			end
+		end
+		
+	end
+	return filters
 end
 
 local function SvengaliGETDocument(url)
@@ -165,7 +206,17 @@ local function parseNovel(novelURL, loadChapters)
 	local author = document:selectFirst("#mcstories > .byline > a"):text()
 	local description = document:selectFirst("#mcstories > section.synopsis"):wholeText()
 	getSvengaliTagsIfNeeded()
-	local tags = SvengaliGETDocument("https://www.gregariousfrog.com/svengali/servers/GetTitleTags.php?titleurl=" .. novelURL:match("/([^/]+)/index%.html$"))
+	local svengaliItemTags = SvengaliGETDocument("https://www.gregariousfrog.com/svengali/servers/GetTitleTags.php?titleurl=" .. novelURL:match("/([^/]+)/index%.html$"))
+	local tags = {}
+	if next(svengaliItemTags) == nil then
+		tags = map(document:select("#mcstories > .storyCodes > a"), function(v)
+			return mapTag(v:text())
+		end)
+	else
+		tags = map(svengaliItemTags["TitleTags"], function(v)
+			return tagFullName(idToTag(v))
+		end)
+	end
 	local wordCount = 0
 
 	local chapter = document:selectFirst("#mcstories > div.chapter")
@@ -193,9 +244,7 @@ local function parseNovel(novelURL, loadChapters)
 		authors = { author },
 		link = novelURL,
 		description = description,
-		genres = map(tags["TitleTags"], function(v)
-			return tagFullName(idToTag(v))
-		end),
+		genres = tags,
 		wordCount = wordCount
 	}
 
@@ -247,6 +296,27 @@ local function search(filters)
 		end)
 	end
 
+	local searchTags = {}
+	for i, v in ipairs(filters) do
+		if i > 2 and v == true then
+			table.insert(searchTags, i - 2)
+		end
+	end
+	if next(searchTags) ~= nil then
+		local searchResults = SvengaliGETDocument("https://www.gregariousfrog.com/svengali/servers/SearchOnTagsV2.php?tags=" .. table.concat(searchTags, ","))
+		return map(searchResults["Titles"], function(v)
+			local infoTable = {}
+			for substr in v:gmatch("[^%%]+") do
+				table.insert(infoTable, substr)
+			end
+			return NovelInfo {
+				title = infoTable[1],
+				link = "/" .. infoTable[2] .. "/index.html",
+				genres = { mapTag(infoTable[3]), infoTable[3] .. "% match" }
+			}
+		end)
+	end
+
 	return {}
 end
 
@@ -259,12 +329,18 @@ local function searchFilters()
 		table.insert(categoryOptions, Tags[i].value)
 	end
 
+	getSvengaliTagsIfNeeded()
+
+	local svengaliFilters = flattenToFilters(svengaliTags, 1)
+
 	return {
 		DropdownFilter(
 			2,
 			"Category",
 			categoryOptions
 		),
+		HeaderFilter("Below filters are ignored if Category is used"),
+		table.unpack(svengaliFilters)
 	}
 end
 
