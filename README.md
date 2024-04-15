@@ -11,6 +11,7 @@ https://raw.githubusercontent.com/jobobby04/ShosetsuExtensions/master
 - [ArchiveOfOurOwn](https://archiveofourown.org/)
 - [Hentai Foundry](https://www.hentai-foundry.com/)
 - [Literotica](https://www.literotica.com/)
+- [MCStories](https://mcstories.com/)
 - [WuxiaBox](https://www.wuxiabox.com/)
 - [WuxiaMate](https://www.wuxiamate.com/)
 - [FanNovels](https://www.fannovels.com/)
