@@ -297,7 +297,7 @@ local function search(filters)
 
 	local searchTags = {}
 	for i, v in ipairs(filters) do
-		if i > 2 and v == true then
+		if i < 9999 and i > 2 and v == true then
 			table.insert(searchTags, i - 2)
 		end
 	end
@@ -338,7 +338,7 @@ local function searchFilters()
 			"Category",
 			categoryOptions
 		),
-        CheckboxFilter(-9999, "Below filters are ignored if Category is used"),
+        CheckboxFilter(9999, "Below filters are ignored if Category is used"),
 		table.unpack(svengaliFilters)
 	}
 end
