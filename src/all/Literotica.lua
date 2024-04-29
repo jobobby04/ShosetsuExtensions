@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.2","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.3","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -82,70 +82,6 @@ local function getPassage(chapterURL)
 	return pageOfElem(chap, true)
 end
 
-
-local function getChapters(authorPage, novelUrl)
-	-- Table to store chapters for each story
-	local stories = {}
-	local lastIndex
-
-	-- Iterate over each table row
-	map(authorPage:select("div > div > table > tbody > tr"), function(row)
-		local storyLink = row:select("a.t-t84.bb.nobck"):first()
-		if storyLink then
-			-- If it's a root story, create a new entry in the stories table
-			local storyUrl = storyLink:attr("href")
-			local storyName = storyLink:select("span"):text()
-			stories[storyUrl] = {
-				name = storyName,
-				chapters = { { name = storyName, url = storyUrl } }
-			}
-		else
-			-- If it's a chapter, add it to the last added story
-			local header = row:select("strong"):first()
-			if header then
-				local headerText = header:text()
-				stories[headerText] = {
-					name = headerText,
-					chapters = {}
-				}
-				lastIndex = headerText
-			else
-				local chapterLink = row:select("a.bb"):first()
-				if chapterLink then
-					local chapterUrl = chapterLink:attr("href")
-					local chapterName = chapterLink:text()
-					table.insert(stories[lastIndex].chapters, {name = chapterName, url = chapterUrl})
-				end
-			end
-		end
-	end)
-
-	-- Find the chapters of the selected story
-	local selectedStory
-
-	for a in pairs(stories) do
-		local story = stories[a]
-		for _, chapter in ipairs(story.chapters) do
-			if chapter.url == novelUrl then
-				selectedStory = story
-				break
-				break
-			end
-		end
-	end
-
-	if selectedStory then
-		print("Chapters of", selectedStory.name)
-		for i, chapter in ipairs(selectedStory.chapters) do
-			print(i, chapter.name, chapter.url)
-		end
-	else
-		print("Story not found.")
-	end
-
-	return selectedStory
-end
-
 local function textToInteger(text)
 	local number, unit = text:match("(%d+%.?%d*)(%a*)")
 	number = tonumber(number)
@@ -157,12 +93,46 @@ local function textToInteger(text)
 	return math.floor(number)
 end
 
-local function getNovel(document, novelUrl)
+local function getNovelInfoFromSeries(document)
+	local title = document:selectFirst(".headline.j_bm"):text()
+	local summary = document:selectFirst(".bp_rh")
+	if summary ~= nil then
+		summary = summary:wholeText()
+	else
+		local firstChapter = document:selectFirst("li.br_ri p")
+		firstChapter:select("p > a"):remove()
+		summary = firstChapter:wholeText()
+	end
+
+	local tags = map(document:select("#tabpanel-tags > a"),function(v)
+		return v:text()
+	end)
+
+	return {
+		title = title,
+		summary = summary,
+		tags = tags
+	}
+end
+
+local function getNovelInfoFromPage(document)
 	local title = document:selectFirst(".headline.j_eQ"):text()
 	local summary = document:selectFirst("#tabpanel-info .bn_B"):text()
 	local tags = map(document:select("#tabpanel-tags .bn_ar > a"),function(v)
 		return v:text()
 	end)
+
+	return {
+		title = title,
+		summary = summary,
+		tags = tags
+	}
+end
+
+local function getNovel(document, novelUrl, mainInfo)
+	local title = mainInfo.title
+	local summary = mainInfo.summary
+	local tags = mainInfo.tags
 	local author = document:selectFirst(".y_eS > .y_eU"):text()
 
 	local info = NovelInfo {
@@ -198,28 +168,41 @@ local function parseNovel(novelURL, loadChapters)
 
 	local document = ClientGetDocument(expandURL(novelURL))
 
-	local authorElement = document:selectFirst(".y_eS > .y_eU")
-	local authorPage = ClientGetDocument(authorElement:attr("href"))
-	local storyInfo = getChapters(authorPage, expandURL(novelURL))
-
-	local info = getNovel(document, novelURL)
-
-	if storyInfo.name and not storyInfo.name:match("^http") then
-		info:setTitle(removeAfterColon(storyInfo.name))
+	local series = document:selectFirst("#tabpanel-series")
+	if series ~= nil then
+		series = series:selectFirst("div.bn_au > a")
+		if series ~= nil then
+			series = ClientGetDocument(series:attr("href"))
+		end
+	end
+	local info
+	if series ~= nil then
+		info = getNovel(series, novelURL, getNovelInfoFromSeries(series))
+	else
+		info = getNovel(document, novelURL, getNovelInfoFromPage(document))
 	end
 
-	if loadChapters and storyInfo.chapters then
-		info:setChapters(
-			AsList(
-				map(storyInfo.chapters, function(v, i)
-					return NovelChapter {
-						order = i,
-						title = v.name,
-						link = shrinkURL(v.url)
-					}
-				end)
-			)
-		)
+	if loadChapters then
+		local chapters
+		if series ~= nil then
+			chapters = map(series:select("li.br_ri"), function(v, i)
+				local chapter = v:selectFirst(".br_rj")
+				return NovelChapter {
+					order = i,
+					title = chapter:text(),
+					link = shrinkURL(chapter:attr("href"))
+				}
+			end)
+		else
+			chapters = {
+				NovelChapter {
+					order = 0,
+					title = info.title,
+					link = novelURL,
+				}
+			}
+		end
+		info:setChapters(AsList(chapters))
 	end
 
 	return info
@@ -295,7 +278,10 @@ local WithinOptions = {
 local function search(filters)
 	local page = filters[PAGE]
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
-	if page == 1 and shrinkURL(url):match("/s/%a+") then
+	if shrinkURL(url):match("/s/%a+") then
+		if page ~= 1 then
+			return {}
+		end
 		local novelUrl = url:gsub("/$", "")
 		local novel = ClientGetDocument(novelUrl):selectFirst(".headline.j_eQ")
 		return {
