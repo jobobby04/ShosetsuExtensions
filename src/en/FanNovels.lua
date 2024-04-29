@@ -1,4 +1,4 @@
--- {"id":1308639969,"ver":"1.0.3","libVer":"1.3.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
+-- {"id":1308639969,"ver":"1.0.4","libVer":"1.3.0","author":"Jobobby04","dep":["ReadWN>=1.0.11"]}
 
 local GENRES = {
     "All",
@@ -88,11 +88,11 @@ local GENRES = {
     "Rebirth",
 }
 
-return Require("ReadWN")("https://www.fannovels.com", {
+return Require("ReadWN")("https://www.fannovels.org", {
     id = 1308639969,
     name = "FanNovels",
     imageURL = "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/fan_novels.png",
-    shrinkURLNovel = "^.-fannovels%.com",
+    shrinkURLNovel = "^.-fannovels%.org",
     hasCloudFlare = true,
 
     genres = GENRES,
@@ -103,28 +103,28 @@ return Require("ReadWN")("https://www.fannovels.com", {
             increments = false,
             selector = "#latest-updates .novel-list.grid.col .novel-item a",
             url = function(data)
-                return "https://www.fannovels.com"
+                return "https://www.fannovels.org"
             end
         },
         {
             name = "Popular Daily Updates",
             increments = true,
             url = function(data)
-                return "https://www.fannovels.com/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"
+                return "https://www.fannovels.org/list/all/all-lastdotime-" .. (data[PAGE] - 1) .. ".html"
             end
         },
         {
             name = "Most Popular",
             increments = true,
             url = function(data)
-                return "https://www.fannovels.com/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"
+                return "https://www.fannovels.org/list/all/all-onclick-" .. (data[PAGE] - 1) .. ".html"
             end
         },
         {
             name = "New to Web Novels",
             increments = true,
             url = function(data)
-                return "https://www.fannovels.com/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"
+                return "https://www.fannovels.org/list/all/all-newstime-" .. (data[PAGE] - 1) .. ".html"
             end
         }
     },
