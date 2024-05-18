@@ -91,27 +91,27 @@ local function flattenToFilters(tagsTable, layer)
 		for t = 2, layer do
 			name = "  " .. name
 		end
-		--if layer == 1 then
-		--	local newFilters = {}
-		--	if v["tagable"] == "1" then
-		--		table.insert(newFilters, CheckboxFilter(tonumber(v["id"]) + 2, name))
-		--	end
-		--	local childFilters = flattenToFilters(v, layer + 1)
-		--	for _, y in ipairs(childFilters) do
-		--		table.insert(newFilters, y)
-		--	end
-		--	table.insert(filters, FilterList(v["name"], newFilters))
-		--else
-		if v["tagable"] == "1" then
-			table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
+		if layer == 1 then
+			local newFilters = {}
+			if v["tagable"] == "1" then
+				table.insert(newFilters, CheckboxFilter(tonumber(v["id"]) + 2, name))
+			end
+			local childFilters = flattenToFilters(v, layer + 1)
+			for _, y in ipairs(childFilters) do
+				table.insert(newFilters, y)
+			end
+			table.insert(filters, FilterList(v["name"], newFilters))
 		else
-			table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
+			if v["tagable"] == "1" then
+				table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
+			else
+				table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
+			end
+			local childFilters = flattenToFilters(v, layer + 1)
+			for _, y in ipairs(childFilters) do
+				table.insert(filters, y)
+			end
 		end
-		local childFilters = flattenToFilters(v, layer + 1)
-		for _, y in ipairs(childFilters) do
-			table.insert(filters, y)
-		end
-		--end
 	end
 	return filters
 end
