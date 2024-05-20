@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.6","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.7","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -289,7 +289,7 @@ local function search(filters)
 		local novel = ClientGetDocument(novelUrl)
 		return {
 			NovelInfo {
-				title = novel:selectFirst(".title"):text(),
+				title = novel:selectFirst(".preface > .title"):text(),
 				link = shrinkURL(novelUrl),
 				imageURL = ""
 			}
