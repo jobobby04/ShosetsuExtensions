@@ -10,3 +10,5 @@ gradlew
 gradlew.bat
 gradle
 /old/
+/_doc.lua
+/bin/extension-tester.jar
