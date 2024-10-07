@@ -26,15 +26,14 @@ fi
 
 if [ "$DOWNLOAD_DOC" = true ]; then
   ## Download lua documentation
-  rm -f _doc.lua
-  wget https://gitlab.com/shosetsuorg/kotlin-lib/-/raw/main/_doc.lua
+  wget -O _doc.lua https://gitlab.com/shosetsuorg/kotlin-lib/-/raw/main/_doc.lua
 
   ## Download javascript documentation
-  #wget https://gitlab.com/shosetsuorg/kotlin-lib/-/raw/main/doc.js
+  #wget -O doc.js https://gitlab.com/shosetsuorg/kotlin-lib/-/raw/main/doc.js
 fi
 
 if [ "$DOWNLOAD_TESTER" = true ]; then
   ## Download extension tester
-  rm -f bin/extension-tester.jar
-  wget https://pages.frohnmeyer-wds.de/tmp/shosetsu/extension-tester.jar -P bin/
+  mkdir -p bin
+  wget -O bin/extension-tester.jar "https://gitlab.com/JFronny/extension-tester/-/jobs/artifacts/index-generation/raw/build/libs/extension-tester.jar?job=build"
 fi
