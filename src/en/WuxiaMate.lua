@@ -62,7 +62,7 @@ local GENRES = {
 return Require("ReadWN")("https://www.wuxiamate.com", {
     id = 1308639965,
     name = "WuxiaMate",
-    imageURL = "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/wuxia_mate.png",
+    imageURL = "https://jobobby04.github.io/ShosetsuExtensions/icons/wuxia_mate.png",
     shrinkURLNovel = "^.-wuxiamate%.com",
     hasCloudFlare = true,
 

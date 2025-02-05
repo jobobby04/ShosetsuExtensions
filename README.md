@@ -4,7 +4,7 @@ Personal extensions for Shosetsu
 
 #### Add the repo to Shosetsu using this Url:
 
-https://raw.githubusercontent.com/jobobby04/ShosetsuExtensions/master
+https://jobobby04.github.io/ShosetsuExtensions/
 
 
 ### Repo Extensions
