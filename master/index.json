@@ -1,0 +1,157 @@
+{
+  "authors": [
+    {
+      "id": -376799541,
+      "name": "Jobobby04",
+      "desc": "Worked on ArchiveOfOurOwn, FanNovels, FansMTL, Hentai Foundry, Literotica, LtNovel, MCStories, ReadWN, WuxiaBox, WuxiaFox, WuxiaMate, WuxiaOne",
+      "imageURL": "",
+      "website": ""
+    },
+    {
+      "id": 1379167306,
+      "name": "David Kolf",
+      "desc": "Worked on dkjson",
+      "imageURL": "",
+      "website": ""
+    }
+  ],
+  "libraries": [
+    {
+      "name": "ReadWN",
+      "ver": "1.0.11",
+      "url": null,
+      "hash": "3a27fd0b395a01361673c061868fcab998da2e01900a81712002a0ac3efe4cc9"
+    },
+    {
+      "name": "dkjson",
+      "ver": "1.0.1",
+      "url": null,
+      "hash": "97803cfe54b21695dda1e8f8a37c5933c4dc7691e5df17c2c1df6cef1203c259"
+    }
+  ],
+  "scripts": [
+    {
+      "id": 1308639964,
+      "name": "WuxiaBox",
+      "fileName": "WuxiaBox",
+      "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/icons/wuxia_box.png",
+      "lang": "en",
+      "ver": "1.1.5",
+      "libVer": "1.0.0",
+      "md5": "66c0faf2127983b9c7b34bf9a2d76ac7060136401f2b40b46359efa13c70129a",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639965,
+      "name": "WuxiaMate",
+      "fileName": "WuxiaMate",
+      "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/icons/wuxia_mate.png",
+      "lang": "en",
+      "ver": "1.0.5",
+      "libVer": "1.0.0",
+      "md5": "4c1aa66d635fa96e58cab2230f4a388ed615771f0dd5dcca4278da7c8a043ee7",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639966,
+      "name": "ArchiveOfOurOwn",
+      "fileName": "ArchiveOfOurOwn",
+      "imageURL": "",
+      "lang": "all",
+      "ver": "1.0.5",
+      "libVer": "1.0.0",
+      "md5": "0aeff69615cfb7ae73ec215cbc6ecf15db5165f8301ff3d618cfb00f914d6f9d",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639967,
+      "name": "Hentai Foundry",
+      "fileName": "HentaiFoundry",
+      "imageURL": "",
+      "lang": "all",
+      "ver": "1.0.0",
+      "libVer": "1.0.0",
+      "md5": "f400ce10f6f764e64c54e7fec55fecf99463e0b2774179b17a334a6969ad0a94",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639969,
+      "name": "FanNovels",
+      "fileName": "FanNovels",
+      "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/icons/fan_novels.png",
+      "lang": "en",
+      "ver": "1.0.3",
+      "libVer": "1.0.0",
+      "md5": "e453b6d1e293517a81f420523469c11f2d586f9d9321538b509c8c6428392443",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639970,
+      "name": "Literotica",
+      "fileName": "Literotica",
+      "imageURL": "",
+      "lang": "all",
+      "ver": "1.0.3",
+      "libVer": "1.0.0",
+      "md5": "6d5b2ebbc02e76ca72b9495c0da26ced130fa521b4efd43b04eaaf0f02ea992f",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639971,
+      "name": "FansMTL",
+      "fileName": "FansMTL",
+      "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/icons/fans_mtl.png",
+      "lang": "en",
+      "ver": "1.0.1",
+      "libVer": "1.0.0",
+      "md5": "4788d2605c3ae9ec23df5da32b57e377280b1aa68435e8cb50308dd68289f129",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639972,
+      "name": "WuxiaFox",
+      "fileName": "WuxiaFox",
+      "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/icons/wuxia_one.png",
+      "lang": "en",
+      "ver": "1.0.1",
+      "libVer": "1.0.0",
+      "md5": "588540c9415c0b466272787f033fd2578ed182cc47e198e55b0bc1f0aaaa0202",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639973,
+      "name": "LtNovel",
+      "fileName": "LtNovel",
+      "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/icons/lt_novel.png",
+      "lang": "en",
+      "ver": "1.0.1",
+      "libVer": "1.0.0",
+      "md5": "29a20bbf98ca86acadc183e107a51a2f0b2cbe38740a01289020e4b28a86beac",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639974,
+      "name": "WuxiaOne",
+      "fileName": "WuxiaOne",
+      "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/icons/wuxia_one.png",
+      "lang": "en",
+      "ver": "1.0.1",
+      "libVer": "1.0.0",
+      "md5": "a5baf73c1b16cdf8160a7dfc525f43c07935c543ae7b64743e05b27154647e66",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639977,
+      "name": "MCStories",
+      "fileName": "MCStories",
+      "imageURL": "",
+      "lang": "en",
+      "ver": "1.0.1",
+      "libVer": "1.0.0",
+      "md5": "2ad936bd9ccd5021da51a91cb437e2338f846d9d2744bb2c5a7943ef2b588314",
+      "type": "LuaScript"
+    }
+  ],
+  "styles": [],
+  "js": []
+}
