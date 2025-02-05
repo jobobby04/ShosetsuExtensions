@@ -112,6 +112,10 @@ do
     local CacheControl = {}
     ---@class MediaType
     local MediaType = {}
+    ---@class Cookie
+    local Cookie = {}
+    ---@class CookieJar
+    local CookieJar = {}
     ---@class HttpUrl
     local HttpUrl = {}
     ---@class Interceptor
@@ -241,6 +245,246 @@ do
         ---@return string
         function ResponseBody:string() return end
     end
+
+    do
+        ---@class CookieBuilder
+        local CookieBuilder = {}
+        ---@return Cookie
+        function CookieBuilder:build() return end
+
+        ---@param name string
+        ---@return CookieBuilder
+        function CookieBuilder:name(name) return end
+
+        ---@param value string
+        ---@return CookieBuilder
+        function CookieBuilder:value(value) return end
+
+        ---@param expiresAt int
+        ---@return CookieBuilder
+        function CookieBuilder:expiresAt(expiresAt) return end
+
+        ---@param domain string
+        ---@return CookieBuilder
+        function CookieBuilder:domain(domain) return end
+
+        ---@param domain string
+        ---@return CookieBuilder
+        function CookieBuilder:hostOnlyDomain(domain) return end
+
+        ---@param path string
+        ---@return CookieBuilder
+        function CookieBuilder:path(path) return end
+
+        ---@return CookieBuilder
+        function CookieBuilder:secure() return end
+
+        ---@return CookieBuilder
+        function CookieBuilder:httpOnly() return end
+    end
+
+    do
+        ---@return string
+        function Cookie:name() return end
+
+        ---@return string
+        function Cookie:value() return end
+
+        ---@return int
+        function Cookie:expiresAt() return end
+
+        ---@return string
+        function Cookie:domain() return end
+
+        ---@return string
+        function Cookie:path() return end
+
+        ---@return boolean
+        function Cookie:secure() return end
+
+        ---@return boolean
+        function Cookie:httpOnly() return end
+
+        ---@return boolean
+        function Cookie:persistent() return end
+
+        ---@return boolean
+        function Cookie:hostOnly() return end
+
+        ---@return CookieBuilder
+        function Cookie:newBuilder() return end
+    end
+
+    do
+        ---@param url HttpUrl
+        ---@param cookies Cookie[] | Array | table
+        ---@return string
+        function CookieJar:saveFromResponse(url, cookies) return end
+
+        ---@param url HttpUrl
+        ---@return Cookie[] | Array | table
+        function CookieJar:loadForRequest(url) return end
+    end
+
+    do
+        ---@class HttpUrlBuilder
+        local HttpUrlBuilder = {}
+        ---@return HttpUrl
+        function HttpUrlBuilder:build() return end
+
+        ---@param scheme string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:scheme(scheme) return end
+
+        ---@param username string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:username(username) return end
+
+        ---@param encodedUsername string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:encodedUsername(encodedUsername) return end
+
+        ---@param password string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:password(password) return end
+
+        ---@param encodedPassword string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:encodedPassword(encodedPassword) return end
+
+        ---@param host string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:host(host) return end
+
+        ---@param port int
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:port(port) return end
+
+        ---@param pathSegment string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:addPathSegment(pathSegment) return end
+
+        ---@param pathSegments string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:addPathSegments(pathSegments) return end
+
+        ---@param encodedPathSegment string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:addEncodedPathSegment(encodedPathSegment) return end
+
+        ---@param encodedPathSegments string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:addEncodedPathSegments(encodedPathSegments) return end
+
+        ---@param index int
+        ---@param pathSegment string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:setPathSegment(index, pathSegment) return end
+
+        ---@param index int
+        ---@param encodedPathSegment string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:setEncodedPathSegment(index, encodedPathSegment) return end
+
+        ---@param index int
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:removePathSegment(index) return end
+
+        ---@param encodedPath string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:encodedPath(encodedPath) return end
+
+        ---@param query string | nil
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:query(query) return end
+
+        ---@param encodedQuery string | nil
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:encodedQuery(encodedQuery) return end
+
+        ---@param name string
+        ---@param value string | nil
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:addQueryParameter(name, value) return end
+
+        ---@param encodedName string
+        ---@param encodedValue string | nil
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:addEncodedQueryParameter(encodedName, encodedValue) return end
+
+        ---@param name string
+        ---@param value string | nil
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:setQueryParameter(name, value) return end
+
+        ---@param encodedName string
+        ---@param encodedValue string | nil
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:setEncodedQueryParameter(encodedName, encodedValue) return end
+
+        ---@param name string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:removeAllQueryParameters(name) return end
+
+        ---@param encodedName string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:removeAllEncodedQueryParameters(encodedName) return end
+
+        ---@param canonicalName string
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:removeAllCanonicalQueryParameters(canonicalName) return end
+
+        ---@param fragment string | nil
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:fragment(fragment) return end
+
+        ---@param encodedFragment string | nil
+        ---@return OkHttpClientBuilder
+        function HttpUrlBuilder:encodedFragment(encodedFragment) return end
+    end
+
+    do
+        ---@return string
+        function HttpUrl:scheme() return end
+
+        ---@return string
+        function HttpUrl:username() return end
+
+        ---@return string
+        function HttpUrl:password() return end
+
+        ---@return string
+        function HttpUrl:host() return end
+
+        ---@return int
+        function HttpUrl:port() return end
+
+        ---@return string[] | Array | table
+        function HttpUrl:pathSegments() return end
+
+        ---@return string | nil
+        function HttpUrl:fragment() return end
+
+        ---@return HttpUrlBuilder
+        function HttpUrl:newBuilder() return end
+
+        ---@param name string
+        ---@return string | nil
+        function HttpUrl:queryParameter(name) return end
+
+        ---@param name string
+        ---@return string[] | nil[] | Array | table
+        function HttpUrl:queryParameterValues(name) return end
+
+        ---@param name int
+        ---@return string
+        function HttpUrl:queryParameterName(index) return end
+
+        ---@param name int
+        ---@return string | nil
+        function HttpUrl:queryParameterValue(index) return end
+    end
+
 end
 
 -- dkjson
@@ -339,6 +583,27 @@ end
 do
     ---@class Listing
     local Listing = {}
+
+    ---@class ListingItem | Listing
+    ---@field name string
+    ---@field link string
+    ---@field isIncrementing boolean
+    ---@field getListing fun(): NovelInfo[] | fun(data: table, inc: int): NovelInfo[] | nil
+    local ListingItem = {}
+
+    ---@class ListingList | Listing
+    ---@field name string
+    ---@field listings fun(): Listing[]
+    local ListingList = {}
+
+    ---@type int
+    QUERY = {}
+
+    ---@type int
+    PAGE = {}
+
+    ---@type int
+    LISTING = {}
 end
 
 -- Novel Stuff
@@ -368,6 +633,10 @@ do
     ---@param order number
     ---@return void
     function NovelChapter:setOrder(order) return end
+
+    ---@param sourceId number
+    ---@return void
+    function NovelChapter:setSourceId(sourceId) return end
 
     ---@class NovelInfo
     ---@field title string
@@ -460,11 +729,11 @@ do
     ---@class ChapterType
     local ChapterType = {}
 
-    ---@type ChapterType
-    ChapterType.STRING = {}
+	---@type ChapterType
+	ChapterType.STRING = {}
 
-    ---@type ChapterType
-    ChapterType.HTML = {}
+	---@type ChapterType
+	ChapterType.HTML = {}
 end
 
 -- ShosetsuLib
@@ -575,6 +844,12 @@ do
         function HeadersBuilder() return end
         ---@return FormBodyBuilder
         function FormBodyBuilder() return end
+        ---@return CookieBuilder
+        function CookieBuilder() return end
+        ---@return CookieJar
+        function CookieJar() return end
+        ---@return HttpUrlBuilder
+        function HttpUrlBuilder() return end
         ---@return CacheControl
         function DefaultCacheControl() return end
 
@@ -619,13 +894,28 @@ do
         ---@return RequestBody
         function RequestBody(data, type) return end
 
-        ---@param block function
+        ---@param block function(chain Chain)
         ---@return Interceptor
         function Interceptor(block) return end
+
+        ---@param saveFromResponse function(url HttpUrl, cookies List<Cookie>)
+        ---@param loadForRequest function(url HttpUrl)
+        ---@return CookieJar
+        function CookieJar(saveFromResponse, loadForRequest) return end
 
         ---@param url string
         ---@return HttpUrl
         function HttpUrl(url) return end
+
+        ---@param url string
+        ---@param setCookie string
+        ---@return HttpUrl
+        function CookieParse(url, setCookie) return end
+
+        ---@param url string
+        ---@param headers Headers
+        ---@return HttpUrl
+        function CookieParseAll(url, headers) return end
     end
 
     -- CONSTRUCTORS
@@ -633,8 +923,20 @@ do
         ---@param name string
         ---@param increments boolean
         ---@param func fun(): NovelInfo[] | fun(data: table, inc: int): NovelInfo[]
-        ---@return Listing
+        ---@return ListingItem
+        ---@deprecated replace with ListingItem
         function Listing(name, increments, func) return end
+
+        ---@param name string
+        ---@param link string
+        ---@param increments boolean
+        ---@return ListingItem
+        function ListingItem(name, link, increments) return end
+
+        ---@param name string
+        ---@param listings Listing[] | Array | table
+        ---@return ListingList
+        function ListingList(name, listings) return end
 
         ---@deprecated Replace with NovelInfo
         ---@return NovelInfo
