@@ -49,7 +49,7 @@ local GENRES = {
 return Require("ReadWN")("https://www.fansmtl.com", {
     id = 1308639971,
     name = "FansMTL",
-    imageURL = "https://jobobby04.github.io/ShosetsuExtensions/icons/fans_mtl.png",
+    imageURL = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/fans_mtl.png",
     shrinkURLNovel = "^.-fansmtl%.com",
     hasCloudFlare = true,
 
