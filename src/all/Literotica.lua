@@ -300,7 +300,7 @@ local function search(filters)
 		local novelUrl = url:gsub("/$", "")
 		local novel = ClientGetDocument(novelUrl):selectFirst(".headline.j_eQ")
 		return {
-			NovelInfo {
+            NovelInfo {
 				title = novel:text(),
 				link = shrinkURL(url),
 				imageURL = ""
@@ -430,7 +430,7 @@ return {
 	listings = {
 		Listing("Nothing", false, function(data)
 			return {
-				NovelInfo {
+                NovelInfo {
 					title = "How to use this source",
 					link = "how",
 					imageURL = ""

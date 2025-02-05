@@ -112,6 +112,7 @@ local function flattenToFilters(tagsTable, layer)
 			table.insert(filters, y)
 		end
 		--end
+
 	end
 	return filters
 end
@@ -344,7 +345,7 @@ local function searchFilters()
 			"Category",
 			categoryOptions
 		),
-        CheckboxFilter(-9999, "Below filters are ignored if Category is used"),
+		CheckboxFilter(-9999, "Below filters are ignored if Category is used"),
 		table.unpack(svengaliFilters)
 	}
 end
