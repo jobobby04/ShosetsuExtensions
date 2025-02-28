@@ -3,7 +3,7 @@
     {
       "id": -376799541,
       "name": "Jobobby04",
-      "desc": "Worked on ArchiveOfOurOwn, FanNovels, FansMTL, Hentai Foundry, Literotica, LtNovel, MCStories, ReadWN, WuxiaBox, WuxiaFox, WuxiaMate, WuxiaOne",
+      "desc": "Worked on ArchiveOfOurOwn, FanFiction.net, FanNovels, FansMTL, Hentai Foundry, Literotica, LtNovel, MCStories, ReadWN, WuxiaBox, WuxiaFox, WuxiaMate, WuxiaOne",
       "imageURL": "",
       "website": ""
     },
@@ -20,7 +20,7 @@
       "name": "ReadWN",
       "ver": "1.0.11",
       "url": null,
-      "hash": "39279b10f5a642a5b4edd62e7270c6f86530bae7b92ba3b37e2a8f2122ee07aa"
+      "hash": "c34f4150bb4632faef4538935032748003ca96bccaa8c8c080c74e14d689e369"
     },
     {
       "name": "dkjson",
@@ -58,9 +58,9 @@
       "fileName": "ArchiveOfOurOwn",
       "imageURL": "",
       "lang": "all",
-      "ver": "1.0.6",
+      "ver": "1.0.7",
       "libVer": "1.3.0",
-      "md5": "e2513b60d156bcfd8388ba9e03c137371cf5f0a076850f8f28570b6385b9fdd6",
+      "md5": "b92730fc68fc748bb47330f3440ee0e25100a0b341c5370af585f8db51bf8482",
       "type": "LuaScript"
     },
     {
@@ -71,7 +71,7 @@
       "lang": "all",
       "ver": "1.0.1",
       "libVer": "1.3.0",
-      "md5": "5ebf529d79d6b83225b2b69b6904c06d48e9cf0e166ba60ad95d9ba971cd95a5",
+      "md5": "0d8595b4a565a4c4a8967f1b0196981b944b395d2f421cc4c63d7b2d8cb5f0e5",
       "type": "LuaScript"
     },
     {
@@ -149,6 +149,17 @@
       "ver": "1.0.6",
       "libVer": "1.3.0",
       "md5": "8b4da226a782515a40ccdd341c6203674677e0a832ec11e1c561c724c2976f82",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639978,
+      "name": "FanFiction.net",
+      "fileName": "FanFictionNet",
+      "imageURL": "",
+      "lang": "all",
+      "ver": "1.0.0",
+      "libVer": "1.0.0",
+      "md5": "4ba067bf9a49b84197458753d4526d460431b627cb5e127910ad0dcd9cfc159d",
       "type": "LuaScript"
     }
   ],

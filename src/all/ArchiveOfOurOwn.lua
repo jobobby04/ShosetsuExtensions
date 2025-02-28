@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.6","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.7","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -185,7 +185,7 @@ local function parseNovel(novelURL, loadChapters)
 		else
 			chapters = {
 				NovelChapter {
-					order = 1,
+					order = 0,
 					title = title,
 					link = novelURL
 				}
@@ -283,36 +283,38 @@ end
 --- @return NovelInfo[]
 local function search(filters)
 	local page = filters[PAGE]
-	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
-	if page == 1 and shrinkURL(url):match("/works/%d+") then
-		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
-		local novel = ClientGetDocument(novelUrl)
-		return {
-			NovelInfo {
-				title = novel:selectFirst(".title"):text(),
-				link = shrinkURL(novelUrl),
-				imageURL = ""
+	local query = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+	if string.match(query, "^.-archiveofourown%.org") ~= nil then
+		if page == 1 and shrinkURL(query):match("/works/%d+") then
+			local novelUrl = query:gsub("/chapters.*$", ""):gsub("/$", "")
+			local novel = ClientGetDocument(novelUrl)
+			return {
+				NovelInfo {
+					title = novel:selectFirst(".title"):text(),
+					link = shrinkURL(novelUrl),
+					imageURL = ""
+				}
 			}
-		}
-	end
+		end
 
-	if shrinkURL(url):match("tags/.+/works") then
-		local newUrl = addPage(removePage(url), page)
-		local document = ClientGetDocument(newUrl)
-		local works = document:select(".work > li")
+		if shrinkURL(query):match("tags/.+/works") then
+			local newUrl = addPage(removePage(query), page)
+			local document = ClientGetDocument(newUrl)
+			local works = document:select(".work > li")
 
-		return map(works, function(v)
-			return parseBrowseNovel(v)
-		end)
-	end
-	if shrinkURL(url):match("works") then
-		local newUrl = addPage(removePage(url), page)
-		local document = ClientGetDocument(newUrl)
-		local works = document:select(".work > li")
+			return map(works, function(v)
+				return parseBrowseNovel(v)
+			end)
+		end
+		if shrinkURL(query):match("works") then
+			local newUrl = addPage(removePage(query), page)
+			local document = ClientGetDocument(newUrl)
+			local works = document:select(".work > li")
 
-		return map(works, function(v)
-			return parseBrowseNovel(v)
-		end)
+			return map(works, function(v)
+				return parseBrowseNovel(v)
+			end)
+		end
 	end
 	return {}
 end
