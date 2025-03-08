@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.fanfiction.net"
 local settings = {}
@@ -147,7 +147,7 @@ for key, option in pairs(StatusOptions) do
 end
 
 local function shrinkURL(url)
-	return url:gsub("^.-hentai-foundry%.com", "")
+	return url:gsub("^.-fanfiction%.net", "")
 end
 
 local function expandURL(url)

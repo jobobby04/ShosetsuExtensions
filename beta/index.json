@@ -157,9 +157,9 @@
       "fileName": "FanFictionNet",
       "imageURL": "",
       "lang": "all",
-      "ver": "1.0.0",
+      "ver": "1.0.1",
       "libVer": "1.0.0",
-      "md5": "01f5b0258ac63535c74c0561c2cdb6a5dd596e5676ed2c4d49b1398c1cac14af",
+      "md5": "446debd84644baf2c4993098d083136462aaac850fe516a2d9566c6cf4016443",
       "type": "LuaScript"
     }
   ],
