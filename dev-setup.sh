@@ -35,6 +35,6 @@ fi
 if [ "$DOWNLOAD_TESTER" = true ]; then
   ## Download extension tester
   mkdir -p bin
-  EXTENSION_TESTER_URL=$(curl -s "https://api.github.com/repos/jobobby04/extension-tester/releases/latest" | grep "browser_download_url" | grep ".jar" | head -n 1 | cut -d '"' -f 4)
+  EXTENSION_TESTER_URL="https://github.com/jobobby04/extension-tester/releases/download/listings-stringify/extension-tester.jar"
   wget -O bin/extension-tester.jar "$EXTENSION_TESTER_URL"
 fi
