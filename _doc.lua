@@ -584,26 +584,76 @@ do
     ---@class Listing
     local Listing = {}
 
-    ---@class ListingItem | Listing
+    ---@class ListingItem : Listing
     ---@field name string
     ---@field link string
+    ---@field func fun(data: table): NovelInfo[]
     ---@field isIncrementing boolean
-    ---@field getListing fun(): NovelInfo[] | fun(data: table, inc: int): NovelInfo[] | nil
+    ---@field search fun(data: table): NovelInfo[]
+    ---@field searchFilters Filter[] | Array | table
+    ---@field searchIsIncrementing boolean
     local ListingItem = {}
 
-    ---@class ListingList | Listing
+    ---@param name string
+    ---@return void
+    function ListingItem:setName(name) return end
+
+    ---@param link string
+    ---@return void
+    function ListingItem:setLink(link) return end
+
+    ---@param func fun(data: table): NovelInfo[]
+    ---@return void
+    function ListingItem:setFunc(func) return end
+
+    ---@param isIncrementing boolean
+    ---@return void
+    function ListingItem:setIncrementing(isIncrementing) return end
+
+    ---@param search fun(data: table): NovelInfo[]
+    ---@return void
+    function ListingItem:setSearchFunc(search) return end
+
+    ---@param searchFilters Filter[] | Array | table
+    ---@return void
+    function ListingItem:setSearchFilters(searchFilters) return end
+
+    ---@param searchIsIncrementing boolean
+    ---@return void
+    function ListingItem:setSearchIsIncrementing(searchIsIncrementing) return end
+
+    ---@class ListingList : Listing
     ---@field name string
-    ---@field listings fun(): Listing[]
+    ---@field link string
+    ---@field func fun(): Listing[]
+    ---@field search fun(data: table): NovelInfo[]
+    ---@field searchFilters Filter[] | Array | table
+    ---@field searchIsIncrementing boolean
     local ListingList = {}
 
-    ---@type int
-    QUERY = {}
+    ---@param name string
+    ---@return void
+    function ListingList:setName(name) return end
 
-    ---@type int
-    PAGE = {}
+    ---@param link string
+    ---@return void
+    function ListingList:setLink(link) return end
 
-    ---@type int
-    LISTING = {}
+    ---@param func fun(): Listing[]
+    ---@return void
+    function ListingList:setFunc(func) return end
+
+    ---@param search fun(data: table): NovelInfo[]
+    ---@return void
+    function ListingList:setSearchFunc(search) return end
+
+    ---@param searchFilters Filter[] | Array | table
+    ---@return void
+    function ListingList:setSearchFilters(searchFilters) return end
+
+    ---@param searchIsIncrementing boolean
+    ---@return void
+    function ListingList:setSearchIsIncrementing(searchIsIncrementing) return end
 end
 
 -- Novel Stuff
@@ -729,11 +779,11 @@ do
     ---@class ChapterType
     local ChapterType = {}
 
-	---@type ChapterType
-	ChapterType.STRING = {}
+    ---@type ChapterType
+    ChapterType.STRING = {}
 
-	---@type ChapterType
-	ChapterType.HTML = {}
+    ---@type ChapterType
+    ChapterType.HTML = {}
 end
 
 -- ShosetsuLib
@@ -923,15 +973,16 @@ do
         ---@param name string
         ---@param increments boolean
         ---@param func fun(): NovelInfo[] | fun(data: table, inc: int): NovelInfo[]
-        ---@return ListingItem
-        ---@deprecated replace with ListingItem
+        ---@return Listing
         function Listing(name, increments, func) return end
 
-        ---@param name string
-        ---@param link string
-        ---@param increments boolean
+        ---@param t ListingItem
         ---@return ListingItem
-        function ListingItem(name, link, increments) return end
+        function ListingItem(t) return end
+
+        ---@param t ListingList
+        ---@return ListingList
+        function ListingList(t) return end
 
         ---@param name string
         ---@param listings Listing[] | Array | table

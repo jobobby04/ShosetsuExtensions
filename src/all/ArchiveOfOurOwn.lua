@@ -319,6 +319,77 @@ local function search(filters)
 	return {}
 end
 
+local function getListings()
+    local doc = GETDocument("https://archiveofourown.org/media")
+    map(doc:select("h3.heading > a"), function(v)
+        local url = shrinkURL(v:attr("href"))
+        return ListingList {
+            name = v:text(),
+            link = v:attr("href"),
+            func = function()
+                local newDoc = GETDocument(expandURL(url))
+            end
+        }
+    end)
+end
+
+local function getListing(listing)
+    if listing == nil or listing == "" or listing == "/media" then
+        return ListingList {
+            name = "ArchiveOfOurOwn",
+            link = "/media",
+            func = function()
+                local doc = GETDocument("https://archiveofourown.org/media")
+                map(doc:select("h3.heading > a"), function(v)
+                    local url = shrinkURL(v:attr("href"))
+                    return ListingList {
+                        name = v:text(),
+                        link = v:attr("href"),
+                        func = function()
+                            local newDoc = GETDocument(expandURL(url))
+                            map(newDoc:select(".listbox .group a.tag"), function(a)
+                                return ListingItem {
+                                    name = a:text(),
+                                    link = shrinkURL(a:attr("href")),
+                                    isIncrementing = true,
+                                    func = function()
+                                        local newUrl = addPage(removePage(query), page)
+                                        local document = ClientGetDocument(newUrl)
+                                        local works = document:select(".work > li")
+
+                                        return map(works, function(b)
+                                            return parseBrowseNovel(b)
+                                        end)
+                                    end
+                                }
+                            end)
+                        end
+                    }
+                end)
+            end,
+            search = search,
+            searchIsIncrementing = true,
+        }
+    end
+    if listing:match("/tags/.+/works") then
+        local a = GETDocument(expandURL(listing)):selectFirst("h2 a.tag")
+        return ListingItem {
+            name = a:text(),
+            link = listing,
+            isIncrementing = true,
+            func = function()
+                local newUrl = addPage(removePage(query), page)
+                local document = ClientGetDocument(newUrl)
+                local works = document:select(".work > li")
+
+                return map(works, function(b)
+                    return parseBrowseNovel(b)
+                end)
+            end
+        }
+    end
+end
+
 return {
 	id = 1308639966,
 	name = "ArchiveOfOurOwn",
@@ -331,24 +402,11 @@ return {
 
 	chapterType = ChapterType.HTML,
 
-
-	-- Must have at least one value
-	listings = {
-		Listing("Nothing", false, function(data)
-			return {
-				NovelInfo {
-					title = "How to use this source",
-					link = "how.v2",
-					imageURL = ""
-				}
-			}
-		end),
-	},
+    getListing = getListing,
 
 	-- Default functions that have to be set
 	getPassage = getPassage,
 	parseNovel = parseNovel,
-	search = search,
 
 	settings = {
 		SwitchFilter(1, "Remove all Justify attributes"),
