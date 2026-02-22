@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.4","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.5","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -25,15 +25,21 @@ local function shrinkURL(url)
 end
 
 local function expandURL(url)
-	return baseURL .. url
+	if url:match("^https?://") then
+		return url
+	elseif url:sub(1, 1) == "/" then
+		return baseURL .. url
+	end
+
+	return baseURL .. "/" .. url
 end
 
 --- @param element Element
 --- @return Element
 local function cleanupDocument(element)
 	element:select(".aa_hv.aa_hy"):remove()
-	element = tostring(element):gsub('<div', '<p'):gsub('</div', '</p'):gsub('<br>', '</p><p>')
-	element = Document(element):selectFirst('body')
+	element = tostring(element):gsub("<div", "<p"):gsub("</div", "</p"):gsub("<br>", "</p><p>")
+	element = Document(element):selectFirst("body")
 	return element
 end
 
@@ -48,25 +54,56 @@ end
 local function getPassage(chapterURL)
 	local document = ClientGetDocument(expandURL(chapterURL))
 	local chap = document:selectFirst(".aa_eQ.article > .aa_ht > div")
-	local title = document:selectFirst(".headline.j_eQ"):text()
-	local summary = document:selectFirst("#tabpanel-info .bn_B"):text()
-	local tags = map(document:select("#tabpanel-tags > .bn_ar > a"),function(v)
+	if chap == nil then
+		chap = document:selectFirst("div[itemprop='articleBody']")
+	end
+	if chap == nil then
+		error("Unable to locate chapter content")
+	end
+
+	local titleElement = document:selectFirst(".headline.j_eQ")
+	if titleElement == nil then
+		titleElement = document:selectFirst("article[itemtype='https://schema.org/Article'] h1")
+	end
+	local title = titleElement and titleElement:text() or ""
+
+	local summaryElement = document:selectFirst("#tabpanel-info .bn_B")
+	if summaryElement == nil then
+		summaryElement = document:selectFirst("[data-tab='tabpanel-info'] [class*='_widget__info_']")
+	end
+	local summary = summaryElement and summaryElement:text() or ""
+
+	local tagsElements = document:select("#tabpanel-tags > .bn_ar > a")
+	if tagsElements:size() == 0 then
+		tagsElements = document:select("[data-tab='tabpanel-tags'] a[href*='tags.literotica.com']")
+	end
+	local tags = map(tagsElements, function(v)
 		return v:text()
 	end)
-
 
 	-- This is for the sake of consistant styling
 	chap = cleanupDocument(chap)
 
 	local pagesElements = document:select("a.l_bJ")
+	if pagesElements:size() <= 1 then
+		pagesElements = document:select("a[href*='?page=']")
+	end
 	if pagesElements:size() > 1 then
-		local lastPage = selectLast(document:select("a.l_bJ")):attr("href")
-		local lastPageNumber = tonumber(lastPage:match("%d+$"))
-		for i = 2, lastPageNumber do
-			local nextDocument = ClientGetDocument(expandURL(chapterURL) .. "?page=" .. i)
-					:selectFirst(".aa_eQ.article > .aa_ht > div")
-			nextDocument = cleanupDocument(nextDocument):selectFirst('body'):children()
-			chap:selectFirst('body'):lastChild():after(nextDocument)
+		local lastPage = selectLast(pagesElements):attr("href")
+		local lastPageNumber = tonumber(lastPage:match("[?&]page=(%d+)")) or tonumber(lastPage:match("%d+$"))
+		if lastPageNumber ~= nil then
+			for i = 2, lastPageNumber do
+				local nextDocument = ClientGetDocument(expandURL(chapterURL) .. "?page=" .. i):selectFirst(
+					".aa_eQ.article > .aa_ht > div"
+				)
+				if nextDocument == nil then
+					nextDocument = ClientGetDocument(expandURL(chapterURL) .. "?page=" .. i):selectFirst(
+						"div[itemprop='articleBody']"
+					)
+				end
+				nextDocument = cleanupDocument(nextDocument):selectFirst("body"):children()
+				chap:selectFirst("body"):lastChild():after(nextDocument)
+			end
 		end
 	end
 
@@ -94,38 +131,65 @@ local function textToInteger(text)
 end
 
 local function getNovelInfoFromSeries(document)
-	local title = document:selectFirst(".headline.j_bm"):text()
+	local titleElement = document:selectFirst(".headline.j_bm")
+	if titleElement == nil then
+		titleElement = document:selectFirst("h1.headline")
+	end
+	local title = titleElement and titleElement:text() or ""
 	local summary = document:selectFirst(".bp_rh")
 	if summary ~= nil then
 		summary = summary:wholeText()
 	else
-		local firstChapter = document:selectFirst("li.br_ri p")
-		firstChapter:select("p > a"):remove()
-		summary = firstChapter:wholeText()
+		summary = document:selectFirst("h1.headline + p")
+		if summary ~= nil then
+			summary = summary:wholeText()
+		else
+			local firstChapter = document:selectFirst("li.br_ri p")
+			if firstChapter ~= nil then
+				firstChapter:select("p > a"):remove()
+				summary = firstChapter:wholeText()
+			else
+				summary = ""
+			end
+		end
 	end
 
-	local tags = map(document:select("#tabpanel-tags > a"),function(v)
+	local tags = map(document:select("#tabpanel-tags > a"), function(v)
 		return v:text()
 	end)
 
 	return {
 		title = title,
 		summary = summary,
-		tags = tags
+		tags = tags,
 	}
 end
 
 local function getNovelInfoFromPage(document)
-	local title = document:selectFirst(".headline.j_eQ"):text()
-	local summary = document:selectFirst("#tabpanel-info .bn_B"):text()
-	local tags = map(document:select("#tabpanel-tags .bn_ar > a"),function(v)
+	local titleElement = document:selectFirst(".headline.j_eQ")
+	if titleElement == nil then
+		titleElement = document:selectFirst("article[itemtype='https://schema.org/Article'] h1")
+	end
+	local title = titleElement and titleElement:text() or ""
+
+	local summaryElement = document:selectFirst("#tabpanel-info .bn_B")
+	if summaryElement == nil then
+		summaryElement = document:selectFirst("[data-tab='tabpanel-info'] [class*='_widget__info_']")
+	end
+	local summary = summaryElement and summaryElement:text() or ""
+
+	local tagsElements = document:select("#tabpanel-tags .bn_ar > a")
+	if tagsElements:size() == 0 then
+		tagsElements = document:select("[data-tab='tabpanel-tags'] a[href*='tags.literotica.com']")
+	end
+	local tags = map(tagsElements, function(v)
 		return v:text()
 	end)
 
 	return {
 		title = title,
 		summary = summary,
-		tags = tags
+		tags = tags,
 	}
 end
 
@@ -133,18 +197,30 @@ local function getNovel(document, novelUrl, mainInfo)
 	local title = mainInfo.title
 	local summary = mainInfo.summary
 	local tags = mainInfo.tags
-	local author = document:selectFirst(".y_eS > .y_eU"):text()
-	local views = document:selectFirst("div[title=Views] > span.aT_cl")
-	local faves = document:selectFirst("div[title=Favorites] > span.aT_cl")
-	local comments = document:selectFirst("div[title=Comments] > span.aT_cl")
+	local authorElement = document:selectFirst(".y_eS > .y_eU")
+	if authorElement == nil then
+		authorElement = document:selectFirst("a[href*='/authors/'][href*='/works/stories'][title]")
+	end
+	if authorElement == nil then
+		authorElement = document:selectFirst("a[href*='/authors/'][href$='/works'][title]")
+	end
+	local author = authorElement and authorElement:text() or ""
+	local views = document:selectFirst("div[title=Views] > span")
+	local faves = document:selectFirst("div[title=Favorites] > span")
+	local comments = document:selectFirst("a[href$='/comments'] > span")
 
-	local info = NovelInfo {
+	local authors = {}
+	if author ~= "" then
+		authors = { author }
+	end
+
+	local info = NovelInfo({
 		title = title,
 		link = novelUrl,
 		description = summary,
 		genres = tags,
-		authors = { author },
-	}
+		authors = authors,
+	})
 
 	if views then
 		info:setViewCount(textToInteger(views:text()))
@@ -155,7 +231,7 @@ local function getNovel(document, novelUrl, mainInfo)
 	end
 
 	if comments then
-		info:setFavoriteCount(textToInteger(comments:text()))
+		info:setCommentCount(textToInteger(comments:text()))
 	end
 
 	return info
@@ -174,20 +250,29 @@ end
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
-	if novelURL:match("^how") then
-		return NovelInfo {
+	local normalizedURL = shrinkURL(novelURL):gsub("^/+", ""):gsub("/+$", "")
+	if normalizedURL == "how" then
+		return NovelInfo({
 			title = "How to use this source",
-			description = "You can use this source by:\n1. searching on the literotica.com website and inputting the url of the story in the search bar.\nOr you can search tags in a comma-delimited list like \"oral,blowjob\""
-		}
+			description = 'You can use this source by:\n1. searching on the literotica.com website and inputting the url of the story in the search bar.\nOr you can search tags in a comma-delimited list like "oral,blowjob"',
+		})
 	end
 
 	local document = ClientGetDocument(expandURL(novelURL))
 
-	local series = document:selectFirst("#tabpanel-series")
-	if series ~= nil then
-		series = series:selectFirst("div.bn_au > a")
-		if series ~= nil then
-			series = ClientGetDocument(series:attr("href"))
+	local seriesPanel = document:selectFirst("#tabpanel-series")
+	if seriesPanel == nil then
+		seriesPanel = document:selectFirst("[data-tab='tabpanel-series']")
+	end
+
+	local series
+	if seriesPanel ~= nil then
+		local seriesLink = seriesPanel:selectFirst("div.bn_au > a")
+		if seriesLink == nil then
+			seriesLink = seriesPanel:selectFirst("a[href*='/series/se/']")
+		end
+		if seriesLink ~= nil then
+			series = ClientGetDocument(expandURL(seriesLink:attr("href")))
 		end
 	end
 	local info
@@ -200,21 +285,37 @@ local function parseNovel(novelURL, loadChapters)
 	if loadChapters then
 		local chapters
 		if series ~= nil then
-			chapters = map(series:select("li.br_ri"), function(v, i)
-				local chapter = v:selectFirst(".br_rj")
-				return NovelChapter {
-					order = i,
-					title = chapter:text(),
-					link = shrinkURL(chapter:attr("href"))
-				}
-			end)
+			local chapterEntries = series:select("li.br_ri")
+			if chapterEntries:size() > 0 then
+				chapters = map(chapterEntries, function(v, i)
+					local chapter = v:selectFirst(".br_rj")
+					if chapter == nil then
+						chapter = v:selectFirst("a[href*='/s/']")
+					end
+					local chapterTitle = chapter and chapter:text() or v:text()
+					local chapterLink = chapter and chapter:attr("href") or ""
+					return NovelChapter({
+						order = i,
+						title = chapterTitle,
+						link = shrinkURL(chapterLink),
+					})
+				end)
+			else
+				chapters = map(series:select("ul.series__works > li > a[href*='/s/']"), function(v, i)
+					return NovelChapter({
+						order = i,
+						title = v:text(),
+						link = shrinkURL(v:attr("href")),
+					})
+				end)
+			end
 		else
 			chapters = {
-				NovelChapter {
+				NovelChapter({
 					order = 0,
 					title = info.title,
 					link = novelURL,
-				}
+				}),
 			}
 		end
 		info:setChapters(AsList(chapters))
@@ -228,11 +329,19 @@ local Categories = {
 	{ name = "Anal", tagCategory = "anal-category-tags", category = "anal-sex-stories" },
 	{ name = "Audio", tagCategory = "audio-category-tags", category = "audio-sex-stories" },
 	{ name = "BDSM", tagCategory = "bdsm-category-tags", category = "bdsm-stories" },
-	{ name = "Celebrities & Fan Fiction", tagCategory = "celebrities-fan-fiction-category-tags", category = "celebrity-stories" },
+	{
+		name = "Celebrities & Fan Fiction",
+		tagCategory = "celebrities-fan-fiction-category-tags",
+		category = "celebrity-stories",
+	},
 	{ name = "Chain Stories", tagCategory = "chain-stories-category-tags", category = "chain-stories" },
 	{ name = "Erotic Couplings", tagCategory = "erotic-couplings-category-tags", category = "erotic-couplings" },
 	{ name = "Erotic Horror", tagCategory = "erotic-horror-category-tags", category = "erotic-horror" },
-	{ name = "Exhibitionist & Voyeur", tagCategory = "exhibitionist-voyeur-category-tags", category = "exhibitionist-voyeur" },
+	{
+		name = "Exhibitionist & Voyeur",
+		tagCategory = "exhibitionist-voyeur-category-tags",
+		category = "exhibitionist-voyeur",
+	},
 	{ name = "Fetish", tagCategory = "fetish-category-tags", category = "fetish-stories" },
 	{ name = "First Time", tagCategory = "first-time-category-tags", category = "first-time-sex-stories" },
 	{ name = "Gay Male", tagCategory = "gay-male-category-tags", category = "gay-sex-stories" },
@@ -241,7 +350,11 @@ local Categories = {
 	{ name = "Humor & Satire", tagCategory = "humor-satire-category-tags", category = "adult-humor" },
 	{ name = "Illustrated", tagCategory = "illustrated-category-tags", category = "illustrated-erotic-fiction" },
 	{ name = "Incest/Taboo", tagCategory = "incest-taboo-category-tags", category = "taboo-sex-stories" },
-	{ name = "Interracial Love", tagCategory = "interracial-love-category-tags", category = "interracial-erotic-stories" },
+	{
+		name = "Interracial Love",
+		tagCategory = "interracial-love-category-tags",
+		category = "interracial-erotic-stories",
+	},
 	{ name = "Lesbian Sex", tagCategory = "lesbian-sex-category-tags", category = "lesbian-sex-stories" },
 	{ name = "Letters & Transcripts", tagCategory = "letters-transcripts-category-tags", category = "erotic-letters" },
 	{ name = "Loving Wives", tagCategory = "loving-wives-category-tags", category = "loving-wives" },
@@ -249,21 +362,32 @@ local Categories = {
 	{ name = "Mind Control", tagCategory = "mind-control-category-tags", category = "mind-control" },
 	{ name = "Non-English", tagCategory = "non-english-category-tags", category = "non-english-stories" },
 	{ name = "Non-Erotic", tagCategory = "non-erotic-category-tags", category = "non-erotic-stories" },
-	{ name = "NonConsent/Reluctance", tagCategory = "nonconsent-reluctance-category-tags", category = "non-consent-stories" },
+	{
+		name = "NonConsent/Reluctance",
+		tagCategory = "nonconsent-reluctance-category-tags",
+		category = "non-consent-stories",
+	},
 	{ name = "NonHuman", tagCategory = "nonhuman-category-tags", category = "non-human-stories" },
 	{ name = "Novels and Novellas", tagCategory = "novels-and-novellas-category-tags", category = "erotic-novels" },
 	{ name = "Reviews & Essays", tagCategory = "reviews-essays-category-tags", category = "reviews-and-essays" },
 	{ name = "Romance", tagCategory = "romance-category-tags", category = "adult-romance" },
 	{ name = "Sci-Fi & Fantasy", tagCategory = "sci-fi-fantasy-category-tags", category = "science-fiction-fantasy" },
-	{ name = "Toys & Masturbation", tagCategory = "toys-masturbation-category-tags", category = "masturbation-stories" },
-	{ name = "Transgender & Crossdressers", tagCategory = "transgender-crossdressers-category-tags", category = "transgender-crossdressers" },
+	{
+		name = "Toys & Masturbation",
+		tagCategory = "toys-masturbation-category-tags",
+		category = "masturbation-stories",
+	},
+	{
+		name = "Transgender & Crossdressers",
+		tagCategory = "transgender-crossdressers-category-tags",
+		category = "transgender-crossdressers",
+	},
 }
-
 
 -- Function to split a string by a delimiter
 local function split(str, delimiter)
 	local result = {}
-	for match in (str..delimiter):gmatch("(.-)"..delimiter) do
+	for match in (str .. delimiter):gmatch("(.-)" .. delimiter) do
 		table.insert(result, match)
 	end
 	return result
@@ -278,37 +402,39 @@ local SortByOptions = {
 	{ name = "Newest", value = "" },
 	{ name = "Views", value = "views" },
 	{ name = "Rating", value = "rating" },
-	{ name = "Favorite", value = "favorite" }
+	{ name = "Favorite", value = "favorite" },
 }
 
 local WithinOptions = {
 	{ name = "All Time", value = "" },
 	{ name = "7 Days", value = "week" },
 	{ name = "30 Days", value = "month" },
-	{ name = "1 Year", value = "year" }
+	{ name = "1 Year", value = "year" },
 }
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
 --- @return NovelInfo[]
 local function search(filters)
 	local page = filters[PAGE]
-	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+	local url = filters[QUERY]:gsub("^%s*(.-)%s*$", "%1")
 	if shrinkURL(url):match("/s/%a+") then
 		if page ~= 1 then
 			return {}
 		end
 		local novelUrl = url:gsub("/$", "")
-		local novel = ClientGetDocument(novelUrl):selectFirst(".headline.j_eQ")
+		local novelDocument = ClientGetDocument(expandURL(novelUrl))
+		local novel = novelDocument:selectFirst(".headline.j_eQ")
+		if novel == nil then
+			novel = novelDocument:selectFirst("article[itemtype='https://schema.org/Article'] h1")
+		end
 		return {
-            NovelInfo {
-				title = novel:text(),
+            NovelInfo({
+				title = novel and novel:text() or "",
 				link = shrinkURL(url),
-				imageURL = ""
-			}
+				imageURL = "",
+			}),
 		}
 	end
-
-
 
 	local query = filters[QUERY]
 	local tags = split(query, ",")
@@ -364,7 +490,7 @@ local function search(filters)
 			else
 				comments = comments:text()
 			end
-			return NovelInfo {
+			return NovelInfo({
 				title = v:selectFirst(".ai_ii h4"):text(),
 				link = shrinkURL(v:selectFirst(".ai_ii"):attr("href")),
 				description = v:selectFirst(".ai_ij p"):text(),
@@ -373,13 +499,12 @@ local function search(filters)
 				viewCount = textToInteger(views),
 				favoriteCount = textToInteger(favorites),
 				commentCount = textToInteger(comments),
-			}
+			})
 		end)
 	end
 
 	return {}
 end
-
 
 local function searchFilters()
 	local categoryOptions = {}
@@ -396,21 +521,9 @@ local function searchFilters()
 	end
 
 	return {
-		DropdownFilter(
-			2,
-			"Category",
-			categoryOptions
-		),
-		DropdownFilter(
-			3,
-			"Sort By",
-			sortByOptions
-		),
-		DropdownFilter(
-			4,
-			"Within",
-			withinOptions
-		),
+		DropdownFilter(2, "Category", categoryOptions),
+		DropdownFilter(3, "Sort By", sortByOptions),
+		DropdownFilter(4, "Within", withinOptions),
 	}
 end
 
@@ -430,11 +543,11 @@ return {
 	listings = {
 		Listing("Nothing", false, function(data)
 			return {
-                NovelInfo {
+                NovelInfo({
 					title = "How to use this source",
 					link = "how",
-					imageURL = ""
-				}
+					imageURL = "",
+				}),
 			}
 		end),
 	},
@@ -451,5 +564,5 @@ return {
 	searchFilters = searchFilters(),
 
 	shrinkURL = shrinkURL,
-	expandURL = expandURL
+	expandURL = expandURL,
 }
