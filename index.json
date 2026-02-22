@@ -1,144 +1,60 @@
 {
-  "libraries": [
+  "authors": [
     {
-      "name": "ReadWN",
-      "ver": "1.0.11"
-    },
-    {
-      "name": "dkjson",
-      "ver": "1.0.1"
+      "id": 1156734878,
+      "name": "unknownazzwipe",
+      "desc": "Worked on 69Yuedu, FanMTL, Powanjuan",
+      "imageURL": "",
+      "website": ""
     }
   ],
+  "libraries": [],
   "scripts": [
     {
-      "name": "WuxiaBox",
-      "fileName": "WuxiaBox",
-      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/wuxia_box.png",
+      "id": 5271,
+      "name": "69Yuedu",
+      "fileName": "69Yuedu",
+      "imageURL": "",
+      "lang": "all",
+      "ver": "1.0.0",
+      "libVer": "1.0.0",
+      "md5": "",
+      "type": "LuaScript"
+    },
+    {
       "id": 1308639964,
+      "name": "FanMTL",
+      "fileName": "FanMTL",
+      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/wuxia_box.png",
+      "lang": "all",
+      "ver": "1.1.5",
+      "libVer": "1.0.0",
+      "md5": "",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639964,
+      "name": "Powanjuan",
+      "fileName": "Powanjun",
+      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/wuxia_box.png",
+      "lang": "all",
+      "ver": "1.1.5",
+      "libVer": "1.0.0",
+      "md5": "",
+      "type": "LuaScript"
+    },
+    {
+      "id": 1308639964,
+      "name": "FanMTL",
+      "fileName": "FanMtl",
+      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/wuxia_box.png",
       "lang": "en",
       "ver": "1.1.5",
       "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "WuxiaMate",
-      "fileName": "WuxiaMate",
-      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/wuxia_mate.png",
-      "id": 1308639965,
-      "lang": "en",
-      "ver": "1.0.5",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "ArchiveOfOurOwn",
-      "fileName": "ArchiveOfOurOwn",
-      "imageURL": "",
-      "id": 1308639966,
-      "lang": "all",
-      "ver": "1.0.5",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "Hentai Foundry",
-      "fileName": "HentaiFoundry",
-      "imageURL": "",
-      "id": 1308639967,
-      "lang": "all",
-      "ver": "1.0.0",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "FanNovels",
-      "fileName": "FanNovels",
-      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/fan_novels.png",
-      "id": 1308639969,
-      "lang": "en",
-      "ver": "1.0.3",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "Literotica",
-      "fileName": "Literotica",
-      "imageURL": "",
-      "id": 1308639970,
-      "lang": "all",
-      "ver": "1.0.3",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "FansMTL",
-      "fileName": "FansMTL",
-      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/fans_mtl.png",
-      "id": 1308639971,
-      "lang": "en",
-      "ver": "1.0.1",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "WuxiaFox",
-      "fileName": "WuxiaFox",
-      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/wuxia_one.png",
-      "id": 1308639972,
-      "lang": "en",
-      "ver": "1.0.1",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "LtNovel",
-      "fileName": "LtNovel",
-      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/lt_novel.png",
-      "id": 1308639973,
-      "lang": "en",
-      "ver": "1.0.1",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "WuxiaOne",
-      "fileName": "WuxiaOne",
-      "imageURL": "https://github.com/jobobby04/ShosetsuExtensions/raw/master/icons/wuxia_one.png",
-      "id": 1308639974,
-      "lang": "en",
-      "ver": "1.0.1",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "69Yuedu",
-      "fileName": "69Yuedu",
-      "imageURL": "https://69yuedu.net/"
-      "id": 5271,
-      "lang": "all", 
-      "ver": "1.0.0",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    { 
-    "name": "Powanjuan",
-      "fileName": "Powanjuan",
-      "imageURL": "https://powanjuan.cc/"
-      "id": 1308639978,
-      "lang": "all", 
-      "ver": "1.0.1",
-      "libVer": "1.0.0",
-      "md5": ""
-    },
-    {
-      "name": "MCStories",
-      "fileName": "MCStories",
-      "imageURL": "",
-      "id": 1308639977,
-      "lang": "en",
-      "ver": "1.0.1",
-      "libVer": "1.0.0",
-      "md5": ""
+      "md5": "",
+      "type": "LuaScript"
     }
-  ]
+  ],
+  "styles": [],
+  "js": []
 }
