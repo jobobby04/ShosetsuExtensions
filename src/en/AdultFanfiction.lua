@@ -130,8 +130,11 @@ local Tags =  {
 --- @return string
 local function getPassage(chapterURL)
 	local document = GETDocumentAdult(expandURL(chapterURL))
-	local chap = document:selectFirst(".chapter-content-card")
+	local title = document:selectFirst(".chapter-content-card .chapter-title"):text()
+	local chap = document:selectFirst(".chapter-content-card .chapter-body")
 	chap = cleanupDocument(chap)
+
+	chap:child(0):before("<h1>" .. title .. "</h1>")
 	return pageOfElem(chap, true)
 end
 
