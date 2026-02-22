@@ -153,7 +153,7 @@ local function parseNovel(novelURL, loadChapters)
 	local authorElement = document:selectFirst(".story-header-author > a")
 	local author = authorElement:text()
 	local subdomain = fullUrl:match("^https?://([^/]+)"):match("^([^.]+)%.")
-	local authorId = authorElement:attr("abs:href"):match("id=(%d+)")
+	local authorId = authorElement:attr("href"):match("id=(%d+)")
 	local authorStories = GETDocumentAdult(
 		"https://members.adult-fanfiction.org/load-user-stories.php?subdomain=" .. subdomain .. "&uid=" .. authorId
 	)
@@ -256,11 +256,12 @@ local function search(filters)
 		local document = GETDocumentAdult(newUrl)
 		local works = document:select(".story-entry")
 
+		local urlPrefix = shrunkUrl:match("^([^.]+)%@") .. ".adult-fanfiction.org/"
 		return map(works, function(v)
 			local title = v:selectFirst(".story-title")
 			return Novel {
 				title = title:text(),
-				link = shrinkURL(title:attr("abs:href")),
+				link = urlPrefix .. title:attr("href"),
 				imageURL = ""
 			}
 		end)
