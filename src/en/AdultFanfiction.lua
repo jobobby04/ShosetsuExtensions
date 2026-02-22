@@ -77,7 +77,7 @@ local Tags =  {
 	["Hum"] = "Humanoid",
 	["Humil"] = "Humiliation",
 	["Inc"] = "Incest",
-	["loli"] = "loli",
+	["loli"] = "Loli",
 	["MBP"] = "Menstrual blood play",
 	["MC"] = "Mind Control",
 	["MCD"] = "Main Character Death",
@@ -127,9 +127,10 @@ local Tags =  {
 }
 
 local TagsIndexed = {}
-for k, _ in pairs(Tags) do
-	table.insert(TagsIndexed, k)
+for k, v in pairs(Tags) do
+	table.insert(TagsIndexed, {key = k, value = v})
 end
+table.sort(TagsIndexed, function(a, b) return a.value < b.value end)
 
 --- @param chapterURL string
 --- @return string
@@ -255,9 +256,9 @@ local function search(filters)
 		for i, tag in ipairs(TagsIndexed) do
 			local value = filters[i + 2] or 0
 			if value == 1 then
-				newUrl = newUrl .. "&tags[]=" .. tag .. "&tag_mode[" .. tag .. "]=include"
+				newUrl = newUrl .. "&tags[]=" .. tag.key .. "&tag_mode[" .. tag.key .. "]=include"
 			elseif value == 2 then
-				newUrl = newUrl .. "&tags[]=" .. tag .. "&tag_mode[" .. tag .. "]=exclude"
+				newUrl = newUrl .. "&tags[]=" .. tag.key .. "&tag_mode[" .. tag.key .. "]=exclude"
 			end
 		end
 
@@ -284,12 +285,14 @@ local function searchFilters()
 				filters,
 				TriStateFilter(
 						i + 2,
-						Tags[tag]
+						tag.value
 				)
 		)
 	end
 
-	return filters
+	return {
+		DropdownFilter(999, "Tags", filters)
+	}
 end
 
 return {
