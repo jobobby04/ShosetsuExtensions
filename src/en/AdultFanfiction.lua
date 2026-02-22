@@ -126,6 +126,11 @@ local Tags =  {
 	["Xeno"] = "Xenophilia"
 }
 
+local TagsIndexed = {}
+for k, _ in pairs(Tags) do
+	table.insert(TagsIndexed, k)
+end
+
 --- @param chapterURL string
 --- @return string
 local function getPassage(chapterURL)
@@ -145,7 +150,7 @@ local function parseNovel(novelURL, loadChapters)
 	if novelURL:match("^how") then
 		return NovelInfo {
 			title = "How to use this source v2",
-			description = "You can use this source by:\n1. searching on the ArchiveOfOurOwn.org website and inputting the url of the work in the search bar.\n2. Setting your queries on the ArchiveOfOurOwn.org website and copying the search to the search bar."
+			description = "You can use this source by:\n1. searching on the adult-fanfiction.org website and inputting the url of the work in the search bar.\n2. Setting your queries on the adult-fanfiction.org website and copying the search to the search bar."
 		}
 	end
 
@@ -247,7 +252,7 @@ local function search(filters)
 	local subdomain = shrunkUrl:match("^@?(%w+)@/$")
 	if shrunkUrl:match("@?[^?]*?cat=%d+") or (subdomain and subdomain ~= "www") then
 		local newUrl = addPage(removePage(url), page)
-		for i, tag in ipairs(Tags) do
+		for i, tag in ipairs(TagsIndexed) do
 			local value = filters[i + 2] or 0
 			if value == 1 then
 				newUrl = newUrl .. "&tags[]=" .. tag .. "&tag_mode[" .. tag .. "]=include"
@@ -274,12 +279,12 @@ end
 
 local function searchFilters()
 	local filters = {}
-	for i, tag in ipairs(Tags) do
+	for i, tag in ipairs(TagsIndexed) do
 		table.insert(
 				filters,
 				TriStateFilter(
 						i + 2,
-						Tags[tag].value
+						Tags[tag]
 				)
 		)
 	end
