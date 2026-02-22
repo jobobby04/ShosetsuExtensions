@@ -291,7 +291,7 @@ local function searchFilters()
 	end
 
 	return {
-		DropdownFilter(999, "Tags", filters)
+		FilterGroup("Tags", filters)
 	}
 end
 
