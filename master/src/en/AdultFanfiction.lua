@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.0.0","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -144,6 +144,10 @@ local function getPassage(chapterURL)
 	return pageOfElem(chap, true)
 end
 
+local function startsWithPattern(mainString, startPattern)
+	return mainString:find("^" .. startPattern) == 1
+end
+
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
@@ -176,14 +180,38 @@ local function parseNovel(novelURL, loadChapters)
 	local summary = storyCard:selectFirst(".story-card-description"):wholeText()
 		:gsub('^%s*(.-)%s*$', '%1')
 
-	local genres = map(storyCard:select(".story-card-tags .story-tag"), function(v)
+	local stats = map(
+			document:select(".story-header-right div.story-header-stats div"),
+			function(v)
+				return v
+			end
+	)
+
+
+	local genres = {}
+
+	table.insert(
+			genres,
+			"Category: " .. document
+					:select(".story-header-right .story-header-category span")
+					:get(1)
+					:text()
+	)
+	for _, v in pairs(stats) do
+		local name = v:selectFirst("strong"):text()
+		if startsWithPattern(name, "Rating") then
+			table.insert(genres, "Rating: " .. v:selectFirst("span"):text())
+		end
+	end
+
+	map(storyCard:select(".story-card-tags .story-tag"), function(v)
 		local tag = v:text()
-		return Tags[tag] or tag
+		table.insert(genres, Tags[tag] or tag)
 	end)
 
 	local status = NovelStatus.PUBLISHING
 	for _, value in ipairs(genres) do
-		if value == "COMPLETE" then
+		if value == "COMPLETE" or value == "Oneshot" then
 			status = NovelStatus.COMPLETED
 			break
 		end
@@ -214,8 +242,6 @@ local function parseNovel(novelURL, loadChapters)
 
 		info:setChapters(AsList(chapters))
 	end
-
-	print(info)
 
 	return info
 end
@@ -254,12 +280,29 @@ local function search(filters)
 	if shrunkUrl:match("@?[^?]*?cat=%d+") or (subdomain and subdomain ~= "www") then
 		local newUrl = addPage(removePage(url), page)
 		for i, tag in ipairs(TagsIndexed) do
-			local value = filters[i + 2] or 0
+			local value = filters[i + 100] or 0
 			if value == 1 then
 				newUrl = newUrl .. "&tags[]=" .. tag.key .. "&tag_mode[" .. tag.key .. "]=include"
 			elseif value == 2 then
 				newUrl = newUrl .. "&tags[]=" .. tag.key .. "&tag_mode[" .. tag.key .. "]=exclude"
 			end
+		end
+		local sort = filters[2]
+		local sortMode
+		if sort == 1 then
+			sortMode = "published"
+		elseif sort == 2 then
+			sortMode = "reviews"
+		elseif sort == 3 then
+			sortMode = "recommendations"
+		elseif sort == 4 then
+			sortMode = "reading"
+		elseif sort == 5 then
+			sortMode = "views"
+		end
+
+		if sortMode then
+			newUrl = newUrl .. "&sort=" .. sortMode
 		end
 
 		local document = GETDocumentAdult(newUrl)
@@ -284,20 +327,32 @@ local function searchFilters()
 		table.insert(
 				filters,
 				TriStateFilter(
-						i + 2,
+						i + 100,
 						tag.value
 				)
 		)
 	end
 
 	return {
+		DropdownFilter(
+				2,
+				"Sort",
+				{
+					"Recently Updated",
+					"Recently Published",
+					"Most Reviews",
+					"Most Recommend",
+					"Most Reading",
+					"Most Viewed"
+				}
+		),
 		FilterGroup("Tags", filters)
 	}
 end
 
 return {
 	id = 1308639978,
-	name = "AdultFanfiction",
+	name = "AdultFanFiction",
 	baseURL = baseURL,
 
 	-- Optional values to change

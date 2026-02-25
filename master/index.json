@@ -3,7 +3,7 @@
 		{
 			"id": -376799541,
 			"name": "Jobobby04",
-			"desc": "Worked on AdultFanfiction, ArchiveOfOurOwn, FanNovels, FansMTL, Hentai Foundry, Literotica, LtNovel, MCStories, ReadWN, WuxiaBox, WuxiaFox, WuxiaMate, WuxiaOne",
+			"desc": "Worked on AdultFanFiction, ArchiveOfOurOwn, FanNovels, FansMTL, Hentai Foundry, Literotica, LtNovel, MCStories, ReadWN, WuxiaBox, WuxiaFox, WuxiaMate, WuxiaOne",
 			"imageURL": "",
 			"website": ""
 		},
@@ -153,13 +153,13 @@
 		},
 		{
 			"id": 1308639978,
-			"name": "AdultFanfiction",
+			"name": "AdultFanFiction",
 			"fileName": "AdultFanfiction",
 			"imageURL": "",
 			"lang": "en",
-			"ver": "1.0.0",
+			"ver": "1.0.1",
 			"libVer": "1.0.0",
-			"md5": "866c10586933045a96445b23a38c4cd4a414dd358dbcae8ec24c0f85d24053ba",
+			"md5": "a232cddbec0884b6afc76d2ad4181e9cb1d1ece874cfc8b6ed1918eb035e4530",
 			"type": "LuaScript"
 		}
 	],
