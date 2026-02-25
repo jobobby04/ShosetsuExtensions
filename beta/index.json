@@ -163,14 +163,14 @@
       "type": "LuaScript"
     },
     {
-      "id": 1308639978,
+      "id": 1308639979,
       "name": "FanFiction.net",
       "fileName": "FanFictionNet",
       "imageURL": "",
       "lang": "all",
       "ver": "1.0.1",
       "libVer": "1.0.0",
-      "md5": "446debd84644baf2c4993098d083136462aaac850fe516a2d9566c6cf4016443",
+      "md5": "6f746cc3fa1246140dc86de68fafbb14ebf2ce7e06b6095f9a13d7d08a47665b",
       "type": "LuaScript"
     }
   ],
