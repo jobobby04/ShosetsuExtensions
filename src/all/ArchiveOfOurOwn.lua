@@ -56,7 +56,7 @@ local function getPassage(chapterURL)
 		title = document:selectFirst("#workskin .title"):text()
 	end
 	local summary = document:selectFirst("#workskin .summary")
-	local notes = document:selectFirst("#workskin .notes[role=\"complementary\"]")
+	local notes = document:selectFirst("#workskin .notes:not(.end)")
 	local endNotes = document:selectFirst("#workskin .chapter .end")
 	-- This is for the sake of consistant styling
 	chap:select(".landmark"):remove()
