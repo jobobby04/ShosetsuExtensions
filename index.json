@@ -56,11 +56,11 @@
       "id": 1308639966,
       "name": "ArchiveOfOurOwn",
       "fileName": "ArchiveOfOurOwn",
-      "imageURL": "",
+      "imageURL": "https://archiveofourown.org/images/ao3_logos/logo_42.png",
       "lang": "all",
-      "ver": "1.0.5",
+      "ver": "1.0.6",
       "libVer": "1.0.0",
-      "md5": "0aeff69615cfb7ae73ec215cbc6ecf15db5165f8301ff3d618cfb00f914d6f9d",
+      "md5": "d1dc22b356b7ec267e9171a6ada1ed55668a812c317be06b36b1490d07222166",
       "type": "LuaScript"
     },
     {
