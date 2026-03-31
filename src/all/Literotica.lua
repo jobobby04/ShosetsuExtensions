@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.5","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.6","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -329,18 +329,19 @@ local Categories = {
 	{ name = "Anal", tagCategory = "anal-category-tags", category = "anal-sex-stories" },
 	{ name = "Audio", tagCategory = "audio-category-tags", category = "audio-sex-stories" },
 	{ name = "BDSM", tagCategory = "bdsm-category-tags", category = "bdsm-stories" },
-	{
-		name = "Celebrities & Fan Fiction",
-		tagCategory = "celebrities-fan-fiction-category-tags",
-		category = "celebrity-stories",
-	},
 	{ name = "Chain Stories", tagCategory = "chain-stories-category-tags", category = "chain-stories" },
+	{ name = "Crossdressing", tagCategory = "crossdressing-category-tags", category = "crossdressing" },
 	{ name = "Erotic Couplings", tagCategory = "erotic-couplings-category-tags", category = "erotic-couplings" },
 	{ name = "Erotic Horror", tagCategory = "erotic-horror-category-tags", category = "erotic-horror" },
 	{
 		name = "Exhibitionist & Voyeur",
 		tagCategory = "exhibitionist-voyeur-category-tags",
 		category = "exhibitionist-voyeur",
+	},
+	{
+		name = "Fan Fiction & Celebrities",
+		tagCategory = "fan-fiction-celebrities-category-tags",
+		category = "celebrity-stories",
 	},
 	{ name = "Fetish", tagCategory = "fetish-category-tags", category = "fetish-stories" },
 	{ name = "First Time", tagCategory = "first-time-category-tags", category = "first-time-sex-stories" },
@@ -349,7 +350,6 @@ local Categories = {
 	{ name = "How To", tagCategory = "how-to-category-tags", category = "adult-how-to" },
 	{ name = "Humor & Satire", tagCategory = "humor-satire-category-tags", category = "adult-humor" },
 	{ name = "Illustrated", tagCategory = "illustrated-category-tags", category = "illustrated-erotic-fiction" },
-	{ name = "Incest/Taboo", tagCategory = "incest-taboo-category-tags", category = "taboo-sex-stories" },
 	{
 		name = "Interracial Love",
 		tagCategory = "interracial-love-category-tags",
@@ -362,26 +362,23 @@ local Categories = {
 	{ name = "Mind Control", tagCategory = "mind-control-category-tags", category = "mind-control" },
 	{ name = "Non-English", tagCategory = "non-english-category-tags", category = "non-english-stories" },
 	{ name = "Non-Erotic", tagCategory = "non-erotic-category-tags", category = "non-erotic-stories" },
-	{
-		name = "NonConsent/Reluctance",
-		tagCategory = "nonconsent-reluctance-category-tags",
-		category = "non-consent-stories",
-	},
 	{ name = "NonHuman", tagCategory = "nonhuman-category-tags", category = "non-human-stories" },
 	{ name = "Novels and Novellas", tagCategory = "novels-and-novellas-category-tags", category = "erotic-novels" },
+	{
+		name = "Reluctance/NonConsent",
+		tagCategory = "reluctance-nonconsent-category-tags",
+		category = "non-consent-stories",
+	},
 	{ name = "Reviews & Essays", tagCategory = "reviews-essays-category-tags", category = "reviews-and-essays" },
 	{ name = "Romance", tagCategory = "romance-category-tags", category = "adult-romance" },
 	{ name = "Sci-Fi & Fantasy", tagCategory = "sci-fi-fantasy-category-tags", category = "science-fiction-fantasy" },
+	{ name = "Taboo/Incest", tagCategory = "taboo-incest-category-tags", category = "taboo-sex-stories" },
 	{
 		name = "Toys & Masturbation",
 		tagCategory = "toys-masturbation-category-tags",
 		category = "masturbation-stories",
 	},
-	{
-		name = "Transgender & Crossdressers",
-		tagCategory = "transgender-crossdressers-category-tags",
-		category = "transgender-crossdressers",
-	},
+	{ name = "Transgender", tagCategory = "transgender-category-tags", category = "transgender" },
 }
 
 -- Function to split a string by a delimiter
@@ -442,7 +439,7 @@ local function search(filters)
 
 	if next(tags) then
 		local searchUrl = "https://tags.literotica.com/"
-		local category = Categories[tonumber(filters[2])]
+		local category = Categories[tonumber(filters[2]) + 1]
 		if category and category.tagCategory ~= "" then
 			searchUrl = searchUrl .. category.tagCategory .. "/"
 		end
@@ -460,11 +457,11 @@ local function search(filters)
 		else
 			searchUrl = searchUrl .. "?page=" .. filters[PAGE]
 		end
-		local sortBy = SortByOptions[tonumber(filters[3])]
+		local sortBy = SortByOptions[tonumber(filters[3]) + 1]
 		if sortBy and sortBy.value ~= "" then
 			searchUrl = searchUrl .. "&sort_by=" .. sortBy.value
 		end
-		local within = WithinOptions[tonumber(filters[4])]
+		local within = WithinOptions[tonumber(filters[4]) + 1]
 		if within and within.value ~= "" then
 			searchUrl = searchUrl .. "&period=" .. within.value
 		end
