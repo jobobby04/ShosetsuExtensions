@@ -1,7 +1,9 @@
--- {"id":1308639966,"ver":"1.0.5","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.6","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
+
+local DEFAULT_COVER = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_cover.webp"
 
 local function shrinkURL(url)
 	return url:gsub("^.-archiveofourown%.org", "")
@@ -54,7 +56,7 @@ local function getPassage(chapterURL)
 		title = document:selectFirst("#workskin .title"):text()
 	end
 	local summary = document:selectFirst("#workskin .summary")
-	local notes = document:selectFirst("#workskin .notes[role=\"complementary\"]")
+	local notes = document:selectFirst("#workskin .notes:not(.end)")
 	local endNotes = document:selectFirst("#workskin .chapter .end")
 	-- This is for the sake of consistant styling
 	chap:select(".landmark"):remove()
@@ -142,12 +144,16 @@ local function parseNovel(novelURL, loadChapters)
 		end
 	end
 
+	local imageElement = document:selectFirst("#chapters img")
+	local imageURL = imageElement and imageElement:attr("src") or DEFAULT_COVER
+
 	local info = NovelInfo {
 		title = title,
 		description = summary,
 		genres = genres,
 		authors = authors,
 		status = status,
+		imageURL = settings[2] and imageURL or nil,
 	}
 
 	if loadChapters then
@@ -243,7 +249,7 @@ return {
 	baseURL = baseURL,
 
 	-- Optional values to change
-	imageURL = "",
+	imageURL = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_icon.png",
 	hasCloudFlare = true,
 	hasSearch = true,
 
@@ -270,6 +276,7 @@ return {
 
 	settings = {
 		SwitchFilter(1, "Remove all Justify attributes"),
+		SwitchFilter(2, "Add cover (may include spoilers)")
 	},
 	updateSetting = function(id, value)
 		settings[id] = value
