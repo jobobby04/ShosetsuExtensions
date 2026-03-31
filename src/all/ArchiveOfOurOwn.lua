@@ -5,6 +5,9 @@ local settings = {}
 
 local DEFAULT_COVER = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_cover.webp"
 
+-- Filter IDs
+local FID_AUTHOR = 2
+
 local function shrinkURL(url)
 	return url:gsub("^.-archiveofourown%.org", "")
 end
@@ -213,11 +216,48 @@ local function addPage(url, page)
 	end
 end
 
+local function parseListing(document)
+	local works = document:select(".work > li")
+	return map(works, function(v)
+		local title = v:selectFirst("h4.heading > a")
+		return Novel {
+			title = title:text(),
+			link = shrinkURL(title:attr("href")),
+			imageURL = ""
+		}
+	end)
+end
+
+local function getListing(filters)
+	local page = filters[PAGE]
+	local author = filters[FID_AUTHOR]
+
+	if filters[QUERY] == nil then
+		if page ~= 1 then return {} end
+		return {
+			Novel {
+				title = "How to use this source",
+				link = "how.v2",
+				imageURL = ""
+			}
+		}
+	end
+
+	local newUrl = expandURL("/works/search"
+		.. "?page=" .. page
+		.. "&work_search[creators]=" .. author
+	)
+	local document = GETDocumentAdult(newUrl)
+	return parseListing(document)
+end
+
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
 --- @return Novel[]
 local function search(filters)
 	local page = filters[PAGE]
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+
+	-- handle a specific work URL
 	if page == 1 and shrinkURL(url):match("/works/%d+") then
 		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
 		local novel = GETDocumentAdult(novelUrl)
@@ -230,35 +270,24 @@ local function search(filters)
 		}
 	end
 
-	if shrinkURL(url):match("tags/.+/works") then
-		local newUrl = addPage(removePage(url), page)
-		local document = GETDocumentAdult(newUrl)
-		local works = document:select(".work > li")
-
-		return map(works, function(v)
-			local title = v:selectFirst("h4.heading > a")
-			return Novel {
-				title = title:text(),
-				link = shrinkURL(title:attr("href")),
-				imageURL = ""
-			}
-		end)
-	end
+	-- handle /works and /tags/.+/works listings
 	if shrinkURL(url):match("works") then
 		local newUrl = addPage(removePage(url), page)
 		local document = GETDocumentAdult(newUrl)
-		local works = document:select(".work > li")
 
-		return map(works, function(v)
-			local title = v:selectFirst("h4.heading > a")
-			return Novel {
-				title = title:text(),
-				link = shrinkURL(title:attr("href")),
-				imageURL = ""
-			}
-		end)
+		return parseListing(document)
 	end
-	return {}
+
+	-- handle searching by query
+	local query = filters[QUERY]:gsub(" ", "+") -- TODO encode query
+	local author = filters[FID_AUTHOR]
+	local newUrl = expandURL("/works/search" 
+		.. "?page=" .. page
+		.. "&work_search[query]=" .. query
+		.. "&work_search[creators]=" .. author
+	)
+	local document = GETDocumentAdult(newUrl)
+	return parseListing(document)
 end
 
 return {
@@ -276,15 +305,7 @@ return {
 
 	-- Must have at least one value
 	listings = {
-		Listing("Nothing", false, function(data)
-			return {
-				Novel {
-					title = "How to use this source",
-					link = "how.v2",
-					imageURL = ""
-				}
-			}
-		end),
+		Listing("Nothing", true, getListing),
 	},
 
 	-- Default functions that have to be set
@@ -292,6 +313,9 @@ return {
 	parseNovel = parseNovel,
 	search = search,
 
+	searchFilters = {
+		TextFilter(FID_AUTHOR, "Author")
+	},
 	settings = {
 		SwitchFilter(1, "Remove all Justify attributes"),
 		SwitchFilter(2, "Add cover (may include spoilers)"),
