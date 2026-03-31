@@ -249,7 +249,7 @@ return {
 	baseURL = baseURL,
 
 	-- Optional values to change
-	imageURL = "https://archiveofourown.org/images/ao3_logos/logo_42.png",
+	imageURL = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_icon.png",
 	hasCloudFlare = true,
 	hasSearch = true,
 

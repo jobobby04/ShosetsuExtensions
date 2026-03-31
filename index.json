@@ -56,11 +56,11 @@
       "id": 1308639966,
       "name": "ArchiveOfOurOwn",
       "fileName": "ArchiveOfOurOwn",
-      "imageURL": "https://archiveofourown.org/images/ao3_logos/logo_42.png",
+      "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_icon.png",
       "lang": "all",
       "ver": "1.0.6",
       "libVer": "1.0.0",
-      "md5": "d1dc22b356b7ec267e9171a6ada1ed55668a812c317be06b36b1490d07222166",
+      "md5": "cef3f4c0f18c4b68e9fc2cd81cb607cd0b4c21e170587359b4452b8a201d762a",
       "type": "LuaScript"
     },
     {
