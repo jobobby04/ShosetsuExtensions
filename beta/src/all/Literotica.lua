@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.8","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.9","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -117,11 +117,13 @@ local function getNovelInfoFromSeries(document)
 	local title = titleElement and titleElement:text() or ""
 
 	local summary = document:selectFirst("#tabpanel-info div:nth-of-type(2)")
-	if summary ~= nil then
-	    local text = summary:text()
+	if summary ~= nil and summary:hasText() then
+	    local text = summary:wholeText()
 	    if text ~= nil and text ~= "" then
 	        summary = text
 	    end
+	else
+	    summary = nil
 	end
 
 	if summary == nil then
