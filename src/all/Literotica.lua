@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.5","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.6","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -53,30 +53,18 @@ end
 --- @return string
 local function getPassage(chapterURL)
 	local document = ClientGetDocument(expandURL(chapterURL))
-	local chap = document:selectFirst(".aa_eQ.article > .aa_ht > div")
-	if chap == nil then
-		chap = document:selectFirst("div[itemprop='articleBody']")
-	end
+	local chap = document:selectFirst("div[itemprop='articleBody']")
 	if chap == nil then
 		error("Unable to locate chapter content")
 	end
 
-	local titleElement = document:selectFirst(".headline.j_eQ")
-	if titleElement == nil then
-		titleElement = document:selectFirst("article[itemtype='https://schema.org/Article'] h1")
-	end
+	local titleElement = document:selectFirst("article[itemtype='https://schema.org/Article'] h1")
 	local title = titleElement and titleElement:text() or ""
 
-	local summaryElement = document:selectFirst("#tabpanel-info .bn_B")
-	if summaryElement == nil then
-		summaryElement = document:selectFirst("[data-tab='tabpanel-info'] [class*='_widget__info_']")
-	end
+	local summaryElement = document:selectFirst("[data-tab='tabpanel-info'] [class*='_widget__info_']")
 	local summary = summaryElement and summaryElement:text() or ""
 
-	local tagsElements = document:select("#tabpanel-tags > .bn_ar > a")
-	if tagsElements:size() == 0 then
-		tagsElements = document:select("[data-tab='tabpanel-tags'] a[href*='tags.literotica.com']")
-	end
+	local tagsElements = document:select("[data-tab='tabpanel-tags'] a[href*='tags.literotica.com']")
 	local tags = map(tagsElements, function(v)
 		return v:text()
 	end)
@@ -84,23 +72,15 @@ local function getPassage(chapterURL)
 	-- This is for the sake of consistant styling
 	chap = cleanupDocument(chap)
 
-	local pagesElements = document:select("a.l_bJ")
-	if pagesElements:size() <= 1 then
-		pagesElements = document:select("a[href*='?page=']")
-	end
+	local pagesElements = document:select("a[href*='?page=']")
 	if pagesElements:size() > 1 then
 		local lastPage = selectLast(pagesElements):attr("href")
 		local lastPageNumber = tonumber(lastPage:match("[?&]page=(%d+)")) or tonumber(lastPage:match("%d+$"))
 		if lastPageNumber ~= nil then
 			for i = 2, lastPageNumber do
 				local nextDocument = ClientGetDocument(expandURL(chapterURL) .. "?page=" .. i):selectFirst(
-					".aa_eQ.article > .aa_ht > div"
+					"div[itemprop='articleBody']"
 				)
-				if nextDocument == nil then
-					nextDocument = ClientGetDocument(expandURL(chapterURL) .. "?page=" .. i):selectFirst(
-						"div[itemprop='articleBody']"
-					)
-				end
 				nextDocument = cleanupDocument(nextDocument):selectFirst("body"):children()
 				chap:selectFirst("body"):lastChild():after(nextDocument)
 			end
@@ -131,27 +111,11 @@ local function textToInteger(text)
 end
 
 local function getNovelInfoFromSeries(document)
-	local titleElement = document:selectFirst(".headline.j_bm")
-	if titleElement == nil then
-		titleElement = document:selectFirst("h1.headline")
-	end
+	local titleElement = document:selectFirst("h1.headline")
 	local title = titleElement and titleElement:text() or ""
-	local summary = document:selectFirst(".bp_rh")
+	local summary = document:selectFirst("ul.series__works a")
 	if summary ~= nil then
 		summary = summary:wholeText()
-	else
-		summary = document:selectFirst("h1.headline + p")
-		if summary ~= nil then
-			summary = summary:wholeText()
-		else
-			local firstChapter = document:selectFirst("li.br_ri p")
-			if firstChapter ~= nil then
-				firstChapter:select("p > a"):remove()
-				summary = firstChapter:wholeText()
-			else
-				summary = ""
-			end
-		end
 	end
 
 	local tags = map(document:select("#tabpanel-tags > a"), function(v)
@@ -166,22 +130,13 @@ local function getNovelInfoFromSeries(document)
 end
 
 local function getNovelInfoFromPage(document)
-	local titleElement = document:selectFirst(".headline.j_eQ")
-	if titleElement == nil then
-		titleElement = document:selectFirst("article[itemtype='https://schema.org/Article'] h1")
-	end
+	local titleElement = document:selectFirst("article[itemtype='https://schema.org/Article'] h1")
 	local title = titleElement and titleElement:text() or ""
 
-	local summaryElement = document:selectFirst("#tabpanel-info .bn_B")
-	if summaryElement == nil then
-		summaryElement = document:selectFirst("[data-tab='tabpanel-info'] [class*='_widget__info_']")
-	end
+	local summaryElement = document:selectFirst("[data-tab='tabpanel-info'] [class*='_widget__info_']")
 	local summary = summaryElement and summaryElement:text() or ""
 
-	local tagsElements = document:select("#tabpanel-tags .bn_ar > a")
-	if tagsElements:size() == 0 then
-		tagsElements = document:select("[data-tab='tabpanel-tags'] a[href*='tags.literotica.com']")
-	end
+	local tagsElements = document:select("[data-tab='tabpanel-tags'] a[href*='tags.literotica.com']")
 	local tags = map(tagsElements, function(v)
 		return v:text()
 	end)
@@ -197,14 +152,11 @@ local function getNovel(document, novelUrl, mainInfo)
 	local title = mainInfo.title
 	local summary = mainInfo.summary
 	local tags = mainInfo.tags
-	local authorElement = document:selectFirst(".y_eS > .y_eU")
-	if authorElement == nil then
-		authorElement = document:selectFirst("a[href*='/authors/'][href*='/works/stories'][title]")
-	end
+	local authorElement = document:selectFirst("a[href*='/authors/'][href*='/works/stories'][title]")
 	if authorElement == nil then
 		authorElement = document:selectFirst("a[href*='/authors/'][href$='/works'][title]")
 	end
-	local author = authorElement and authorElement:text() or ""
+	local author = authorElement and (authorElement:attr("title") or authorElement:text()) or ""
 
 	local authors = {}
 	if author ~= "" then
@@ -222,15 +174,6 @@ local function getNovel(document, novelUrl, mainInfo)
 	return info
 end
 
-local function removeAfterColon(str)
-	local index = string.find(str, ":")
-	if index then
-		return string.sub(str, 1, index - 1)
-	else
-		return str
-	end
-end
-
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
@@ -245,17 +188,10 @@ local function parseNovel(novelURL, loadChapters)
 
 	local document = ClientGetDocument(expandURL(novelURL))
 
-	local seriesPanel = document:selectFirst("#tabpanel-series")
-	if seriesPanel == nil then
-		seriesPanel = document:selectFirst("[data-tab='tabpanel-series']")
-	end
-
+	local seriesPanel = document:selectFirst("[data-tab='tabpanel-series']")
 	local series
 	if seriesPanel ~= nil then
-		local seriesLink = seriesPanel:selectFirst("div.bn_au > a")
-		if seriesLink == nil then
-			seriesLink = seriesPanel:selectFirst("a[href*='/series/se/']")
-		end
+		local seriesLink = seriesPanel:selectFirst("a[href*='/series/se/']")
 		if seriesLink ~= nil then
 			series = ClientGetDocument(expandURL(seriesLink:attr("href")))
 		end
@@ -270,13 +206,10 @@ local function parseNovel(novelURL, loadChapters)
 	if loadChapters then
 		local chapters
 		if series ~= nil then
-			local chapterEntries = series:select("li.br_ri")
+			local chapterEntries = series:select("ul.series__works li")
 			if chapterEntries:size() > 0 then
 				chapters = map(chapterEntries, function(v, i)
-					local chapter = v:selectFirst(".br_rj")
-					if chapter == nil then
-						chapter = v:selectFirst("a[href*='/s/']")
-					end
+					local chapter = v:selectFirst("a[href*='/s/']")
 					local chapterTitle = chapter and chapter:text() or v:text()
 					local chapterLink = chapter and chapter:attr("href") or ""
 					return NovelChapter({
@@ -285,20 +218,12 @@ local function parseNovel(novelURL, loadChapters)
 						link = shrinkURL(chapterLink),
 					})
 				end)
-			else
-				chapters = map(series:select("ul.series__works > li > a[href*='/s/']"), function(v, i)
-					return NovelChapter({
-						order = i,
-						title = v:text(),
-						link = shrinkURL(v:attr("href")),
-					})
-				end)
 			end
 		else
 			chapters = {
 				NovelChapter({
 					order = 0,
-					title = info.title,
+					title = info:getTitle(),
 					link = novelURL,
 				}),
 			}
@@ -405,10 +330,7 @@ local function search(filters)
 		end
 		local novelUrl = url:gsub("/$", "")
 		local novelDocument = ClientGetDocument(expandURL(novelUrl))
-		local novel = novelDocument:selectFirst(".headline.j_eQ")
-		if novel == nil then
-			novel = novelDocument:selectFirst("article[itemtype='https://schema.org/Article'] h1")
-		end
+		local novel = novelDocument:selectFirst("article[itemtype='https://schema.org/Article'] h1")
 		return {
 			Novel({
 				title = novel and novel:text() or "",
@@ -453,12 +375,12 @@ local function search(filters)
 
 		local document = ClientGetDocument(searchUrl)
 
-		return map(document:select(".panel.ai_gJ"), function(v)
+		return map(document:select(".panel[property='itemListElement']"), function(v)
 			return Novel({
-				title = v:selectFirst(".ai_ii h4"):text(),
-				link = shrinkURL(v:selectFirst(".ai_ii"):attr("href")),
-				description = v:selectFirst(".ai_ij p"):text(),
-				authors = { v:selectFirst(".ai_il > span.ai_im"):text() },
+				title = v:selectFirst("[href*='/s/'] h4"):text(),
+				link = shrinkURL(v:selectFirst("[href*='/s/']"):attr("href")),
+				description = v:selectFirst("p[property='headline']"):text(),
+				authors = { v:select("a[typeof='Person'] > meta"):attr("content") },
 			})
 		end)
 	end
