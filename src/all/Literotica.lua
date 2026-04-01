@@ -120,11 +120,13 @@ local function getPassage(chapterURL)
 end
 
 local function textToInteger(text)
-	local number, unit = text:match("(%d+%.?%d*)(%a*)")
+	local number, unit = text:gsub(",", ""):match("(%d+%.?%d*)(%a*)")
 	number = tonumber(number)
 
 	if unit == "k" then
 		number = number * 1000
+	elseif unit == "m" then
+		 number = number * 1000000
 	end
 
 	return math.floor(number)
@@ -205,9 +207,9 @@ local function getNovel(document, novelUrl, mainInfo)
 		authorElement = document:selectFirst("a[href*='/authors/'][href$='/works'][title]")
 	end
 	local author = authorElement and authorElement:text() or ""
-	local views = document:selectFirst("div[title=Views] > span")
-	local faves = document:selectFirst("div[title=Favorites] > span")
-	local comments = document:selectFirst("a[href$='/comments'] > span")
+	local views = document:selectFirst("div[title=Views]")
+	local faves = document:selectFirst("div[title=Favorites]")
+	local comments = document:selectFirst("a[href$='/comments']")
 
 	local authors = {}
 	if author ~= "" then
@@ -223,15 +225,15 @@ local function getNovel(document, novelUrl, mainInfo)
 	})
 
 	if views then
-		info:setViewCount(textToInteger(views:text()))
+		info:setViewCount(textToInteger(views:attr("data-value")))
 	end
 
 	if faves then
-		info:setFavoriteCount(textToInteger(faves:text()))
+		info:setFavoriteCount(textToInteger(faves:attr("data-value")))
 	end
 
 	if comments then
-		info:setCommentCount(textToInteger(comments:text()))
+		info:setCommentCount(textToInteger(comments:attr("data-value")))
 	end
 
 	return info
@@ -469,23 +471,23 @@ local function search(filters)
 		local document = ClientGetDocument(searchUrl)
 
 		return map(document:select(".panel.ai_gJ"), function(v)
-			local views = v:selectFirst("div[title=Views] > span")
+			local views = v:selectFirst("div[title=Views]")
 			if views == nil then
 				views = "0"
 			else
-				views = views:text()
+				views = views:attr("data-value")
 			end
-			local favorites = v:selectFirst("div[title=Favorites] > span")
+			local favorites = v:selectFirst("div[title=Favorites]")
 			if favorites == nil then
 				favorites = "0"
 			else
-				favorites = favorites:text()
+				favorites = favorites:attr("data-value")
 			end
-			local comments = v:selectFirst("div[title=Comments] > span")
+			local comments = v:selectFirst("div[title=Comments]")
 			if comments == nil then
 				comments = "0"
 			else
-				comments = comments:text()
+				comments = comments:attr("data-value")
 			end
 			return NovelInfo({
 				title = v:selectFirst(".ai_ii h4"):text(),
