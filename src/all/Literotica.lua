@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.6","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.7","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -113,10 +113,26 @@ end
 local function getNovelInfoFromSeries(document)
 	local titleElement = document:selectFirst("h1.headline")
 	local title = titleElement and titleElement:text() or ""
-	local summary = document:selectFirst("ul.series__works a")
+
+	local summary = document:selectFirst("#tabpanel-info div:nth-of-type(2)")
 	if summary ~= nil then
-		summary = summary:wholeText()
+	    local text = summary:text()
+	    if text ~= nil and text ~= "" then
+	        summary = text
+	    end
 	end
+
+	if summary == nil then
+		summary = document:selectFirst("ul.series__works p")
+		if summary ~= nil then
+			local a = summary:selectFirst("a")
+			if a ~= nil then
+					a:remove()
+			end
+			summary = summary:wholeText()
+		end
+	end
+
 
 	local tags = map(document:select("#tabpanel-tags > a"), function(v)
 		return v:text()
@@ -381,6 +397,7 @@ local function search(filters)
 				link = shrinkURL(v:selectFirst("[href*='/s/']"):attr("href")),
 				description = v:selectFirst("p[property='headline']"):text(),
 				authors = { v:select("a[typeof='Person'] > meta"):attr("content") },
+				genres = { v:selectFirst("[href*='/c/'] > span"):text() },
 			})
 		end)
 	end
