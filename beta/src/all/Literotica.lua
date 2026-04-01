@@ -105,7 +105,7 @@ local function textToInteger(text)
 
 	if unit == "k" then
 		number = number * 1000
-	elseif unit == "m" then
+	elseif unit == "m" or unit == "M" then
 		 number = number * 1000000
 	end
 
@@ -124,10 +124,17 @@ local function getNovelInfoFromSeries(document)
 		return v:text()
 	end)
 
+  local views = document:selectFirst("div[title=Views]")
+  local faves = document:selectFirst("div[title=Favorites]")
+  local comments = document:selectFirst("a[href$='/comments']")
+
 	return {
 		title = title,
 		summary = summary,
 		tags = tags,
+		viewCount = views and textToInteger(views:text()) or nil,
+		favoriteCount = faves and textToInteger(faves:text()) or nil,
+		commentCount = comments and textToInteger(comments:text()) or nil
 	}
 end
 
@@ -143,10 +150,17 @@ local function getNovelInfoFromPage(document)
 		return v:text()
 	end)
 
+  local views = document:selectFirst("div[title=Views]")
+  local faves = document:selectFirst("div[title=Favorites]")
+  local comments = document:selectFirst("a[href$='/comments']")
+
 	return {
 		title = title,
 		summary = summary,
 		tags = tags,
+		viewCount = views and textToInteger(views:attr("data-value")) or nil,
+		favoriteCount = faves and textToInteger(faves:attr("data-value")) or nil,
+		commentCount = comments and textToInteger(comments:attr("data-value")) or nil
 	}
 end
 
@@ -159,9 +173,9 @@ local function getNovel(document, novelUrl, mainInfo)
 		authorElement = document:selectFirst("a[href*='/authors/'][href$='/works'][title]")
 	end
 	local author = authorElement and (authorElement:attr("title") or authorElement:text()) or ""
-	local views = document:selectFirst("div[title=Views]")
-	local faves = document:selectFirst("div[title=Favorites]")
-	local comments = document:selectFirst("a[href$='/comments']")
+	local views = mainInfo.viewCount
+	local faves = mainInfo.favoriteCount
+	local comments = mainInfo.commentCount
 
 	local authors = {}
 	if author ~= "" then
@@ -174,19 +188,10 @@ local function getNovel(document, novelUrl, mainInfo)
 		description = summary,
 		genres = tags,
 		authors = authors,
+		viewCount = views,
+		favoriteCount = faves,
+		commentCount = comments
 	})
-
-	if views then
-		info:setViewCount(textToInteger(views:attr("data-value")))
-	end
-
-	if faves then
-		info:setFavoriteCount(textToInteger(faves:attr("data-value")))
-	end
-
-	if comments then
-		info:setCommentCount(textToInteger(comments:attr("data-value")))
-	end
 
 	return info
 end
