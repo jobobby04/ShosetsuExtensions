@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.9","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.10","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -168,9 +168,9 @@ local function getNovelInfoFromPage(document)
 		return v:text()
 	end)
 
-  local views = document:selectFirst("div[title=Views]")
-  local faves = document:selectFirst("div[title=Favorites]")
-  local comments = document:selectFirst("a[href$='/comments']")
+  local views = document:selectFirst("[data-tab='tabpanel-info'] div[title=Views]")
+  local faves = document:selectFirst("[data-tab='tabpanel-info'] div[title=Favorites]")
+  local comments = document:selectFirst("[data-tab='tabpanel-info'] a[href$='/comments']")
 
 	return {
 		title = title,
