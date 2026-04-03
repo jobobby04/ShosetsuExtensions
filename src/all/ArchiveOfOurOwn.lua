@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.6","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.7","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -157,25 +157,49 @@ local function parseNovel(novelURL, loadChapters)
 	}
 
 	if loadChapters then
-		local chaptersDocument = document:select("option, .actions option, form code")
 		local chapters
-		if chaptersDocument ~= nil and chaptersDocument:size() ~= 0 then
+		if (settings[3]) then
+			local chaptersResponse = GETDocumentAdult(expandURL(novelURL .. "/navigate"))
+			local chaptersDocument = chaptersResponse:select("ol.chapter li")
+
 			chapters = map(chaptersDocument, function(v, i)
+				local item = v:selectFirst("a")
+				local dateTime = v:selectFirst("span.datetime"):text():gsub("^%((.*)%)$", "%1")
+				local y, m, d = dateTime:match("(%d+)-(%d+)-(%d+)")
+				local timestamp = os.time({
+						year = tonumber(y),
+						month = tonumber(m),
+						day = tonumber(d),
+				})
+
 				return NovelChapter {
 					order = i,
-					title = v:text(),
-					link =  novelURL .. "/chapters/" .. v:attr("value")
+					title = item:text(),
+					link =  item:attr("href"),
+					release = timestamp,
 				}
 			end)
-		else
-			chapters = {
-				NovelChapter {
-					order = 1,
-					title = title,
-					link = novelURL
-				}
-			}
+			else
+				local chaptersDocument = document:select("option, .actions option, form code")
+				if chaptersDocument ~= nil and chaptersDocument:size() ~= 0 then
+					chapters = map(chaptersDocument, function(v, i)
+						return NovelChapter {
+							order = i,
+							title = v:text(),
+							link =  novelURL .. "/chapters/" .. v:attr("value")
+						}
+					end)
+				else
+					chapters = {
+						NovelChapter {
+							order = 1,
+							title = title,
+							link = novelURL
+						}
+					}
+				end
 		end
+
 
 		info:setChapters(AsList(chapters))
 	end
@@ -276,7 +300,8 @@ return {
 
 	settings = {
 		SwitchFilter(1, "Remove all Justify attributes"),
-		SwitchFilter(2, "Add cover (may include spoilers)")
+		SwitchFilter(2, "Add cover (may include spoilers)"),
+		SwitchFilter(3, "Fetch chapter dates")
 	},
 	updateSetting = function(id, value)
 		settings[id] = value
