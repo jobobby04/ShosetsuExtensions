@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.7","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.8","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -165,18 +165,12 @@ local function parseNovel(novelURL, loadChapters)
 			chapters = map(chaptersDocument, function(v, i)
 				local item = v:selectFirst("a")
 				local dateTime = v:selectFirst("span.datetime"):text():gsub("^%((.*)%)$", "%1")
-				local y, m, d = dateTime:match("(%d+)-(%d+)-(%d+)")
-				local timestamp = os.time({
-						year = tonumber(y),
-						month = tonumber(m),
-						day = tonumber(d),
-				})
 
 				return NovelChapter {
 					order = i,
 					title = item:text(),
 					link =  item:attr("href"),
-					release = timestamp,
+					release = dateTime,
 				}
 			end)
 			else
