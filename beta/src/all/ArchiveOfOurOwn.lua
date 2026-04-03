@@ -186,18 +186,12 @@ local function parseNovel(novelURL, loadChapters)
 			chapters = map(chaptersDocument, function(v, i)
 				local item = v:selectFirst("a")
 				local dateTime = v:selectFirst("span.datetime"):text():gsub("^%((.*)%)$", "%1")
-				local y, m, d = dateTime:match("(%d+)-(%d+)-(%d+)")
-				local timestamp = os.time({
-						year = tonumber(y),
-						month = tonumber(m),
-						day = tonumber(d),
-				})
 
 				return NovelChapter {
 					order = i,
 					title = item:text(),
 					link =  item:attr("href"),
-					release = timestamp,
+					release = dateTime,
 				}
 			end)
 			else
