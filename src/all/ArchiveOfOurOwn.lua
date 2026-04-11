@@ -316,6 +316,10 @@ return {
 	-- Must have at least one value
 	listings = {
 		Listing("User Guide", true, getUserGuide),
+		Listing("Latest", true, function (filters)
+			filters[QUERY] = "https://archiveofourown.org/works"
+			return search(filters)
+		end)
 	},
 
 	-- Default functions that have to be set
