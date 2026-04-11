@@ -228,16 +228,27 @@ local function parseListing(document)
 	end)
 end
 
+local function urlEncode(str)
+	if str == nil or str == "" then
+		return ""
+	end
+	str = str:gsub(" ", "+")
+	return (str:gsub("([^%w%-_%.~])", function(c)
+		return string.format("%%%02X", string.byte(c))
+	end))
+end
+
 local function simpleSearch(filters)
 	local page = filters[PAGE]
-	local query = filters[QUERY] -- TODO encode query
+	local query = filters[QUERY]
 	local author = filters[FID_AUTHOR]
 
-	local newUrl = expandURL("/works/search" 
+	local newUrl = expandURL("/works/search"
 		.. "?page=" .. page
-		.. "&work_search[query]=" .. (query or "")
-		.. "&work_search[creators]=" .. author
+		.. "&work_search[query]=" .. urlEncode(query)
+		.. "&work_search[creators]=" .. urlEncode(author)
 	)
+
 	local document = GETDocumentAdult(newUrl)
 	return parseListing(document)
 end
@@ -262,7 +273,7 @@ local function search(filters)
 	end
 
 	-- handle /works and /tags/.+/works listings
-	if shrinkURL(url):match("works") then
+	if shrinkURL(url):match("/works") then
 		local newUrl = addPage(removePage(url), page)
 		local document = GETDocumentAdult(newUrl)
 
@@ -273,10 +284,10 @@ local function search(filters)
 	return simpleSearch(filters)
 end
 
-local function getListing(filters)
+local function getUserGuide(filters)
 	local page = filters[PAGE]
 
-	if filters[FID_AUTHOR] ~= "" then
+	if filters[FID_AUTHOR] and filters[FID_AUTHOR] ~= "" then
 		return simpleSearch(filters)
 	end
 
@@ -302,10 +313,9 @@ return {
 
 	chapterType = ChapterType.HTML,
 
-
 	-- Must have at least one value
 	listings = {
-		Listing("Nothing", true, getListing),
+		Listing("User Guide", true, getUserGuide),
 	},
 
 	-- Default functions that have to be set
