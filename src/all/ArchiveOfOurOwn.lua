@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.9","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.10","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -32,6 +32,9 @@ local function ClientGetDocument(url)
 end
 
 local DEFAULT_COVER = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_cover.webp"
+
+-- Filter IDs
+local FID_AUTHOR = 2
 
 local function shrinkURL(url)
 	return url:gsub("^.-archiveofourown%.org", "")
@@ -303,44 +306,93 @@ local function parseBrowseNovel(element)
 	}
 end
 
+local function parseListing(document)
+	local works = document:select(".work > li")
+	return map(works, function(v)
+		return parseBrowseNovel(v)
+	end)
+end
+
+local function urlEncode(str)
+	if str == nil or str == "" then
+		return ""
+	end
+	str = str:gsub(" ", "+")
+	return (str:gsub("([^%w%-_%.~])", function(c)
+		return string.format("%%%02X", string.byte(c))
+	end))
+end
+
+local function simpleSearch(filters)
+	local page = filters[PAGE]
+	local query = filters[QUERY]
+	local author = filters[FID_AUTHOR]
+
+	local newUrl = expandURL("/works/search"
+		.. "?page=" .. page
+		.. "&work_search[query]=" .. urlEncode(query)
+		.. "&work_search[creators]=" .. urlEncode(author)
+	)
+
+	local document = ClientGetDocument(newUrl)
+	return parseListing(document)
+end
+
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
 --- @return NovelInfo[]
 local function search(filters)
 	local page = filters[PAGE]
-	local query = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
-	if string.match(query, "^.-archiveofourown%.org") ~= nil then
-		if page == 1 and shrinkURL(query):match("/works/%d+") then
-			local novelUrl = query:gsub("/chapters.*$", ""):gsub("/$", "")
-			local novel = ClientGetDocument(novelUrl)
-			return {
-				NovelInfo {
-					title = novel:selectFirst(".title"):text(),
-					link = shrinkURL(novelUrl),
-					imageURL = ""
-				}
+	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+
+	-- handler URL to a specific work
+	if page == 1 and shrinkURL(url):match("/works/%d+") then
+		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
+		local novel = ClientGetDocument(novelUrl)
+		return {
+			NovelInfo {
+				title = novel:selectFirst(".title"):text(),
+				link = shrinkURL(novelUrl),
+				imageURL = ""
 			}
-		end
-
-		if shrinkURL(query):match("tags/.+/works") then
-			local newUrl = addPage(removePage(query), page)
-			local document = ClientGetDocument(newUrl)
-			local works = document:select(".work > li")
-
-			return map(works, function(v)
-				return parseBrowseNovel(v)
-			end)
-		end
-		if shrinkURL(query):match("works") then
-			local newUrl = addPage(removePage(query), page)
-			local document = ClientGetDocument(newUrl)
-			local works = document:select(".work > li")
-
-			return map(works, function(v)
-				return parseBrowseNovel(v)
-			end)
-		end
+		}
 	end
-	return {}
+
+	-- handle /works and /tags/.+/works listings
+	if shrinkURL(url):match("/works") then
+		local newUrl = addPage(removePage(url), page)
+		local document = ClientGetDocument(newUrl)
+
+		return parseListing(document)
+	end
+
+	-- handle searching
+	return simpleSearch(filters)
+end
+
+local function getUserGuide(filters)
+	local page = filters[PAGE]
+
+	if filters[FID_AUTHOR] and filters[FID_AUTHOR] ~= "" then
+		return simpleSearch(filters)
+	end
+
+	if page ~= 1 then return {} end
+	return {
+		NovelInfo {
+			title = "How to use this source",
+			link = "how.v2",
+			imageURL = ""
+		}
+	}
+end
+
+local function getLatestListing(filters)
+	if filters[FID_AUTHOR] and filters[FID_AUTHOR] ~= "" then
+		return simpleSearch(filters)
+	end
+
+	filters[QUERY] = "https://archiveofourown.org/works"
+	return search(filters)
 end
 
 return {
@@ -355,18 +407,10 @@ return {
 
 	chapterType = ChapterType.HTML,
 
-
 	-- Must have at least one value
 	listings = {
-		Listing("Nothing", false, function(data)
-			return {
-				NovelInfo {
-					title = "How to use this source",
-					link = "how.v2",
-					imageURL = ""
-				}
-			}
-		end),
+		Listing("User Guide", true, getUserGuide),
+		Listing("Latest", true, getLatestListing)
 	},
 
 	-- Default functions that have to be set
@@ -374,6 +418,9 @@ return {
 	parseNovel = parseNovel,
 	search = search,
 
+	searchFilters = {
+		TextFilter(FID_AUTHOR, "Author")
+	},
 	settings = {
 		SwitchFilter(1, "Remove all Justify attributes"),
 		SwitchFilter(2, "Add cover (may include spoilers)"),
