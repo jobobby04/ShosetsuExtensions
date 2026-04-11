@@ -228,23 +228,14 @@ local function parseListing(document)
 	end)
 end
 
-local function getListing(filters)
+local function simpleSearch(filters)
 	local page = filters[PAGE]
+	local query = filters[QUERY] -- TODO encode query
 	local author = filters[FID_AUTHOR]
 
-	if filters[QUERY] == nil then
-		if page ~= 1 then return {} end
-		return {
-			Novel {
-				title = "How to use this source",
-				link = "how.v2",
-				imageURL = ""
-			}
-		}
-	end
-
-	local newUrl = expandURL("/works/search"
+	local newUrl = expandURL("/works/search" 
 		.. "?page=" .. page
+		.. "&work_search[query]=" .. (query or "")
 		.. "&work_search[creators]=" .. author
 	)
 	local document = GETDocumentAdult(newUrl)
@@ -257,7 +248,7 @@ local function search(filters)
 	local page = filters[PAGE]
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 
-	-- handle a specific work URL
+	-- handler URL to a specific work
 	if page == 1 and shrinkURL(url):match("/works/%d+") then
 		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
 		local novel = GETDocumentAdult(novelUrl)
@@ -278,16 +269,25 @@ local function search(filters)
 		return parseListing(document)
 	end
 
-	-- handle searching by query
-	local query = filters[QUERY]:gsub(" ", "+") -- TODO encode query
-	local author = filters[FID_AUTHOR]
-	local newUrl = expandURL("/works/search" 
-		.. "?page=" .. page
-		.. "&work_search[query]=" .. query
-		.. "&work_search[creators]=" .. author
-	)
-	local document = GETDocumentAdult(newUrl)
-	return parseListing(document)
+	-- handle searching
+	return simpleSearch(filters)
+end
+
+local function getListing(filters)
+	local page = filters[PAGE]
+
+	if filters[FID_AUTHOR] ~= "" then
+		return simpleSearch(filters)
+	end
+
+	if page ~= 1 then return {} end
+	return {
+		Novel {
+			title = "How to use this source",
+			link = "how.v2",
+			imageURL = ""
+		}
+	}
 end
 
 return {
