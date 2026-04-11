@@ -1,9 +1,12 @@
--- {"id":1308639966,"ver":"1.0.8","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.9","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
 
 local DEFAULT_COVER = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_cover.webp"
+
+-- Filter IDs
+local FID_AUTHOR = 2
 
 local function shrinkURL(url)
 	return url:gsub("^.-archiveofourown%.org", "")
@@ -213,11 +216,50 @@ local function addPage(url, page)
 	end
 end
 
+local function parseListing(document)
+	local works = document:select(".work > li")
+	return map(works, function(v)
+		local title = v:selectFirst("h4.heading > a")
+		return Novel {
+			title = title:text(),
+			link = shrinkURL(title:attr("href")),
+			imageURL = ""
+		}
+	end)
+end
+
+local function urlEncode(str)
+	if str == nil or str == "" then
+		return ""
+	end
+	str = str:gsub(" ", "+")
+	return (str:gsub("([^%w%-_%.~])", function(c)
+		return string.format("%%%02X", string.byte(c))
+	end))
+end
+
+local function simpleSearch(filters)
+	local page = filters[PAGE]
+	local query = filters[QUERY]
+	local author = filters[FID_AUTHOR]
+
+	local newUrl = expandURL("/works/search"
+		.. "?page=" .. page
+		.. "&work_search[query]=" .. urlEncode(query)
+		.. "&work_search[creators]=" .. urlEncode(author)
+	)
+
+	local document = GETDocumentAdult(newUrl)
+	return parseListing(document)
+end
+
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
 --- @return Novel[]
 local function search(filters)
 	local page = filters[PAGE]
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+
+	-- handler URL to a specific work
 	if page == 1 and shrinkURL(url):match("/works/%d+") then
 		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
 		local novel = GETDocumentAdult(novelUrl)
@@ -230,35 +272,42 @@ local function search(filters)
 		}
 	end
 
-	if shrinkURL(url):match("tags/.+/works") then
+	-- handle /works and /tags/.+/works listings
+	if shrinkURL(url):match("/works") then
 		local newUrl = addPage(removePage(url), page)
 		local document = GETDocumentAdult(newUrl)
-		local works = document:select(".work > li")
 
-		return map(works, function(v)
-			local title = v:selectFirst("h4.heading > a")
-			return Novel {
-				title = title:text(),
-				link = shrinkURL(title:attr("href")),
-				imageURL = ""
-			}
-		end)
+		return parseListing(document)
 	end
-	if shrinkURL(url):match("works") then
-		local newUrl = addPage(removePage(url), page)
-		local document = GETDocumentAdult(newUrl)
-		local works = document:select(".work > li")
 
-		return map(works, function(v)
-			local title = v:selectFirst("h4.heading > a")
-			return Novel {
-				title = title:text(),
-				link = shrinkURL(title:attr("href")),
-				imageURL = ""
-			}
-		end)
+	-- handle searching
+	return simpleSearch(filters)
+end
+
+local function getUserGuide(filters)
+	local page = filters[PAGE]
+
+	if filters[FID_AUTHOR] and filters[FID_AUTHOR] ~= "" then
+		return simpleSearch(filters)
 	end
-	return {}
+
+	if page ~= 1 then return {} end
+	return {
+		Novel {
+			title = "How to use this source",
+			link = "how.v2",
+			imageURL = ""
+		}
+	}
+end
+
+local function getLatestListing(filters)
+	if filters[FID_AUTHOR] and filters[FID_AUTHOR] ~= "" then
+		return simpleSearch(filters)
+	end
+
+	filters[QUERY] = "https://archiveofourown.org/works"
+	return search(filters)
 end
 
 return {
@@ -273,18 +322,10 @@ return {
 
 	chapterType = ChapterType.HTML,
 
-
 	-- Must have at least one value
 	listings = {
-		Listing("Nothing", false, function(data)
-			return {
-				Novel {
-					title = "How to use this source",
-					link = "how.v2",
-					imageURL = ""
-				}
-			}
-		end),
+		Listing("User Guide", true, getUserGuide),
+		Listing("Latest", true, getLatestListing)
 	},
 
 	-- Default functions that have to be set
@@ -292,6 +333,9 @@ return {
 	parseNovel = parseNovel,
 	search = search,
 
+	searchFilters = {
+		TextFilter(FID_AUTHOR, "Author")
+	},
 	settings = {
 		SwitchFilter(1, "Remove all Justify attributes"),
 		SwitchFilter(2, "Add cover (may include spoilers)"),
