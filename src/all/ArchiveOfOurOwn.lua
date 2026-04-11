@@ -301,6 +301,15 @@ local function getUserGuide(filters)
 	}
 end
 
+local function getLatestListing(filters)
+	if filters[FID_AUTHOR] and filters[FID_AUTHOR] ~= "" then
+		return simpleSearch(filters)
+	end
+
+	filters[QUERY] = "https://archiveofourown.org/works"
+	return search(filters)
+end
+
 return {
 	id = 1308639966,
 	name = "ArchiveOfOurOwn",
@@ -316,10 +325,7 @@ return {
 	-- Must have at least one value
 	listings = {
 		Listing("User Guide", true, getUserGuide),
-		Listing("Latest", true, function (filters)
-			filters[QUERY] = "https://archiveofourown.org/works"
-			return search(filters)
-		end)
+		Listing("Latest", true, getLatestListing)
 	},
 
 	-- Default functions that have to be set
