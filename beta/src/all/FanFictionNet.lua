@@ -1,4 +1,4 @@
--- {"id":1308639979,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639979,"ver":"1.0.1","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.fanfiction.net"
 local settings = {}
