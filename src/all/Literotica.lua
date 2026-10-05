@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.10","libVer":"1.3.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.11","libVer":"1.3.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -113,46 +113,29 @@ local function textToInteger(text)
 end
 
 local function getNovelInfoFromSeries(document)
-	local titleElement = document:selectFirst("h1.headline")
+	local titleElement = document:selectFirst("h1")
 	local title = titleElement and titleElement:text() or ""
 
-	local summary = document:selectFirst("#tabpanel-info div:nth-of-type(2)")
-	if summary ~= nil and summary:hasText() then
-	    local text = summary:wholeText()
-	    if text ~= nil and text ~= "" then
-	        summary = text
-	    end
-	else
-	    summary = nil
-	end
-
-	if summary == nil then
-		summary = document:selectFirst("ul.series__works p")
-		if summary ~= nil then
-			local a = summary:selectFirst("a")
-			if a ~= nil then
-					a:remove()
-			end
-			summary = summary:wholeText()
+	local summaryElement = titleElement and titleElement:parent():selectFirst("p")
+	local summary = nil
+	if summaryElement ~= nil and summaryElement:hasText() then
+		local text = summaryElement:wholeText()
+		if text ~= nil and text ~= "" then
+			summary = text
 		end
 	end
 
-
-	local tags = map(document:select("#tabpanel-tags > a"), function(v)
+	local tags = map(document:select("[data-tab='tabpanel-tags'] a"), function(v)
 		return v:text()
 	end)
-
-  local views = document:selectFirst("div[title=Views]")
-  local faves = document:selectFirst("div[title=Favorites]")
-  local comments = document:selectFirst("a[href$='/comments']")
 
 	return {
 		title = title,
 		summary = summary,
 		tags = tags,
-		viewCount = views and textToInteger(views:text()) or nil,
-		favoriteCount = faves and textToInteger(faves:text()) or nil,
-		commentCount = comments and textToInteger(comments:text()) or nil
+		viewCount = nil,
+		favoriteCount = nil,
+		commentCount = nil
 	}
 end
 
@@ -246,20 +229,18 @@ local function parseNovel(novelURL, loadChapters)
 	if loadChapters then
 		local chapters
 		if series ~= nil then
-			local chapterEntries = series:select("ul.series__works li")
+			local chapterEntries = series:select("li a[href*='/s/']")
 			if chapterEntries:size() > 0 then
 				chapters = map(chapterEntries, function(v, i)
-					local chapter = v:selectFirst("a[href*='/s/']")
-					local chapterTitle = chapter and chapter:text() or v:text()
-					local chapterLink = chapter and chapter:attr("href") or ""
 					return NovelChapter({
 						order = i,
-						title = chapterTitle,
-						link = shrinkURL(chapterLink),
+						title = v:text(),
+						link = shrinkURL(v:attr("href")),
 					})
 				end)
 			end
-		else
+		end
+		if chapters == nil then
 			chapters = {
 				NovelChapter({
 					order = 0,
@@ -390,7 +371,7 @@ local function search(filters)
 		if category and category.tagCategory ~= "" then
 			searchUrl = searchUrl .. category.tagCategory .. "/"
 		end
-		for i in pairs(tags) do
+		for i = 1, #tags do
 			if i == 1 then
 				searchUrl = searchUrl .. tags[i] .. "/"
 			elseif i == 2 then
@@ -415,34 +396,23 @@ local function search(filters)
 
 		local document = ClientGetDocument(searchUrl)
 
-		return map(document:select(".panel[property='itemListElement']"), function(v)
-			local views = v:selectFirst("div[title=Views]")
-			if views == nil then
-				views = "0"
-			else
-				views = views:attr("data-value")
-			end
-			local favorites = v:selectFirst("div[title=Favorites]")
-			if favorites == nil then
-				favorites = "0"
-			else
-				favorites = favorites:attr("data-value")
-			end
-			local comments = v:selectFirst("div[title=Comments]")
-			if comments == nil then
-				comments = "0"
-			else
-				comments = comments:attr("data-value")
-			end
+		return map(document:select("article"), function(v)
+			local titleLink = v:selectFirst("a[href*='/s/']")
+			local description = v:selectFirst("p")
+			local author = v:selectFirst("a[href*='/authors/']")
+			local category = v:selectFirst("a[href*='/c/']")
+			local views = v:selectFirst("span[title=Views]")
+			local favorites = v:selectFirst("span[title=Favorites]")
+			local comments = v:selectFirst("span[title=Comments]")
 			return NovelInfo({
-				title = v:selectFirst("[href*='/s/'] h4"):text(),
-				link = shrinkURL(v:selectFirst("[href*='/s/']"):attr("href")),
-				description = v:selectFirst("p[property='headline']"):text(),
-				authors = { v:select("a[typeof='Person'] > meta"):attr("content") },
-				genres = { v:selectFirst("[href*='/c/'] > span"):text() },
-				viewCount = textToInteger(views),
-				favoriteCount = textToInteger(favorites),
-				commentCount = textToInteger(comments),
+				title = titleLink and titleLink:text() or "",
+				link = titleLink and shrinkURL(titleLink:attr("href")) or "",
+				description = description and description:text() or "",
+				authors = author and { author:text() } or {},
+				genres = category and { category:text() } or {},
+				viewCount = views and textToInteger(views:attr("data-value")) or 0,
+				favoriteCount = favorites and textToInteger(favorites:attr("data-value")) or 0,
+				commentCount = comments and textToInteger(comments:attr("data-value")) or 0,
 			})
 		end)
 	end
@@ -452,16 +422,16 @@ end
 
 local function searchFilters()
 	local categoryOptions = {}
-	for i in pairs(Categories) do
+	for i = 1, #Categories do
 		table.insert(categoryOptions, Categories[i].name)
 	end
 	local sortByOptions = {}
-	for _, option in pairs(SortByOptions) do
-		table.insert(sortByOptions, option.name)
+	for i = 1, #SortByOptions do
+		table.insert(sortByOptions, SortByOptions[i].name)
 	end
 	local withinOptions = {}
-	for _, option in pairs(WithinOptions) do
-		table.insert(withinOptions, option.name)
+	for i = 1, #WithinOptions do
+		table.insert(withinOptions, WithinOptions[i].name)
 	end
 
 	return {
