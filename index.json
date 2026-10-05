@@ -37,8 +37,8 @@
       "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/beta/icons/wuxia_box.png",
       "lang": "en",
       "ver": "1.1.6",
-      "libVer": "1.3.0",
-      "md5": "ccd2f03fd9b77b1859e9f1727acd6180587a0ce0d4d3276326247a298947ab77",
+      "libVer": "1.1.0",
+      "md5": "fe4dbf0ddaf8562dac4289fb9e7acf666af24b995bc82922b62e606c9c542464",
       "type": "LuaScript"
     },
     {
@@ -48,8 +48,8 @@
       "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/beta/icons/wuxia_mate.png",
       "lang": "en",
       "ver": "1.0.5",
-      "libVer": "1.3.0",
-      "md5": "3e803680a9acfb8a75c79bada3cffb27e4b4a1abcff63948d038ce61ce704b5f",
+      "libVer": "1.1.0",
+      "md5": "59dbac91fe32b3ed10ad6d9298d2b0218dd074c479cfc0d180f685e7bc924377",
       "type": "LuaScript"
     },
     {
@@ -59,8 +59,8 @@
       "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_icon.png",
       "lang": "all",
       "ver": "1.0.10",
-      "libVer": "1.3.0",
-      "md5": "2e809cc0fe7e52ede635456977ab8c7a947de8fb978ba3c85a5cc7bd34e2c50d",
+      "libVer": "1.1.0",
+      "md5": "411a7d16d9e595d20b8a3d31a304f9639fffc44e751f1e76b9fb3119bfe518ee",
       "type": "LuaScript"
     },
     {
@@ -70,8 +70,8 @@
       "imageURL": "",
       "lang": "all",
       "ver": "1.0.1",
-      "libVer": "1.3.0",
-      "md5": "0d8595b4a565a4c4a8967f1b0196981b944b395d2f421cc4c63d7b2d8cb5f0e5",
+      "libVer": "1.1.0",
+      "md5": "b1e3df286b0fecf747adf752a78425e33d67294d98b667b005fa475e413cb748",
       "type": "LuaScript"
     },
     {
@@ -81,8 +81,8 @@
       "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/beta/icons/fan_novels.png",
       "lang": "en",
       "ver": "1.0.4",
-      "libVer": "1.3.0",
-      "md5": "773d89605c4ec922aec8e867bd6aca5e9a91d37f72965c5667d6b575a52f9f27",
+      "libVer": "1.1.0",
+      "md5": "cc3338722dbd24236b46fe159d3fba8e1a91ffd0e583c1588d9796679ea58ec6",
       "type": "LuaScript"
     },
     {
@@ -91,9 +91,9 @@
       "fileName": "Literotica",
       "imageURL": "",
       "lang": "all",
-      "ver": "1.0.10",
-      "libVer": "1.3.0",
-      "md5": "8651626fe542a3fac7bbd9d17da3ee5792c8ad5ad068ea35a909caba1758891f",
+      "ver": "1.0.11",
+      "libVer": "1.1.0",
+      "md5": "b693805a2ccaef22b644b294a13be58857bf15db02761d435b495222cc04f9f0",
       "type": "LuaScript"
     },
     {
@@ -103,8 +103,8 @@
       "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/beta/icons/fans_mtl.png",
       "lang": "en",
       "ver": "1.0.1",
-      "libVer": "1.3.0",
-      "md5": "1c422dbd9e65604b1cbd35a2d72b195e565451dad4de621c03dc9c2779926837",
+      "libVer": "1.1.0",
+      "md5": "896d3ae96342c9b1e760d6825e3c32afb24f76f26ac244dfac9b9d69b9e29787",
       "type": "LuaScript"
     },
     {
@@ -114,8 +114,8 @@
       "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/beta/icons/wuxia_one.png",
       "lang": "en",
       "ver": "1.0.1",
-      "libVer": "1.3.0",
-      "md5": "616686e1084b773906666dee06ed038423960e526bb2d424fdd876ea311a7b4f",
+      "libVer": "1.1.0",
+      "md5": "618af757ebc8e80a601465bf3678bff500fd58b06692caf35ce4820f8a2b4fd7",
       "type": "LuaScript"
     },
     {
@@ -125,8 +125,8 @@
       "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/beta/icons/lt_novel.png",
       "lang": "en",
       "ver": "1.0.1",
-      "libVer": "1.3.0",
-      "md5": "f2193ee3557971a9ca7d37927dddad1346b39012d0d350ac4d1a41c7e8594121",
+      "libVer": "1.1.0",
+      "md5": "80ab5f476b3d3f0ff80dc6544809d405b197a6acf5fd94c1fac0a39e27fce4bf",
       "type": "LuaScript"
     },
     {
@@ -136,8 +136,8 @@
       "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/beta/icons/wuxia_one.png",
       "lang": "en",
       "ver": "1.0.1",
-      "libVer": "1.3.0",
-      "md5": "a5c1812e5056bec206ae1aa86d76c0bc8fbd98afefd7500c1a1af72169d4eeb5",
+      "libVer": "1.1.0",
+      "md5": "0ca1a84165912254d180e936f3da470fac6d44a271e3e79a27c3381a6889045c",
       "type": "LuaScript"
     },
     {
@@ -147,8 +147,8 @@
       "imageURL": "",
       "lang": "en",
       "ver": "1.0.6",
-      "libVer": "1.3.0",
-      "md5": "8b4da226a782515a40ccdd341c6203674677e0a832ec11e1c561c724c2976f82",
+      "libVer": "1.1.0",
+      "md5": "e5e7b85847a6c29201909d81909bd81ddf8faea7755c42a984fed5d4055b1929",
       "type": "LuaScript"
     },
     {
@@ -158,8 +158,8 @@
       "imageURL": "",
       "lang": "en",
       "ver": "1.0.1",
-      "libVer": "1.3.0",
-      "md5": "f97d7aa421db67cde68375687e19da25bd81baef4eacd475413ca98100ab5adb",
+      "libVer": "1.1.0",
+      "md5": "fedfa449a3f9039d4f3800a5ad49d3ddf7b66c2b62f9299f957304efa4f34f51",
       "type": "LuaScript"
     },
     {
@@ -169,8 +169,8 @@
       "imageURL": "",
       "lang": "all",
       "ver": "1.0.1",
-      "libVer": "1.0.0",
-      "md5": "6f746cc3fa1246140dc86de68fafbb14ebf2ce7e06b6095f9a13d7d08a47665b",
+      "libVer": "1.1.0",
+      "md5": "828fc0708f4a640ff66d945a66825ce1ff395e40cb1f1250686afdd3c8e5ed49",
       "type": "LuaScript"
     }
   ],
