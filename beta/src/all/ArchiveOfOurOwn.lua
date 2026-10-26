@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.10","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.11","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -129,7 +129,7 @@ local function parseNovel(novelURL, loadChapters)
 	if novelURL:match("^how") then
 		return NovelInfo {
 			title = "How to use this source v2",
-			description = "You can use this source by:\n1. searching on the ArchiveOfOurOwn.org website and inputting the url of the work in the search bar.\n2. Setting your queries on the ArchiveOfOurOwn.org website and copying the search to the search bar."
+			description = "You can use this source by:\n1. searching on the ArchiveOfOurOwn.org website and inputting the url of the work in the search bar.\n2. Setting your queries on the ArchiveOfOurOwn.org website and copying the search to the search bar.\n3. Pasting the url of a series to browse all the works in it."
 		}
 	end
 
@@ -359,6 +359,14 @@ local function search(filters)
 
 	-- handle /works and /tags/.+/works listings
 	if shrinkURL(url):match("/works") then
+		local newUrl = addPage(removePage(url), page)
+		local document = ClientGetDocument(newUrl)
+
+		return parseListing(document)
+	end
+
+	-- handle /series listings
+	if shrinkURL(url):match("/series/%d+") then
 		local newUrl = addPage(removePage(url), page)
 		local document = ClientGetDocument(newUrl)
 
