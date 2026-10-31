@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.0.2","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -24,14 +24,6 @@ local function GETDocumentAdult(url)
 					:addHeader("Cookie", "age_verified=1")
 					:build()
 	)
-end
-
---- @param element Element
---- @return Element
-local function cleanupDocument(element)
-	element = tostring(element):gsub('<div', '<p'):gsub('</div', '</p'):gsub('<br>', '</p><p>')
-	element = Document(element):selectFirst('body')
-	return element
 end
 
 local Tags =  {
@@ -138,7 +130,6 @@ local function getPassage(chapterURL)
 	local document = GETDocumentAdult(expandURL(chapterURL))
 	local title = document:selectFirst(".chapter-content-card .chapter-title"):text()
 	local chap = document:selectFirst(".chapter-content-card .chapter-body")
-	chap = cleanupDocument(chap)
 
 	chap:child(0):before("<h1>" .. title .. "</h1>")
 	return pageOfElem(chap, true)
@@ -152,13 +143,6 @@ end
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
-	if novelURL:match("^how") then
-		return NovelInfo {
-			title = "How to use this source v2",
-			description = "You can use this source by:\n1. searching on the adult-fanfiction.org website and inputting the url of the work in the search bar.\n2. Setting your queries on the adult-fanfiction.org website and copying the search to the search bar."
-		}
-	end
-
 	local fullUrl = expandURL(novelURL)
 	local document = GETDocumentAdult(fullUrl)
 	local storyId = fullUrl:match("no=(%d+)")
@@ -258,69 +242,124 @@ local function addPage(url, page)
 	end
 end
 
---- @param filters table @of applied filter values [QUERY] is the search query, may be empty
+--- @param document Document
+--- @param subdomain string
 --- @return NovelInfo[]
-local function search(filters)
-	local page = filters[PAGE]
-	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
-	local shrunkUrl = shrinkURL(url)
-	if page == 1 and shrunkUrl:match("@?[^/]*story%.php%?no=") then
-		local novelUrl = url:gsub("&chapter=%d+", ""):gsub("?chapter=%d+&", "?"):gsub("?chapter=%d+", "")
-		local novel = GETDocumentAdult(novelUrl)
-		return {
-			NovelInfo {
-				title = novel:selectFirst(".story-header-left > h1"):text(),
-				link = shrinkURL(novelUrl),
-				imageURL = ""
-			}
+local function parseStoryEntries(document, subdomain)
+	local works = document:select(".story-entry")
+	local urlPrefix = subdomain .. ".adult-fanfiction.org/"
+	return map(works, function(v)
+		local title = v:selectFirst(".story-title")
+		return NovelInfo {
+			title = title:text(),
+			link = urlPrefix .. title:attr("href"),
+			imageURL = ""
 		}
-	end
-
-	local subdomain = shrunkUrl:match("^@?(%w+)@/$")
-	if shrunkUrl:match("@?[^?]*?cat=%d+") or (subdomain and subdomain ~= "www") then
-		local newUrl = addPage(removePage(url), page)
-		for i, tag in ipairs(TagsIndexed) do
-			local value = filters[i + 100] or 0
-			if value == 1 then
-				newUrl = newUrl .. "&tags[]=" .. tag.key .. "&tag_mode[" .. tag.key .. "]=include"
-			elseif value == 2 then
-				newUrl = newUrl .. "&tags[]=" .. tag.key .. "&tag_mode[" .. tag.key .. "]=exclude"
-			end
-		end
-		local sort = filters[2]
-		local sortMode
-		if sort == 1 then
-			sortMode = "published"
-		elseif sort == 2 then
-			sortMode = "reviews"
-		elseif sort == 3 then
-			sortMode = "recommendations"
-		elseif sort == 4 then
-			sortMode = "reading"
-		elseif sort == 5 then
-			sortMode = "views"
-		end
-
-		if sortMode then
-			newUrl = newUrl .. "&sort=" .. sortMode
-		end
-
-		local document = GETDocumentAdult(newUrl)
-		local works = document:select(".story-entry")
-
-		local urlPrefix = shrunkUrl:match("^([^.]+)%@") .. ".adult-fanfiction.org/"
-		return map(works, function(v)
-			local title = v:selectFirst(".story-title")
-			return NovelInfo {
-				title = title:text(),
-				link = urlPrefix .. title:attr("href"),
-				imageURL = ""
-			}
-		end)
-	end
-	return {}
+	end)
 end
 
+-- Index 0 is the site default ("Recently Updated")
+local SortModes = {
+	[1] = "published",
+	[2] = "reviews",
+	[3] = "recommendations",
+	[4] = "reading",
+}
+
+--- Appends the active tag and sort filters to a listing URL.
+--- @param url string
+--- @param data table @applied filter values
+--- @return string
+local function applyFilters(url, data)
+	for i, tag in ipairs(TagsIndexed) do
+		local value = data[i + 100] or 0
+		if value == 1 then
+			url = url .. "&tags[]=" .. tag.key .. "&tag_mode[" .. tag.key .. "]=include"
+		elseif value == 2 then
+			url = url .. "&tags[]=" .. tag.key .. "&tag_mode[" .. tag.key .. "]=exclude"
+		end
+	end
+
+	local sort = data[2]
+	if sort and sort > 0 then
+		local sortMode = SortModes[sort]
+		if sortMode then
+			url = url .. "&sort=" .. sortMode
+		end
+	end
+
+	return url
+end
+
+--- @param subdomain string
+--- @param data table @contains [PAGE]
+--- @return NovelInfo[]
+local function browseStories(subdomain, data)
+	local url = "https://" .. subdomain .. ".adult-fanfiction.org/index.php"
+	url = addPage(url, data[PAGE])
+	local document = GETDocumentAdult(url)
+	return parseStoryEntries(document, subdomain)
+end
+
+--- Searches a fandom subdomain. The query may be a pasted site URL,
+--- a plain-text title search, or empty (falls back to the default listing).
+--- @param subdomain string
+--- @param data table @contains [QUERY], [PAGE] and filter values
+--- @return NovelInfo[]
+local function searchStories(subdomain, data)
+	local query = (data[QUERY] or ""):gsub('^%s*(.-)%s*$', '%1')
+
+	local url
+	if query:match("adult%-fanfiction%.org") then
+		url = query
+	elseif query ~= "" then
+		url = "https://" .. subdomain .. ".adult-fanfiction.org/advancedsearch.php?title=" .. query
+	else
+		url = "https://" .. subdomain .. ".adult-fanfiction.org/index.php"
+	end
+
+	url = applyFilters(addPage(removePage(url), data[PAGE]), data)
+	local document = GETDocumentAdult(url)
+	return parseStoryEntries(document, subdomain)
+end
+
+local subdomainNames = {}
+
+--- @return table[] @of {subdomain: string, name: string}
+local function getSubdomains()
+	local document = GETDocumentAdult("https://www.adult-fanfiction.org/")
+	local links = document:select(".menu-main a[href*='.adult-fanfiction.org']")
+	local subdomains = {}
+	local seen = {}
+	for i = 0, links:size() - 1 do
+		local a = links:get(i)
+		local href = a:attr("href")
+		local subdomain = href:match("^https?://([^/]+)%.adult%-fanfiction%.org")
+		if subdomain and subdomain ~= "www" and not seen[subdomain] then
+			seen[subdomain] = true
+			local name = a:selectFirst(".menu-text")
+			local displayName = (name and name:text()) or subdomain
+			subdomainNames[subdomain] = displayName
+			table.insert(subdomains, {
+				subdomain = subdomain,
+				name = displayName
+			})
+		end
+	end
+	return subdomains
+end
+
+--- @param subdomain string
+--- @return string
+local function getSubdomainName(subdomain)
+	if subdomainNames[subdomain] then
+		return subdomainNames[subdomain]
+	end
+	getSubdomains()
+	return subdomainNames[subdomain] or subdomain
+end
+
+--- @return Filter[]
 local function searchFilters()
 	local filters = {}
 	for i, tag in ipairs(TagsIndexed) do
@@ -341,13 +380,48 @@ local function searchFilters()
 					"Recently Updated",
 					"Recently Published",
 					"Most Reviews",
-					"Most Recommend",
-					"Most Reading",
-					"Most Viewed"
+					"Most Recommended",
+					"Most Reading"
 				}
 		),
 		FilterGroup("Tags", filters)
 	}
+end
+
+--- @param subdomain string
+--- @param name string?
+--- @return Listing
+local function makeSubdomainListing(subdomain, name)
+	return ListingItem {
+		name = name or getSubdomainName(subdomain),
+		link = subdomain,
+		isIncrementing = true,
+		func = function(data)
+			return browseStories(subdomain, data)
+		end,
+		search = function(data)
+			return searchStories(subdomain, data)
+		end,
+		searchFilters = searchFilters(),
+		searchIsIncrementing = true
+	}
+end
+
+--- @param link string @"" for the root, otherwise a fandom subdomain
+--- @return Listing
+local function getListing(link)
+	if link == "" then
+		return ListingList {
+			name = "",
+			link = "",
+			func = function()
+				return map(getSubdomains(), function(v)
+					return makeSubdomainListing(v.subdomain, v.name)
+				end)
+			end
+		}
+	end
+	return makeSubdomainListing(link)
 end
 
 return {
@@ -355,39 +429,21 @@ return {
 	name = "AdultFanFiction",
 	baseURL = baseURL,
 
-	-- Optional values to change
 	imageURL = "",
 	hasCloudFlare = true,
-	hasSearch = true,
 
 	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
+	getListing = getListing,
 
-	-- Must have at least one value
-	listings = {
-		Listing("Nothing", false, function(data)
-			return {
-				NovelInfo {
-					title = "How to use this source",
-					link = "how.v1",
-					imageURL = ""
-				}
-			}
-		end),
-	},
-
-	-- Default functions that have to be set
 	getPassage = getPassage,
 	parseNovel = parseNovel,
-	search = search,
 
 	settings = {},
 	updateSetting = function(id, value)
 		settings[id] = value
 	end,
-
-	searchFilters = searchFilters(),
 
 	shrinkURL = shrinkURL,
 	expandURL = expandURL
