@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.9","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.10","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -100,11 +100,13 @@ local function getPassage(chapterURL)
 end
 
 local function textToInteger(text)
-	local number, unit = text:match("(%d+%.?%d*)(%a*)")
+	local number, unit = text:gsub(",", ""):match("(%d+%.?%d*)(%a*)")
 	number = tonumber(number)
 
 	if unit == "k" then
 		number = number * 1000
+	elseif unit == "m" or unit == "M" then
+		 number = number * 1000000
 	end
 
 	return math.floor(number)
@@ -131,6 +133,9 @@ local function getNovelInfoFromSeries(document)
 		title = title,
 		summary = summary,
 		tags = tags,
+		viewCount = nil,
+		favoriteCount = nil,
+		commentCount = nil
 	}
 end
 
@@ -146,10 +151,17 @@ local function getNovelInfoFromPage(document)
 		return v:text()
 	end)
 
+  local views = document:selectFirst("[data-tab='tabpanel-info'] div[title=Views]")
+  local faves = document:selectFirst("[data-tab='tabpanel-info'] div[title=Favorites]")
+  local comments = document:selectFirst("[data-tab='tabpanel-info'] a[href$='/comments']")
+
 	return {
 		title = title,
 		summary = summary,
 		tags = tags,
+		viewCount = views and textToInteger(views:attr("data-value")) or nil,
+		favoriteCount = faves and textToInteger(faves:attr("data-value")) or nil,
+		commentCount = comments and textToInteger(comments:attr("data-value")) or nil
 	}
 end
 
@@ -162,6 +174,9 @@ local function getNovel(document, novelUrl, mainInfo)
 		authorElement = document:selectFirst("a[href*='/authors/'][href$='/works'][title]")
 	end
 	local author = authorElement and (authorElement:attr("title") or authorElement:text()) or ""
+	local views = mainInfo.viewCount
+	local faves = mainInfo.favoriteCount
+	local comments = mainInfo.commentCount
 
 	local authors = {}
 	if author ~= "" then
@@ -174,6 +189,9 @@ local function getNovel(document, novelUrl, mainInfo)
 		description = summary,
 		genres = tags,
 		authors = authors,
+		viewCount = views,
+		favoriteCount = faves,
+		commentCount = comments
 	})
 
 	return info
@@ -335,7 +353,7 @@ local function search(filters)
 		local novelDocument = ClientGetDocument(expandURL(novelUrl))
 		local novel = novelDocument:selectFirst("article[itemtype='https://schema.org/Article'] h1")
 		return {
-			Novel({
+			NovelInfo({
 				title = novel and novel:text() or "",
 				link = shrinkURL(url),
 				imageURL = "",
@@ -383,12 +401,18 @@ local function search(filters)
 			local description = v:selectFirst("p")
 			local author = v:selectFirst("a[href*='/authors/']")
 			local category = v:selectFirst("a[href*='/c/']")
+			local views = v:selectFirst("span[title=Views]")
+			local favorites = v:selectFirst("span[title=Favorites]")
+			local comments = v:selectFirst("span[title=Comments]")
 			return NovelInfo({
 				title = titleLink and titleLink:text() or "",
 				link = titleLink and shrinkURL(titleLink:attr("href")) or "",
 				description = description and description:text() or "",
 				authors = author and { author:text() } or {},
 				genres = category and { category:text() } or {},
+				viewCount = views and textToInteger(views:attr("data-value")) or 0,
+				favoriteCount = favorites and textToInteger(favorites:attr("data-value")) or 0,
+				commentCount = comments and textToInteger(comments:attr("data-value")) or 0,
 			})
 		end)
 	end
@@ -427,13 +451,14 @@ return {
 	hasCloudFlare = false,
 	hasSearch = true,
 
+	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
 	-- Must have at least one value
 	listings = {
 		Listing("Nothing", false, function(data)
 			return {
-				Novel({
+				NovelInfo({
 					title = "How to use this source",
 					link = "how",
 					imageURL = "",

@@ -1,7 +1,35 @@
--- {"id":1308639966,"ver":"1.0.10","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.11","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
+
+---@type OkHttpClient
+local client = HttpClientBuilder()
+		--:addInterceptor(enterAgreeInterceptor)
+		:build()
+
+---@param request Request
+---@return Response
+local function ClientRequest(request)
+	return client:newCall(request):execute()
+end
+
+---@param request Request
+---@return string
+local function ClientRequestDocument(request)
+	local response = ClientRequest(request)
+	local status = response:code()
+	if status >= 200 and status <= 299 then
+		return response:body():string()
+	else
+		error("Http error " .. status)
+	end
+end
+
+---@return Document
+local function ClientGetDocument(url)
+	return Document(ClientRequestDocument(GET(url)))
+end
 
 local DEFAULT_COVER = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_cover.webp"
 
@@ -14,18 +42,6 @@ end
 
 local function expandURL(url)
 	return baseURL .. url
-end
-
---- @param url string
---- @return Document
-local function GETDocumentAdult(url)
-	return RequestDocument(
-			RequestBuilder()
-					:get()
-					:url(url)
-					--:addHeader("Cookie", "view_adult=true")
-					:build()
-	)
 end
 
 --- @param element Element
@@ -49,7 +65,7 @@ end
 --- @param chapterURL string
 --- @return string
 local function getPassage(chapterURL)
-	local document = GETDocumentAdult(expandURL(chapterURL))
+	local document = ClientGetDocument(expandURL(chapterURL))
 	local chap = document:selectFirst("#workskin div.userstuff")
 	local title
 	local titleDoc = document:selectFirst("#workskin .chapter .title")
@@ -80,7 +96,7 @@ local function getPassage(chapterURL)
 end
 
 --- @param genres string[]
---- @param document Document
+--- @param document Node
 --- @param selector string
 --- @param prefix string
 local function addTags(genres, document, selector, prefix)
@@ -90,6 +106,20 @@ local function addTags(genres, document, selector, prefix)
 			table.insert(genres, prefix .. tags:get(i):text())
 		end
 	end
+end
+
+local function readStatus(document)
+	local status = NovelStatus.COMPLETED
+	local statusElement = document:selectFirst(".stats dd.chapters"):text()
+	if statusElement:sub(-#"?") == "?" then
+		status = NovelStatus.PUBLISHING
+	else
+		local chapterCount, finishedChapterCount = statusElement:match("^(.+)/(.+)$")
+		if chapterCount ~= finishedChapterCount then
+			status = NovelStatus.PUBLISHING
+		end
+	end
+	return status
 end
 
 --- @param novelURL string
@@ -103,7 +133,7 @@ local function parseNovel(novelURL, loadChapters)
 		}
 	end
 
-	local document = GETDocumentAdult(expandURL(novelURL))
+	local document = ClientGetDocument(expandURL(novelURL) .. "?view_adult=true")
 	local title = document:selectFirst(".title"):text()
 	local summaryElement = document:selectFirst("#workskin div .userstuff:not([role])")
 	local summary = ""
@@ -111,7 +141,7 @@ local function parseNovel(novelURL, loadChapters)
 		summary = Document(tostring(summaryElement))
 		summary:select("br"):prepend("\\n")
 		summary:select("p"):prepend("\\n\\n")
-		summary = summary:wholeText():gsub("\\n", "\n"):gsub('^%s*(.-)%s*$', '%1')
+		summary = summary:wholeText():gsub("\\n", "\n"):gsub('^%s*(.-)%s*$', '%1'):gsub('\n%s+', '\n')
 	end
 	local genres = {}
 
@@ -136,16 +166,7 @@ local function parseNovel(novelURL, loadChapters)
 		return v:text()
 	end)
 
-	local status = NovelStatus.COMPLETED
-	local statusElement = document:selectFirst(".stats dd.chapters"):text()
-	if statusElement:sub(-#"?") == "?" then
-		status = NovelStatus.PUBLISHING
-	else
-		local chapterCount, finishedChapterCount = statusElement:match("^(.+)/(.+)$")
-		if chapterCount ~= finishedChapterCount then
-			status = NovelStatus.PUBLISHING
-		end
-	end
+	local status = readStatus(document)
 
 	local imageElement = document:selectFirst("#chapters img")
 	local imageURL = imageElement and imageElement:attr("src") or DEFAULT_COVER
@@ -162,7 +183,7 @@ local function parseNovel(novelURL, loadChapters)
 	if loadChapters then
 		local chapters
 		if (settings[3]) then
-			local chaptersResponse = GETDocumentAdult(expandURL(novelURL .. "/navigate"))
+			local chaptersResponse = ClientGetDocument(expandURL(novelURL .. "/navigate"))
 			local chaptersDocument = chaptersResponse:select("ol.chapter li")
 
 			chapters = map(chaptersDocument, function(v, i)
@@ -216,15 +237,79 @@ local function addPage(url, page)
 	end
 end
 
+local function getSubItemOrNil(selector, element)
+	local item = element:selectFirst(selector)
+	if item then
+		local text = item:text():gsub(',', ''):gsub("/.*$", ''):gsub("%s", '')
+		return tonumber(text)
+	end
+end
+
+---@param element Element
+---@return NovelInfo
+local function parseBrowseNovel(element)
+	local title = element:selectFirst("h4.heading > a:first-child")
+	local authors = map(element:select("h4.heading > a[rel=\"author\"]"), function(v)
+		return v:text()
+	end)
+
+	local genres = {}
+
+	local languageElement = element:selectFirst(".stats dd.language")
+	local language = ""
+	if languageElement ~= nil then
+		language = languageElement:text()
+	end
+
+	addTags(genres, element, ".required-tags .rating span", "")
+	addTags(genres, element, ".required-tags .category span", "")
+	addTags(genres, element, ".fandoms a.tag", "")
+	addTags(genres, element, "li.warnings", "")
+	addTags(genres, element, "li.relationships", "")
+	addTags(genres, element, "li.characters", "")
+	addTags(genres, element, "li.freeforms", "")
+
+	local words = getSubItemOrNil(".stats dd.words", element)
+	local chapters = getSubItemOrNil(".stats dd.chapters", element)
+	local comments = getSubItemOrNil(".stats dd.comments", element)
+	local faves = getSubItemOrNil(".stats dd.bookmarks", element)
+	local views = getSubItemOrNil(".stats dd.hits", element)
+
+	local status = readStatus(element)
+
+	local summaryElement = element:selectFirst(".summary")
+	local summary = ""
+	if summaryElement ~= nil then
+		summary = Document(tostring(summaryElement))
+		summary = summary:wholeText():gsub("\\n", "\n"):gsub('^%s*(.-)%s*$', '%1'):gsub('\n%s+', '\n')
+	end
+
+	local seriesElement = element:selectFirst(".series")
+	if seriesElement ~= nil then
+		summary = summary .. "\n" .. seriesElement:text()
+	end
+
+	return NovelInfo {
+		title = title:text(),
+		link = shrinkURL(title:attr("href")),
+		imageURL = "",
+		description = summary,
+		genres = genres,
+		status = status,
+		authors = authors,
+		language = language,
+		wordCount = words,
+		chapterCount = chapters,
+		commentCount = comments,
+		favoriteCount = faves,
+		viewCount = views
+	}
+end
+
 local function parseListing(document)
 	local works = document:select(".work > li")
 	return map(works, function(v)
-		local title = v:selectFirst("h4.heading > a")
-		return Novel {
-			title = title:text(),
-			link = shrinkURL(title:attr("href")),
-			imageURL = ""
-		}
+		return parseBrowseNovel(v)
 	end)
 end
 
@@ -249,12 +334,12 @@ local function simpleSearch(filters)
 		.. "&work_search[creators]=" .. urlEncode(author)
 	)
 
-	local document = GETDocumentAdult(newUrl)
+	local document = ClientGetDocument(newUrl)
 	return parseListing(document)
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @return Novel[]
+--- @return NovelInfo[]
 local function search(filters)
 	local page = filters[PAGE]
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
@@ -262,9 +347,9 @@ local function search(filters)
 	-- handler URL to a specific work
 	if page == 1 and shrinkURL(url):match("/works/%d+") then
 		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
-		local novel = GETDocumentAdult(novelUrl)
+		local novel = ClientGetDocument(novelUrl)
 		return {
-			Novel {
+			NovelInfo {
 				title = novel:selectFirst(".title"):text(),
 				link = shrinkURL(novelUrl),
 				imageURL = ""
@@ -275,7 +360,7 @@ local function search(filters)
 	-- handle /works and /tags/.+/works listings
 	if shrinkURL(url):match("/works") then
 		local newUrl = addPage(removePage(url), page)
-		local document = GETDocumentAdult(newUrl)
+		local document = ClientGetDocument(newUrl)
 
 		return parseListing(document)
 	end
@@ -283,7 +368,7 @@ local function search(filters)
 	-- handle /series listings
 	if shrinkURL(url):match("/series/%d+") then
 		local newUrl = addPage(removePage(url), page)
-		local document = GETDocumentAdult(newUrl)
+		local document = ClientGetDocument(newUrl)
 
 		return parseListing(document)
 	end
@@ -301,7 +386,7 @@ local function getUserGuide(filters)
 
 	if page ~= 1 then return {} end
 	return {
-		Novel {
+		NovelInfo {
 			title = "How to use this source",
 			link = "how.v2",
 			imageURL = ""
@@ -328,6 +413,7 @@ return {
 	hasCloudFlare = true,
 	hasSearch = true,
 
+	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
 	-- Must have at least one value

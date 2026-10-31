@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.0.2","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -259,7 +259,7 @@ local function addPage(url, page)
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @return Novel[]
+--- @return NovelInfo[]
 local function search(filters)
 	local page = filters[PAGE]
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
@@ -268,7 +268,7 @@ local function search(filters)
 		local novelUrl = url:gsub("&chapter=%d+", ""):gsub("?chapter=%d+&", "?"):gsub("?chapter=%d+", "")
 		local novel = GETDocumentAdult(novelUrl)
 		return {
-			Novel {
+			NovelInfo {
 				title = novel:selectFirst(".story-header-left > h1"):text(),
 				link = shrinkURL(novelUrl),
 				imageURL = ""
@@ -311,7 +311,7 @@ local function search(filters)
 		local urlPrefix = shrunkUrl:match("^([^.]+)%@") .. ".adult-fanfiction.org/"
 		return map(works, function(v)
 			local title = v:selectFirst(".story-title")
-			return Novel {
+			return NovelInfo {
 				title = title:text(),
 				link = urlPrefix .. title:attr("href"),
 				imageURL = ""
@@ -360,6 +360,7 @@ return {
 	hasCloudFlare = true,
 	hasSearch = true,
 
+	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
 
@@ -367,7 +368,7 @@ return {
 	listings = {
 		Listing("Nothing", false, function(data)
 			return {
-				Novel {
+				NovelInfo {
 					title = "How to use this source",
 					link = "how.v1",
 					imageURL = ""

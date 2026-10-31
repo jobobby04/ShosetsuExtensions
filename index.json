@@ -18,9 +18,9 @@
   "libraries": [
     {
       "name": "ReadWN",
-      "ver": "1.0.11",
+      "ver": "1.0.12",
       "url": null,
-      "hash": "3a27fd0b395a01361673c061868fcab998da2e01900a81712002a0ac3efe4cc9"
+      "hash": "d309fbbee5f0e291c449ec06e721d9ed53caa5177ced84572e64f129f879af04"
     },
     {
       "name": "dkjson",
@@ -58,9 +58,9 @@
       "fileName": "ArchiveOfOurOwn",
       "imageURL": "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_icon.png",
       "lang": "all",
-      "ver": "1.0.10",
-      "libVer": "1.0.0",
-      "md5": "f687dbca2a7581fc4f4a5d6f3831fc89cf0e60f1bd7aba3c4ca469488f41c8d0",
+      "ver": "1.0.11",
+      "libVer": "1.1.0",
+      "md5": "ad3438b80b0529b014e8e7c4f69368a8e3a5944abc1dbca8d0280f5ad21fbcff",
       "type": "LuaScript"
     },
     {
@@ -69,9 +69,9 @@
       "fileName": "HentaiFoundry",
       "imageURL": "",
       "lang": "all",
-      "ver": "1.0.0",
-      "libVer": "1.0.0",
-      "md5": "f400ce10f6f764e64c54e7fec55fecf99463e0b2774179b17a334a6969ad0a94",
+      "ver": "1.0.1",
+      "libVer": "1.1.0",
+      "md5": "d4d55b5295178b833f5ca0e6c672c7ac234cf56f0a1c39fd8d22acb3bc6a9c32",
       "type": "LuaScript"
     },
     {
@@ -91,9 +91,9 @@
       "fileName": "Literotica",
       "imageURL": "",
       "lang": "all",
-      "ver": "1.0.9",
+      "ver": "1.0.10",
       "libVer": "1.0.0",
-      "md5": "8d89d6ca0f8c914f60c2f52bb66a18e150fb9f4e5004e5a0cb628f9fafc07612",
+      "md5": "c03e6ecb12e71e4490f1dfcb08f4594023d473353e8d3ffb1c7c1246f70602d3",
       "type": "LuaScript"
     },
     {
@@ -146,9 +146,9 @@
       "fileName": "MCStories",
       "imageURL": "",
       "lang": "en",
-      "ver": "1.0.1",
+      "ver": "1.0.2",
       "libVer": "1.0.0",
-      "md5": "2ad936bd9ccd5021da51a91cb437e2338f846d9d2744bb2c5a7943ef2b588314",
+      "md5": "e6997005efaa60dd23192f6cdb27b11abd1b839878806aed47779a482293dd10",
       "type": "LuaScript"
     },
     {
@@ -157,9 +157,9 @@
       "fileName": "AdultFanfiction",
       "imageURL": "",
       "lang": "en",
-      "ver": "1.0.1",
+      "ver": "1.0.2",
       "libVer": "1.0.0",
-      "md5": "a232cddbec0884b6afc76d2ad4181e9cb1d1ece874cfc8b6ed1918eb035e4530",
+      "md5": "2a69cee370386e80d965ad7322e75ae3a21302d0f7f5e366ab76a031b3b6c92e",
       "type": "LuaScript"
     }
   ],
