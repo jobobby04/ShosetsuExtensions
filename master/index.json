@@ -59,8 +59,8 @@
 			"imageURL": "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_icon.png",
 			"lang": "all",
 			"ver": "1.0.11",
-			"libVer": "1.1.0",
-			"md5": "ad3438b80b0529b014e8e7c4f69368a8e3a5944abc1dbca8d0280f5ad21fbcff",
+			"libVer": "1.0.0",
+			"md5": "a2663bfea4b6080b8abed69aee7ed78d88db85ad8ef818b72d1def76d927b02a",
 			"type": "LuaScript"
 		},
 		{
@@ -70,8 +70,8 @@
 			"imageURL": "",
 			"lang": "all",
 			"ver": "1.0.1",
-			"libVer": "1.1.0",
-			"md5": "d4d55b5295178b833f5ca0e6c672c7ac234cf56f0a1c39fd8d22acb3bc6a9c32",
+			"libVer": "1.0.0",
+			"md5": "faa35d98494be9dc581179006802561f18276c26bd711791ec17d955a79add10",
 			"type": "LuaScript"
 		},
 		{
