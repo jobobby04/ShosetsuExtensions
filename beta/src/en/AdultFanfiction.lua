@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.1.3","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.1.4","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -395,6 +395,13 @@ end
 
 local subdomainNames = {}
 
+local nonFandomSubdomains = {
+	www = true,
+	www2 = true, -- Forum
+	members = true, -- Members / Supporters / Register / Resend Activation
+	adsys = true, -- Advertiser Dashboard
+}
+
 --- @return table[] @of {subdomain: string, name: string}
 local function getSubdomains()
 	local document = GETDocumentAdult("https://www.adult-fanfiction.org/")
@@ -405,7 +412,7 @@ local function getSubdomains()
 		local a = links:get(i)
 		local href = a:attr("href")
 		local subdomain = href:match("^https?://([^/]+)%.adult%-fanfiction%.org")
-		if subdomain and subdomain ~= "www" and not seen[subdomain] then
+		if subdomain and not nonFandomSubdomains[subdomain] and not seen[subdomain] then
 			seen[subdomain] = true
 			local name = a:selectFirst(".menu-text")
 			local displayName = (name and name:text()) or subdomain
