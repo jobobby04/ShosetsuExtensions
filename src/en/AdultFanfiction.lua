@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.1.1","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -242,6 +242,32 @@ local function addPage(url, page)
 	end
 end
 
+--- @param entry Element
+--- @return table @of {["Published:"] = "Oct 31, 2026", ...}
+local function metaValues(entry)
+	local result = {}
+	local items = entry:select(".story-meta-item")
+	for i = 0, items:size() - 1 do
+		local item = items:get(i)
+		local strong = item:selectFirst("strong")
+		if strong then
+			local label = strong:text()
+			local value = item:wholeText():gsub("^.-" .. label .. "%s*", "")
+			result[label] = value:gsub("^%s*(.-)%s*$", "%1")
+		end
+	end
+	return result
+end
+
+--- @param value string?
+--- @return int?
+local function metaInt(value)
+	if not value then return nil end
+	local num = (value:gsub(",", "")):match("(%d+)")
+	if num then return tonumber(num) end
+	return nil
+end
+
 --- @param document Document
 --- @param subdomain string
 --- @return NovelInfo[]
@@ -250,10 +276,54 @@ local function parseStoryEntries(document, subdomain)
 	local urlPrefix = subdomain .. ".adult-fanfiction.org/"
 	return map(works, function(v)
 		local title = v:selectFirst(".story-title")
+		local author = v:selectFirst(".story-author")
+		local description = v:selectFirst(".story-description")
+		local location = v:selectFirst(".story-location")
+
+		local meta = metaValues(v)
+
+		local genres = {}
+		if location then
+			local cat = location:wholeText():gsub("^%s*Located:%s*", "")
+			cat = cat:gsub("^%s*(.-)%s*$", "%1")
+			if cat ~= "" then
+				table.insert(genres, "Category: " .. cat)
+			end
+		end
+		if meta["Rated:"] then
+			table.insert(genres, "Rating: " .. meta["Rated:"])
+		end
+
+		local tags = map(v:select(".story-tags .story-tag"), function(t)
+			return Tags[t:text()] or t:text()
+		end)
+
+		local status = NovelStatus.PUBLISHING
+		for _, tag in ipairs(tags) do
+			if tag == "COMPLETE" or tag == "Oneshot" then
+				status = NovelStatus.COMPLETED
+				break
+			end
+		end
+
+		local desc = ""
+		if description then
+			desc = description:wholeText():gsub("^%s*(.-)%s*$", "%1")
+		end
+
 		return NovelInfo {
 			title = title:text(),
 			link = urlPrefix .. title:attr("href"),
-			imageURL = ""
+			imageURL = "",
+			description = desc,
+			authors = author and { author:text() } or {},
+			genres = genres,
+			tags = tags,
+			status = status,
+			chapterCount = metaInt(meta["Chapters:"]),
+			commentCount = metaInt(meta["Reviews:"]),
+			viewCount = metaInt(meta["Views:"]),
+			favoriteCount = metaInt(meta["Recommendations:"])
 		}
 	end)
 end
