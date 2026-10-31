@@ -584,6 +584,77 @@ end
 do
     ---@class Listing
     local Listing = {}
+
+    ---@class ListingItem : Listing
+    ---@field name string
+    ---@field link string
+    ---@field func fun(data: table): NovelInfo[]
+    ---@field isIncrementing boolean
+    ---@field search fun(data: table): NovelInfo[]
+    ---@field searchFilters Filter[] | Array | table
+    ---@field searchIsIncrementing boolean
+    local ListingItem = {}
+
+    ---@param name string
+    ---@return void
+    function ListingItem:setName(name) return end
+
+    ---@param link string
+    ---@return void
+    function ListingItem:setLink(link) return end
+
+    ---@param func fun(data: table): NovelInfo[]
+    ---@return void
+    function ListingItem:setFunc(func) return end
+
+    ---@param isIncrementing boolean
+    ---@return void
+    function ListingItem:setIncrementing(isIncrementing) return end
+
+    ---@param search fun(data: table): NovelInfo[]
+    ---@return void
+    function ListingItem:setSearchFunc(search) return end
+
+    ---@param searchFilters Filter[] | Array | table
+    ---@return void
+    function ListingItem:setSearchFilters(searchFilters) return end
+
+    ---@param searchIsIncrementing boolean
+    ---@return void
+    function ListingItem:setSearchIsIncrementing(searchIsIncrementing) return end
+
+    ---@class ListingList : Listing
+    ---@field name string
+    ---@field link string
+    ---@field func fun(): Listing[]
+    ---@field search fun(data: table): NovelInfo[]
+    ---@field searchFilters Filter[] | Array | table
+    ---@field searchIsIncrementing boolean
+    local ListingList = {}
+
+    ---@param name string
+    ---@return void
+    function ListingList:setName(name) return end
+
+    ---@param link string
+    ---@return void
+    function ListingList:setLink(link) return end
+
+    ---@param func fun(): Listing[]
+    ---@return void
+    function ListingList:setFunc(func) return end
+
+    ---@param search fun(data: table): NovelInfo[]
+    ---@return void
+    function ListingList:setSearchFunc(search) return end
+
+    ---@param searchFilters Filter[] | Array | table
+    ---@return void
+    function ListingList:setSearchFilters(searchFilters) return end
+
+    ---@param searchIsIncrementing boolean
+    ---@return void
+    function ListingList:setSearchIsIncrementing(searchIsIncrementing) return end
 end
 
 -- Novel Stuff
@@ -922,6 +993,14 @@ do
         ---@param func (fun(): NovelInfo[]) | fun(data: table, inc: int): NovelInfo[]
         ---@return Listing
         function Listing(name, increments, func) return end
+
+        ---@param t ListingItem
+        ---@return ListingItem
+        function ListingItem(t) return end
+
+        ---@param t ListingList
+        ---@return ListingList
+        function ListingList(t) return end
 
         ---@deprecated Replace with NovelInfo
         ---@return NovelInfo

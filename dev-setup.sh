@@ -26,7 +26,7 @@ fi
 
 if [ "$DOWNLOAD_DOC" = true ]; then
   ## Download lua documentation
-  wget -O _doc.lua https://gitlab.com/shosetsuorg/kotlin-lib/-/raw/development/_doc.lua
+  wget -O _doc.lua https://gitlab.com/JFronny/shosetsu-kotlin-lib/-/raw/listing-stringly/_doc.lua
 
   ## Download javascript documentation
   #wget -O doc.js https://gitlab.com/shosetsuorg/kotlin-lib/-/raw/main/doc.js
@@ -35,6 +35,6 @@ fi
 if [ "$DOWNLOAD_TESTER" = true ]; then
   ## Download extension tester
   mkdir -p bin
-  EXTENSION_TESTER_URL=$(curl -s "https://api.github.com/repos/jobobby04/extension-tester/releases/latest" | grep "browser_download_url" | grep ".jar" | head -n 1 | cut -d '"' -f 4)
+  EXTENSION_TESTER_URL=$(curl -s "https://api.github.com/repos/jobobby04/extension-tester/releases/tags/listing-stringly" | grep "browser_download_url" | grep ".jar" | head -n 1 | cut -d '"' -f 4)
   wget -O bin/extension-tester.jar "$EXTENSION_TESTER_URL"
 fi
