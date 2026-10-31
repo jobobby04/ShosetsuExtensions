@@ -271,8 +271,6 @@ end
 local function getToken()
 	local cookies = HttpClient():cookieJar():loadForRequest(HttpUrl("https://www.hentai-foundry.com"))
 
-	local token
-
 	for i = 0, cookies:size() - 1 do
 		if cookies:get(i):name() == "YII_CSRF_TOKEN" then
 			return cookies:get(i):value()
@@ -301,9 +299,6 @@ local function search(filters)
 			shrinkURL(url):match("/categories/%d+/[%a%-]+/.+/stories") or
 			shrinkURL(url):match("/categories/%d+/[%a%-]+/.+/.+/stories") then
 
-		---@type table
-		local cookies = HttpClient():cookieJar():loadForRequest(HttpUrl("https://www.hentai-foundry.com"))
-
 		local token = getToken()
 
 		if token == nil then
@@ -312,6 +307,7 @@ local function search(filters)
 		end
 
 		local formBody = createFormBody(urldecode(token):match('"([^"]+)"'), filters)
+		-- todo maybe close
 		local response = ClientRequest(POST("https://www.hentai-foundry.com/site/filters", DEFAULT_HEADERS(), formBody))
 
 		local document = ClientGetDocument(url .. "/page/" .. page)

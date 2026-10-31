@@ -353,7 +353,7 @@ local function search(filters)
 		local novelDocument = ClientGetDocument(expandURL(novelUrl))
 		local novel = novelDocument:selectFirst("article[itemtype='https://schema.org/Article'] h1")
 		return {
-            NovelInfo({
+			NovelInfo({
 				title = novel and novel:text() or "",
 				link = shrinkURL(url),
 				imageURL = "",
@@ -458,7 +458,7 @@ return {
 	listings = {
 		Listing("Nothing", false, function(data)
 			return {
-                NovelInfo({
+				NovelInfo({
 					title = "How to use this source",
 					link = "how",
 					imageURL = "",
