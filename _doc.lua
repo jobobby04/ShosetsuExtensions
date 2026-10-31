@@ -7,6 +7,7 @@
 
 -- Please, do NOT auto-format this file.
 
+---@diagnostic disable: unused, missing-return-value
 ---@alias int number
 
 -- base java/kotlin
@@ -20,7 +21,7 @@ do
 
     ---@param index int
     ---@param value any
-    ---@return
+    ---@return void
     function Array:set(index, value) return end
 
     ---@class ArrayList : Array
@@ -476,11 +477,11 @@ do
         ---@return string[] | nil[] | Array | table
         function HttpUrl:queryParameterValues(name) return end
 
-        ---@param name int
+        ---@param index int
         ---@return string
         function HttpUrl:queryParameterName(index) return end
 
-        ---@param name int
+        ---@param index int
         ---@return string | nil
         function HttpUrl:queryParameterValue(index) return end
     end
@@ -583,27 +584,6 @@ end
 do
     ---@class Listing
     local Listing = {}
-
-    ---@class ListingItem | Listing
-    ---@field name string
-    ---@field link string
-    ---@field isIncrementing boolean
-    ---@field getListing fun(): NovelInfo[] | fun(data: table, inc: int): NovelInfo[] | nil
-    local ListingItem = {}
-
-    ---@class ListingList | Listing
-    ---@field name string
-    ---@field listings fun(): Listing[]
-    local ListingList = {}
-
-    ---@type int
-    QUERY = {}
-
-    ---@type int
-    PAGE = {}
-
-    ---@type int
-    LISTING = {}
 end
 
 -- Novel Stuff
@@ -729,9 +709,11 @@ do
     ---@class ChapterType
     local ChapterType = {}
 
+	---@diagnostic disable-next-line: missing-fields
 	---@type ChapterType
 	ChapterType.STRING = {}
 
+	---@diagnostic disable-next-line: missing-fields
 	---@type ChapterType
 	ChapterType.HTML = {}
 end
@@ -801,6 +783,21 @@ do
         ---@param f function @Function to wrap
         ---@return function @Wrapper
         function wrap(o, f) return end
+
+        ---@param node Element
+        ---@param remove_style_attr? boolean
+        ---@param custom_style? string
+        ---@param keep_scripts? boolean
+        ---@return string
+        ---@overload fun(node: Element): string
+        ---@overload fun(node: Element, remove_style_attr: boolean): string
+        ---@overload fun(node: Element, remove_style_attr: boolean, custom_style: string): string
+        function pageOfElem(node, remove_style_attr, custom_style, keep_scripts) return end
+
+        --- Flattens a table of tables into a single table
+        ---@param t table
+        ---@return table
+        function flatten(t) return end
     end
 
     -- ArrayList
@@ -922,21 +919,9 @@ do
     do
         ---@param name string
         ---@param increments boolean
-        ---@param func fun(): NovelInfo[] | fun(data: table, inc: int): NovelInfo[]
-        ---@return ListingItem
-        ---@deprecated replace with ListingItem
+        ---@param func (fun(): NovelInfo[]) | fun(data: table, inc: int): NovelInfo[]
+        ---@return Listing
         function Listing(name, increments, func) return end
-
-        ---@param name string
-        ---@param link string
-        ---@param increments boolean
-        ---@return ListingItem
-        function ListingItem(name, link, increments) return end
-
-        ---@param name string
-        ---@param listings Listing[] | Array | table
-        ---@return ListingList
-        function ListingList(name, listings) return end
 
         ---@deprecated Replace with NovelInfo
         ---@return NovelInfo

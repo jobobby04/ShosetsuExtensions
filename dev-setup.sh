@@ -26,7 +26,7 @@ fi
 
 if [ "$DOWNLOAD_DOC" = true ]; then
   ## Download lua documentation
-  wget -O _doc.lua https://gitlab.com/jobobby04/kotlin-lib/-/raw/listing/_doc.lua
+  wget -O _doc.lua https://gitlab.com/shosetsuorg/kotlin-lib/-/raw/development/_doc.lua
 
   ## Download javascript documentation
   #wget -O doc.js https://gitlab.com/shosetsuorg/kotlin-lib/-/raw/main/doc.js
