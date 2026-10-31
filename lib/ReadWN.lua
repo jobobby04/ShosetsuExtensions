@@ -1,9 +1,8 @@
--- {"ver":"1.0.11","author":"Jobobby04"}
+-- {"ver":"1.0.12","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
 ---@type fun(tbl: table , url: string): string
-
 local defaults = {
     shrinkURLNovel = "",
     listingsMap = {},
@@ -185,7 +184,7 @@ function defaults:search(filters)
                 if pages:size() > 0 then
                     searchMap[query] = self.selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
                     searchId = searchMap[query]
-                    return self.parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
+                    return self.parseBrowse(GETDocument(self.expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
                 else
                     return {}
                 end
@@ -239,6 +238,7 @@ return function(baseURL, _self)
 
     _self["baseURL"] = baseURL
 
+		---@diagnostic disable-next-line: undefined-global
     _self["chapterType"] = ChapterType.HTML
 
     _self["hasSearch"] = true

@@ -18,7 +18,7 @@
   "libraries": [
     {
       "name": "ReadWN",
-      "ver": "1.0.11",
+      "ver": "1.0.12",
       "url": null,
       "hash": "c34f4150bb4632faef4538935032748003ca96bccaa8c8c080c74e14d689e369"
     },
