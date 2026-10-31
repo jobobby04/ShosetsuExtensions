@@ -1,4 +1,4 @@
--- {"id":1308639977,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
+-- {"id":1308639977,"ver":"1.0.2","libVer":"1.0.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
 
 local baseURL = "https://www.mcstories.com"
 local settings = {}
@@ -217,10 +217,12 @@ local function parseNovel(novelURL, loadChapters)
 			return tagFullName(idToTag(v))
 		end)
 	end
+	local wordCount = 0
 
 	local chapter = document:selectFirst("#mcstories > div.chapter")
 	local chapters
 	if chapter then
+		wordCount = tonumber(chapter:text():match("%((.-)%)"):match("%d+"))
 		chapters = {
 			NovelChapter {
 				title = chapter:select("a"):text(),
@@ -229,6 +231,7 @@ local function parseNovel(novelURL, loadChapters)
 		}
 	else
 		chapters = map(document:select("#mcstories > table > tbody > tr:not(:has(th))"), function(v)
+			wordCount = wordCount + tonumber(v:selectFirst("td:nth-child(2)"):text():match("%d+"))
 			return NovelChapter {
 				title = v:select("a"):text(),
 				link = shrinkURL(novelURL:gsub("index.html", "") .. v:select("a"):attr("href"))
@@ -242,6 +245,7 @@ local function parseNovel(novelURL, loadChapters)
 		link = novelURL,
 		description = description,
 		genres = tags,
+		wordCount = wordCount
 	}
 
 	if loadChapters then
@@ -262,7 +266,7 @@ local function search(filters)
 		local novelUrl = url:gsub("/$", "")
 		local novel = ClientGetDocument(novelUrl):selectFirst(".headline.j_eQ")
 		return {
-			Novel {
+			NovelInfo {
 				title = novel:text(),
 				link = shrinkURL(url),
 				imageURL = ""
@@ -284,7 +288,7 @@ local function search(filters)
 			for i in items:get(1):text():gmatch("%S+") do
 				table.insert(tags, mapTag(i))
 			end
-			return Novel {
+			return NovelInfo {
 				title = items:get(0):select("a"):text(),
 				link = items:get(0):select("a"):attr("href"):gsub("%.%.", ""),
 				genres = tags
@@ -294,7 +298,7 @@ local function search(filters)
 
 	local searchTags = {}
 	for i, v in ipairs(filters) do
-		if i > 2 and v == true then
+		if i < 9999 and i > 2 and v == true then
 			table.insert(searchTags, i - 2)
 		end
 	end
@@ -305,10 +309,16 @@ local function search(filters)
 			for substr in v:gmatch("[^%%]+") do
 				table.insert(infoTable, substr)
 			end
-			return Novel {
+			local tags
+			if #infoTable == 4 then
+				tags = { mapTag(infoTable[3]), infoTable[4] .. "% match" }
+			else
+				tags = { infoTable[3] .. "% match" }
+			end
+			return NovelInfo {
 				title = infoTable[1],
 				link = "/" .. infoTable[2] .. "/index.html",
-				genres = { mapTag(infoTable[3]), infoTable[3] .. "% match" }
+				genres = tags
 			}
 		end)
 	end
@@ -350,6 +360,7 @@ return {
 	hasCloudFlare = false,
 	hasSearch = true,
 
+	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
 	-- Must have at least one value
@@ -359,13 +370,13 @@ return {
 			return map(document:select("div.story"), function(v)
 				local items = v:select("div")
 				local tags = {}
-				for i in items:get(1):text():match("%((.-)%)"):gmatch("%S+") do
+				for i in items:get(2):text():match("%((.-)%)"):gmatch("%S+") do
 					table.insert(tags, mapTag(i))
 				end
-				return Novel {
-					title = items:get(0):select("a"):text(),
-					link = "/" .. items:get(0):select("a"):attr("href"),
-					authors = { items:get(1):select("a"):text() },
+				return NovelInfo {
+					title = items:get(1):select("a"):text(),
+					link = "/" .. items:get(1):select("a"):attr("href"),
+					authors = { items:get(2):select("a"):text() },
 					description = v:selectFirst("div.synopsis"):text(),
 					genres = tags
 				}

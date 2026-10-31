@@ -1,9 +1,8 @@
--- {"ver":"1.0.11","author":"Jobobby04"}
+-- {"ver":"1.0.12","author":"Jobobby04"}
 
 -- rename this if you ever figure out its real name
 
 ---@type fun(tbl: table , url: string): string
-
 local defaults = {
     shrinkURLNovel = "",
     listingsMap = {},
@@ -134,10 +133,10 @@ end
 
 --- @param document Document
 --- @param selector string
---- @return Novel[]
+--- @return NovelInfo[]
 function defaults:parseBrowseWithSelector(document,selector)
     return map(document:select(selector), function(v)
-        return Novel {
+        return NovelInfo {
             title = v:attr("title"),
             link = self.shrinkURL(v:attr("href")),
             imageURL = self.expandURL(v:selectFirst("img"):attr("data-src"))
@@ -146,7 +145,7 @@ function defaults:parseBrowseWithSelector(document,selector)
 end
 
 --- @param document Document
---- @return Novel[]
+--- @return NovelInfo[]
 function defaults:parseBrowse(document)
     return self.parseBrowseWithSelector(document, ".novel-item a")
 end
@@ -154,7 +153,7 @@ end
 local searchMap = {}
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @return Novel[]
+--- @return NovelInfo[]
 function defaults:search(filters)
     local query = filters[QUERY]
     local page = filters[PAGE]
@@ -185,7 +184,7 @@ function defaults:search(filters)
                 if pages:size() > 0 then
                     searchMap[query] = self.selectLast(pages):attr("href"):match(".*searchid=([0-9]*).*")
                     searchId = searchMap[query]
-                    return self.parseBrowse(GETDocument(expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
+                    return self.parseBrowse(GETDocument(self.expandURL("/e/search/result/index.php?page=" .. (page - 1) .. "&searchid=" .. searchId)))
                 else
                     return {}
                 end
@@ -197,8 +196,8 @@ function defaults:search(filters)
 end
 
 --- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @param f fun(): Novel[]
---- @return Novel[]
+--- @param f fun(): NovelInfo[]
+--- @return NovelInfo[]
 function defaults:getListings(filters, f)
     local genre = filters[GENRE_SELECT]
     local status = filters[STATUS_SELECT]
@@ -239,6 +238,7 @@ return function(baseURL, _self)
 
     _self["baseURL"] = baseURL
 
+		---@diagnostic disable-next-line: undefined-global
     _self["chapterType"] = ChapterType.HTML
 
     _self["hasSearch"] = true
