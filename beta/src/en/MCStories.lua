@@ -360,6 +360,7 @@ return {
 	hasCloudFlare = false,
 	hasSearch = true,
 
+	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
 	-- Must have at least one value
