@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.1.2","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.1.3","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -492,7 +492,7 @@ end
 local function makeCategoryLeaf(subdomain, cat, name)
 	return ListingItem {
 		name = name,
-		link = subdomain .. "@cat=" .. cat,
+		link = subdomain .. "@cat=" .. cat .. "@all",
 		isIncrementing = true,
 		func = function(data)
 			local url = "https://" .. subdomain .. ".adult-fanfiction.org/index.php?cat=" .. cat
@@ -537,7 +537,7 @@ end
 local function makeAllStoriesListing(subdomain)
 	return ListingItem {
 		name = "All Stories",
-		link = subdomain,
+		link = subdomain .. "@all",
 		isIncrementing = true,
 		func = function(data)
 			return browseStories(subdomain, data)
@@ -581,10 +581,22 @@ local function getListing(link)
 			end
 		}
 	end
-	local subdomain, cat = link:match("^(.+)@cat=(%d+)$")
+	-- "subdomain@cat=N@all" -> a leaf category's own stories
+	local subdomain, cat = link:match("^(.+)@cat=(%d+)@all$")
+	if subdomain then
+		return makeCategoryLeaf(subdomain, cat, "Category " .. cat)
+	end
+	-- "subdomain@all" -> the subdomain's "All Stories" listing
+	subdomain = link:match("^(.+)@all$")
+	if subdomain then
+		return makeAllStoriesListing(subdomain)
+	end
+	-- "subdomain@cat=N" -> a category (its subcategories, or its stories)
+	subdomain, cat = link:match("^(.+)@cat=(%d+)$")
 	if subdomain then
 		return makeCategoryListing(subdomain, cat)
 	end
+	-- "subdomain" -> the subdomain's category listing
 	return makeSubdomainListing(link)
 end
 
