@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.1.4","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.1.5","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -402,6 +402,26 @@ local nonFandomSubdomains = {
 	adsys = true, -- Advertiser Dashboard
 }
 
+--- Returns the label of the nearest parent menu group (a `has-submenu`
+--- item) that contains the given link, or nil for top-level items.
+--- @param a Element
+--- @return string?
+local function getMenuOptionName(a)
+	local node = a:parent()
+	while node do
+		if node:hasClass("has-submenu") then
+			local optA = node:selectFirst("a")
+			local text = optA and optA:selectFirst(".menu-text")
+			if text then
+				return text:text()
+			end
+			break
+		end
+		node = node:parent()
+	end
+	return nil
+end
+
 --- @return table[] @of {subdomain: string, name: string}
 local function getSubdomains()
 	local document = GETDocumentAdult("https://www.adult-fanfiction.org/")
@@ -416,6 +436,11 @@ local function getSubdomains()
 			seen[subdomain] = true
 			local name = a:selectFirst(".menu-text")
 			local displayName = (name and name:text()) or subdomain
+			-- Prefix the parent menu group, e.g. "Anime - Bleach".
+			local option = getMenuOptionName(a)
+			if option then
+				displayName = option .. " - " .. displayName
+			end
 			subdomainNames[subdomain] = displayName
 			table.insert(subdomains, {
 				subdomain = subdomain,
@@ -423,6 +448,9 @@ local function getSubdomains()
 			})
 		end
 	end
+	table.sort(subdomains, function(a, b)
+		return a.name < b.name
+	end)
 	return subdomains
 end
 
