@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.1.1","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.1.2","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -458,12 +458,85 @@ local function searchFilters()
 	}
 end
 
+--- @param a Element
+--- @return string
+local function categoryName(a)
+	return a:text():gsub("%(%d+%)", ""):gsub("^%s*(.-)%s*$", "%1")
+end
+
+--- Reads the top-level categories from a subdomain's home page.
 --- @param subdomain string
+--- @return table[] @of {cat: string, name: string}
+local function getCategories(subdomain)
+	local document = GETDocumentAdult(
+		"https://" .. subdomain .. ".adult-fanfiction.org/index.php"
+	)
+	local cards = document:select(".categories-grid .category-card a")
+	local categories = {}
+	local seen = {}
+	for i = 0, cards:size() - 1 do
+		local a = cards:get(i)
+		local cat = a:attr("href"):match("cat=(%d+)")
+		if cat and not seen[cat] then
+			seen[cat] = true
+			table.insert(categories, { cat = cat, name = categoryName(a) })
+		end
+	end
+	return categories
+end
+
+--- @param subdomain string
+--- @param cat string
+--- @param name string
+--- @return Listing
+local function makeCategoryLeaf(subdomain, cat, name)
+	return ListingItem {
+		name = name,
+		link = subdomain .. "@cat=" .. cat,
+		isIncrementing = true,
+		func = function(data)
+			local url = "https://" .. subdomain .. ".adult-fanfiction.org/index.php?cat=" .. cat
+			url = addPage(url, data[PAGE])
+			local document = GETDocumentAdult(url)
+			return parseStoryEntries(document, subdomain)
+		end
+	}
+end
+
+--- @param subdomain string
+--- @param cat string
 --- @param name string?
 --- @return Listing
-local function makeSubdomainListing(subdomain, name)
+local function makeCategoryListing(subdomain, cat, name)
+	return ListingList {
+		name = name or ("Category " .. cat),
+		link = subdomain .. "@cat=" .. cat,
+		func = function()
+			local document = GETDocumentAdult(
+				"https://" .. subdomain .. ".adult-fanfiction.org/index.php?cat=" .. cat
+			)
+			local cards = document:select(".categories-grid .category-card a")
+			local items = {}
+			for i = 0, cards:size() - 1 do
+				local a = cards:get(i)
+				local subcat = a:attr("href"):match("cat=(%d+)")
+				if subcat then
+					table.insert(items, makeCategoryLeaf(subdomain, subcat, categoryName(a)))
+				end
+			end
+			if #items == 0 then
+				table.insert(items, makeCategoryLeaf(subdomain, cat, name or ("Category " .. cat)))
+			end
+			return items
+		end
+	}
+end
+
+--- @param subdomain string
+--- @return Listing
+local function makeAllStoriesListing(subdomain)
 	return ListingItem {
-		name = name or getSubdomainName(subdomain),
+		name = "All Stories",
 		link = subdomain,
 		isIncrementing = true,
 		func = function(data)
@@ -477,7 +550,24 @@ local function makeSubdomainListing(subdomain, name)
 	}
 end
 
---- @param link string @"" for the root, otherwise a fandom subdomain
+--- @param subdomain string
+--- @param name string?
+--- @return Listing
+local function makeSubdomainListing(subdomain, name)
+	return ListingList {
+		name = name or getSubdomainName(subdomain),
+		link = subdomain,
+		func = function()
+			local items = { makeAllStoriesListing(subdomain) }
+			for _, c in ipairs(getCategories(subdomain)) do
+				table.insert(items, makeCategoryListing(subdomain, c.cat, c.name))
+			end
+			return items
+		end
+	}
+end
+
+--- @param link string @"" for the root, a subdomain, or "subdomain@cat=N"
 --- @return Listing
 local function getListing(link)
 	if link == "" then
@@ -490,6 +580,10 @@ local function getListing(link)
 				end)
 			end
 		}
+	end
+	local subdomain, cat = link:match("^(.+)@cat=(%d+)$")
+	if subdomain then
+		return makeCategoryListing(subdomain, cat)
 	end
 	return makeSubdomainListing(link)
 end
