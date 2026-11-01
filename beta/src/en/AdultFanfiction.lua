@@ -143,6 +143,13 @@ end
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
+	if novelURL == "how" then
+		return NovelInfo {
+			title = "How to use this source",
+			description = "Paste a story URL into the search box of the \"Add by URL\" listing at the bottom of the list, e.g.\nhttps://anime.adult-fanfiction.org/story.php?no=12345\n\nThe story will be added so you can read it.",
+			link = "how"
+		}
+	end
 	local fullUrl = expandURL(novelURL)
 	local document = GETDocumentAdult(fullUrl)
 	local storyId = fullUrl:match("no=(%d+)")
@@ -273,7 +280,7 @@ end
 --- @return NovelInfo[]
 local function parseStoryEntries(document, subdomain)
 	local works = document:select(".story-entry")
-	local urlPrefix = subdomain .. ".adult-fanfiction.org/"
+	local urlPrefix = "https://" .. subdomain .. ".adult-fanfiction.org/"
 	return map(works, function(v)
 		local title = v:selectFirst(".story-title")
 		local author = v:selectFirst(".story-author")
@@ -313,7 +320,7 @@ local function parseStoryEntries(document, subdomain)
 
 		return NovelInfo {
 			title = title:text(),
-			link = urlPrefix .. title:attr("href"),
+			link = shrinkURL(urlPrefix .. title:attr("href")),
 			imageURL = "",
 			description = desc,
 			authors = author and { author:text() } or {},
@@ -369,6 +376,28 @@ local function browseStories(subdomain, data)
 	url = addPage(url, data[PAGE])
 	local document = GETDocumentAdult(url)
 	return parseStoryEntries(document, subdomain)
+end
+
+--- @param url string
+--- @return string?
+local function toStoryLink(url)
+	local trimmed = (url or ""):gsub('^%s*(.-)%s*$', '%1')
+	if trimmed:match("^https?://([^.]+)%.adult%-fanfiction%.org/story%.php%?no=%d+") then
+		return shrinkURL(trimmed)
+	end
+	return nil
+end
+
+--- @param data table @contains [QUERY]
+--- @return NovelInfo[]
+local function searchByURL(data)
+	local link = toStoryLink(data[QUERY])
+	if not link then
+		return {}
+	end
+	local info = parseNovel(link, false)
+	info:setLink(link)
+	return { info }
 end
 
 --- Searches a fandom subdomain. The query may be a pasted site URL,
@@ -594,6 +623,28 @@ local function makeAllStoriesListing(subdomain)
 	}
 end
 
+--- @return Listing
+local function makeHowListing()
+	return ListingItem {
+		name = "Add by URL",
+		link = "how",
+		isIncrementing = false,
+		func = function()
+			return {
+				NovelInfo {
+					title = "How to use this source",
+					link = "how",
+					imageURL = ""
+				}
+			}
+		end,
+		search = function(data)
+			return searchByURL(data)
+		end,
+		searchIsIncrementing = false
+	}
+end
+
 --- @param subdomain string
 --- @param name string?
 --- @return Listing
@@ -619,11 +670,16 @@ local function getListing(link)
 			name = "",
 			link = "",
 			func = function()
-				return map(getSubdomains(), function(v)
+				local items = map(getSubdomains(), function(v)
 					return makeSubdomainListing(v.subdomain, v.name)
 				end)
+				table.insert(items, makeHowListing())
+				return items
 			end
 		}
+	end
+	if link == "how" then
+		return makeHowListing()
 	end
 	-- "subdomain@cat=N@all" -> a leaf category's own stories
 	local subdomain, cat = link:match("^(.+)@cat=(%d+)@all$")
