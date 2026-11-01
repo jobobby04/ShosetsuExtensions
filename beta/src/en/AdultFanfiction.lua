@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.1.5","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.1.6","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -525,16 +525,25 @@ end
 --- @param name string
 --- @return Listing
 local function makeCategoryLeaf(subdomain, cat, name)
+	local catUrl = "https://" .. subdomain .. ".adult-fanfiction.org/index.php?cat=" .. cat
 	return ListingItem {
 		name = name,
 		link = subdomain .. "@cat=" .. cat .. "@all",
 		isIncrementing = true,
 		func = function(data)
-			local url = "https://" .. subdomain .. ".adult-fanfiction.org/index.php?cat=" .. cat
-			url = addPage(url, data[PAGE])
+			local url = addPage(catUrl, data[PAGE])
 			local document = GETDocumentAdult(url)
 			return parseStoryEntries(document, subdomain)
-		end
+		end,
+		-- Simple filters only (sort + tags); the category page accepts the
+		-- same sort/tags[] params as the subdomain home. No title search.
+		search = function(data)
+			local url = applyFilters(addPage(catUrl, data[PAGE]), data)
+			local document = GETDocumentAdult(url)
+			return parseStoryEntries(document, subdomain)
+		end,
+		searchFilters = searchFilters(),
+		searchIsIncrementing = true
 	}
 end
 
