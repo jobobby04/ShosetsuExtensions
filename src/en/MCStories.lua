@@ -187,13 +187,10 @@ local function parseNovel(novelURL, loadChapters)
 	local description = document:selectFirst("#mcstories > section.synopsis"):wholeText()
 	getSvengaliTagsIfNeeded()
 	local svengaliItemTags = SvengaliGETDocument("https://www.gregariousfrog.com/svengali/servers/GetTitleTags.php?titleurl=" .. novelURL:match("/([^/]+)/index%.html$"))
-	local tags = {}
-	if next(svengaliItemTags) == nil then
-		tags = map(document:select("#mcstories > .storyCodes > a"), function(v)
-			return mapTag(v:text())
-		end)
-	else
-		tags = {}
+	local tags = map(document:select("#mcstories > .storyCodes > a"), function(v)
+		return "Category > " .. mapTag(v:text())
+	end)
+	if svengaliItemTags and svengaliItemTags["TitleTags"] then
 		for _, v in ipairs(svengaliItemTags["TitleTags"]) do
 			local tag = idToTag(v)
 			if tag then
