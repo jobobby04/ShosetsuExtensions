@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.11","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.0.12","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -37,9 +37,8 @@ end
 --- @param element Element
 --- @return Element
 local function cleanupDocument(element)
-	element:select(".aa_hv.aa_hy"):remove()
-	element = tostring(element):gsub("<div", "<p"):gsub("</div", "</p"):gsub("<br>", "</p><p>")
-	element = Document(element):selectFirst("body")
+	-- Strip non-story elements
+	element:select("a[href*='dialog=report-work']"):remove()
 	return element
 end
 
@@ -69,23 +68,28 @@ local function getPassage(chapterURL)
 		return v:text()
 	end)
 
-	-- This is for the sake of consistant styling
-	chap = cleanupDocument(chap)
-
+	-- Combine all pages
 	local pagesElements = document:select("a[href*='?page=']")
 	if pagesElements:size() > 1 then
 		local lastPage = selectLast(pagesElements):attr("href")
 		local lastPageNumber = tonumber(lastPage:match("[?&]page=(%d+)")) or tonumber(lastPage:match("%d+$"))
 		if lastPageNumber ~= nil then
 			for i = 2, lastPageNumber do
-				local nextDocument = ClientGetDocument(expandURL(chapterURL) .. "?page=" .. i):selectFirst(
+				local nextBody = ClientGetDocument(expandURL(chapterURL) .. "?page=" .. i):selectFirst(
 					"div[itemprop='articleBody']"
 				)
-				nextDocument = cleanupDocument(nextDocument):selectFirst("body"):children()
-				chap:selectFirst("body"):lastChild():after(nextDocument)
+				if nextBody ~= nil then
+					nextBody = cleanupDocument(nextBody)
+					local children = nextBody:children()
+					for j = 0, children:size() - 1 do
+						chap:appendChild(children:get(j))
+					end
+				end
 			end
 		end
 	end
+
+	chap = cleanupDocument(chap)
 
 	-- Adds Chapter Info
 
