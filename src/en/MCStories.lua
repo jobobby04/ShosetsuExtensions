@@ -241,12 +241,12 @@ local function parseNovel(novelURL, loadChapters)
 	return info
 end
 
---- Checkbox filters for the category codes, used for client-side filtering.
+--- Tri-state filters for the category codes, used for client-side filtering.
 --- @return Filter[]
 local function categoryFilters()
 	local filters = {}
 	for i = 1, #Tags do
-		table.insert(filters, CheckboxFilter(100 + (i - 1), Tags[i].name .. ": " .. Tags[i].value))
+		table.insert(filters, TriStateFilter(100 + (i - 1), Tags[i].name .. ": " .. Tags[i].value))
 	end
 	return filters
 end
@@ -271,24 +271,27 @@ local function toNovelInfos(stories)
 	return result
 end
 
---- Keep only the stories that carry every selected category code.
+--- Keep only the stories matching the include/exclude category-code filters.
 --- @param stories table[] @raw story data
 --- @param data table @filter values
 --- @return table[]
 local function filterByCodes(stories, data)
-	local selected = {}
+	local include, exclude = {}, {}
 	for i = 1, #Tags do
-		if data[100 + (i - 1)] == true then
-			table.insert(selected, Tags[i].name)
+		local value = data[100 + (i - 1)] or 0
+		if value == 1 then
+			table.insert(include, Tags[i].name)
+		elseif value == 2 then
+			table.insert(exclude, Tags[i].name)
 		end
 	end
-	if #selected == 0 then
+	if #include == 0 and #exclude == 0 then
 		return stories
 	end
 	local result = {}
 	for _, s in ipairs(stories) do
 		local match = true
-		for _, code in ipairs(selected) do
+		for _, code in ipairs(include) do
 			local has = false
 			for _, c in ipairs(s.codes) do
 				if c == code then
@@ -299,6 +302,19 @@ local function filterByCodes(stories, data)
 			if not has then
 				match = false
 				break
+			end
+		end
+		if match then
+			for _, code in ipairs(exclude) do
+				for _, c in ipairs(s.codes) do
+					if c == code then
+						match = false
+						break
+					end
+				end
+				if not match then
+					break
+				end
 			end
 		end
 		if match then
