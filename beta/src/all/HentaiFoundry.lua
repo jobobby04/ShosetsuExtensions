@@ -143,7 +143,7 @@ end
 local function parseNovel(novelURL, loadChapters)
 	if novelURL:match("^how") then
 		return NovelInfo {
-			title = "How to use this source",
+			title = "How to use this listing",
 			description = "Search a novel's URL to add it."
 		}
 	end
@@ -507,6 +507,26 @@ local function makeCategoryNode(node)
 	}
 end
 
+--- @return Listing
+local function makeSearchListing()
+	return ListingItem {
+		name = "Add by URL",
+		link = "searchByURL",
+		isIncrementing = false,
+		func = function()
+			return {
+				NovelInfo {
+					title = "How to use this listing",
+					link = "how",
+					imageURL = ""
+				}
+			}
+		end,
+		search = searchByURL,
+		searchIsIncrementing = false
+	}
+end
+
 --- @param link string @"" for the root, "cat@<id>@<path>", or "cat@<id>@<path>@all"
 --- @return Listing
 local function getListing(link)
@@ -518,25 +538,13 @@ local function getListing(link)
 				local items = map(getCategoryTree(), function(n)
 					return makeCategoryNode(n)
 				end)
-				table.insert(items, ListingItem {
-					name = "Search",
-					link = "search",
-					isIncrementing = false,
-					func = function()
-						return {
-							NovelInfo {
-								title = "How to use this source",
-								link = "how",
-								imageURL = ""
-							}
-						}
-					end,
-					search = searchByURL,
-					searchIsIncrementing = false
-				})
+				table.insert(items, makeSearchListing())
 				return items
 			end
 		}
+	end
+	if link == "searchByURL" then
+	    return makeSearchListing()
 	end
 	local id, path = link:match("^cat@(%d+)@(.+)@all$")
 	if id then
