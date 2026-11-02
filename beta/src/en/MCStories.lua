@@ -1,4 +1,4 @@
--- {"id":1308639977,"ver":"1.0.6","libVer":"1.1.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
+-- {"id":1308639977,"ver":"1.0.7","libVer":"1.1.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
 
 local baseURL = "https://www.mcstories.com"
 local settings = {}
@@ -29,19 +29,11 @@ local function expandURL(url)
 	return baseURL .. url
 end
 
---- @param element Element
---- @return Element
-local function cleanupDocument(element)
-	element = tostring(element):gsub('<div', '<p'):gsub('</div', '</p'):gsub('<br>', '</p><p>')
-	element = Document(element):selectFirst('body')
-	return element
-end
-
 --- @param chapterURL string
 --- @return string
 local function getPassage(chapterURL)
 	local document = ClientGetDocument(expandURL(chapterURL))
-	local chap = cleanupDocument(document:selectFirst("#mcstories"))
+	local chap = document:selectFirst("#mcstories")
 	return pageOfElem(chap, true)
 end
 
@@ -91,27 +83,11 @@ local function flattenToFilters(tagsTable, layer)
 		for t = 2, layer do
 			name = "  " .. name
 		end
-		--if layer == 1 then
-		--	local newFilters = {}
-		--	if v["tagable"] == "1" then
-		--		table.insert(newFilters, CheckboxFilter(tonumber(v["id"]) + 2, name))
-		--	end
-		--	local childFilters = flattenToFilters(v, layer + 1)
-		--	for _, y in ipairs(childFilters) do
-		--		table.insert(newFilters, y)
-		--	end
-		--	table.insert(filters, FilterList(v["name"], newFilters))
-		--else
-		if v["tagable"] == "1" then
-			table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
-		else
-			table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
-		end
+		table.insert(filters, CheckboxFilter(tonumber(v["id"]) + 2, name))
 		local childFilters = flattenToFilters(v, layer + 1)
 		for _, y in ipairs(childFilters) do
 			table.insert(filters, y)
 		end
-		--end
 
 	end
 	return filters
@@ -181,12 +157,16 @@ local Tags = {
 }
 
 local function mapTag(name)
+	-- "mg" on svengali means "mf".
+	if name == "mg" then
+		name = "mf"
+	end
 	for _, tag in ipairs(Tags) do
 		if tag.name == name then
 			return tag.value
 		end
 	end
-	return nil
+	return name
 end
 
 --- @param novelURL string
@@ -196,7 +176,7 @@ local function parseNovel(novelURL, loadChapters)
 	if novelURL:match("^how") then
 		return NovelInfo {
 			title = "How to use this source",
-			description = "You can use this source by:\n1. searching on the literotica.com website and inputting the url of the story in the search bar.\nOr you can search tags in a comma-delimited list like \"oral,blowjob\""
+			description = "You can use this source by:\n1. pasting the url of a story in the search bar\nOr selecting one or more tags in the search filters."
 		}
 	end
 
@@ -213,9 +193,13 @@ local function parseNovel(novelURL, loadChapters)
 			return mapTag(v:text())
 		end)
 	else
-		tags = map(svengaliItemTags["TitleTags"], function(v)
-			return tagFullName(idToTag(v))
-		end)
+		tags = {}
+		for _, v in ipairs(svengaliItemTags["TitleTags"]) do
+			local tag = idToTag(v)
+			if tag then
+				table.insert(tags, tagFullName(tag))
+			end
+		end
 	end
 	local wordCount = 0
 
@@ -264,7 +248,7 @@ local function search(filters)
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 	if page == 1 and shrinkURL(url):match("index.html") then
 		local novelUrl = url:gsub("/$", "")
-		local novel = ClientGetDocument(novelUrl):selectFirst(".headline.j_eQ")
+		local novel = ClientGetDocument(novelUrl):selectFirst("#mcstories > .title")
 		return {
 			NovelInfo {
 				title = novel:text(),
@@ -297,7 +281,7 @@ local function search(filters)
 	end
 
 	local searchTags = {}
-	for i, v in ipairs(filters) do
+	for i, v in pairs(filters) do
 		if i < 9999 and i > 2 and v == true then
 			table.insert(searchTags, i - 2)
 		end
