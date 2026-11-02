@@ -1,4 +1,4 @@
--- {"id":1308639967,"ver":"1.0.2","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639967,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.hentai-foundry.com"
 local settings = {}
@@ -144,7 +144,7 @@ local function parseNovel(novelURL, loadChapters)
 	if novelURL:match("^how") then
 		return NovelInfo {
 			title = "How to use this source",
-			description = "Make sure your logged into webview!!\n\n You can use this source by:\n1. searching on the hentai-foundry.com website and inputting the url of the story in the search bar."
+			description = "Search a novel's URL to add it."
 		}
 	end
 
@@ -286,12 +286,37 @@ local function getToken()
 	end
 end
 
---- @param filters table @of applied filter values [QUERY] is the search query, may be empty
+--- @param catUrl string @relative category URL, e.g. "/categories/5/Misc/stories"
+--- @param page number
 --- @return NovelInfo[]
-local function search(filters)
-	local page = filters[PAGE]
+local function browseCategory(catUrl, page)
+	local document = ClientGetDocument(expandURL(catUrl) .. "/page/" .. page)
+	return map(document:select(".storyRow"), function(v)
+		return getNovel(v)
+	end)
+end
+
+--- Applies the rating/sort filters to a category via the site's filter form.
+--- @param catUrl string @relative category URL
+--- @param filters table
+--- @return NovelInfo[]
+local function filterCategory(catUrl, filters)
+	local token = getToken()
+	if token == nil then
+		ClientGetDocument("https://www.hentai-foundry.com")
+		token = getToken()
+	end
+	local formBody = createFormBody(urldecode(token):match('"([^"]+)"'), filters)
+	local response = ClientRequest(POST("https://www.hentai-foundry.com/site/filters", DEFAULT_HEADERS(), formBody))
+	response:close()
+	return browseCategory(catUrl, filters[PAGE])
+end
+
+--- @param filters table
+--- @return NovelInfo[]
+local function searchByURL(filters)
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
-	if page == 1 and shrinkURL(url):match("/stories/user/%w+/%d+") then
+	if filters[PAGE] == 1 and shrinkURL(url):match("/stories/user/%w+/%d+") then
 		local novelUrl = shrinkURL(url):gsub("/chapters.*$", ""):gsub("/$", "")
 		local novel = ClientGetDocument(expandURL(novelUrl)):selectFirst(".titlebar > a")
 		return {
@@ -302,28 +327,6 @@ local function search(filters)
 			}
 		}
 	end
-
-	if shrinkURL(url):match("/categories/%d+/[%a%-]+/stories") or
-			shrinkURL(url):match("/categories/%d+/[%a%-]+/.+/stories") or
-			shrinkURL(url):match("/categories/%d+/[%a%-]+/.+/.+/stories") then
-
-		local token = getToken()
-
-		if token == nil then
-			ClientGetDocument("https://www.hentai-foundry.com")
-			token = getToken()
-		end
-
-		local formBody = createFormBody(urldecode(token):match('"([^"]+)"'), filters)
-		-- todo maybe close
-		local response = ClientRequest(POST("https://www.hentai-foundry.com/site/filters", DEFAULT_HEADERS(), formBody))
-
-		local document = ClientGetDocument(expandURL(shrinkURL(url)) .. "/page/" .. page)
-		return map(document:select(".storyRow"), function(v)
-			return getNovel(v)
-		end)
-	end
-
 	return {}
 end
 
@@ -400,6 +403,156 @@ local function searchFilters()
 	}
 end
 
+
+
+--- @param li Element @an <li class="item_level_N"> category node
+--- @return table? @{id, path, name, children}
+local function parseCategoryLi(li)
+	local a = li:selectFirst("a")
+	local id, path = a:attr("href"):match("/categories/(%d+)/(.+)/pictures")
+	if not id then
+		return nil
+	end
+	local node = { id = id, path = path, name = a:text(), children = {} }
+	local subUl = li:selectFirst("> ul")
+	if subUl then
+		local subLis = subUl:select("> li")
+		for i = 0, subLis:size() - 1 do
+			local child = parseCategoryLi(subLis:get(i))
+			if child then
+				table.insert(node.children, child)
+			end
+		end
+	end
+	return node
+end
+
+local categoryTree
+--- @return table[] @top-level category nodes {id, path, name, children}
+local function getCategoryTree()
+	if categoryTree then
+		return categoryTree
+	end
+	local document = ClientGetDocument(expandURL("/category/browse"))
+	local topLis = document:select(".browseCategoriesDiv .item_level_1")
+	categoryTree = {}
+	for i = 0, topLis:size() - 1 do
+		local node = parseCategoryLi(topLis:get(i))
+		if node then
+			table.insert(categoryTree, node)
+		end
+	end
+	return categoryTree
+end
+
+--- @param id string
+--- @param path string
+--- @return table | nil
+local function findCategory(id, path)
+	local function search(nodes)
+		for _, n in ipairs(nodes) do
+			if n.id == id and n.path == path then
+				return n
+			end
+			local found = search(n.children)
+			if found then
+				return found
+			end
+		end
+		return nil
+	end
+	return search(getCategoryTree())
+end
+
+--- @param id string
+--- @param path string
+--- @param name string
+--- @param linkSuffix string? @disambiguates a group's "All" item from the group itself
+--- @return Listing
+local function makeCategoryListing(id, path, name, linkSuffix)
+	local catUrl = "/categories/" .. id .. "/" .. path .. "/stories"
+	return ListingItem {
+		name = name,
+		link = "cat@" .. id .. "@" .. path .. (linkSuffix or ""),
+		isIncrementing = true,
+		func = function(data)
+			return browseCategory(catUrl, data[PAGE])
+		end,
+		search = function(data)
+			return filterCategory(catUrl, data)
+		end,
+		searchFilters = searchFilters(),
+		searchIsIncrementing = true
+	}
+end
+
+--- A category with subcategories is a group holding an "All" item plus its
+--- children; a leaf category is a plain item.
+--- @param node table
+--- @return Listing
+local function makeCategoryNode(node)
+	if #node.children == 0 then
+		return makeCategoryListing(node.id, node.path, node.name)
+	end
+	return ListingList {
+		name = node.name,
+		link = "cat@" .. node.id .. "@" .. node.path,
+		func = function()
+			local items = { makeCategoryListing(node.id, node.path, node.name .. " (All)", "@all") }
+			for _, child in ipairs(node.children) do
+				table.insert(items, makeCategoryNode(child))
+			end
+			return items
+		end
+	}
+end
+
+--- @param link string @"" for the root, "cat@<id>@<path>", or "cat@<id>@<path>@all"
+--- @return Listing
+local function getListing(link)
+	if link == "" then
+		return ListingList {
+			name = "",
+			link = "",
+			func = function()
+				local items = map(getCategoryTree(), function(n)
+					return makeCategoryNode(n)
+				end)
+				table.insert(items, ListingItem {
+					name = "Search",
+					link = "search",
+					isIncrementing = false,
+					func = function()
+						return {
+							NovelInfo {
+								title = "How to use this source",
+								link = "how",
+								imageURL = ""
+							}
+						}
+					end,
+					search = searchByURL,
+					searchIsIncrementing = false
+				})
+				return items
+			end
+		}
+	end
+	local id, path = link:match("^cat@(%d+)@(.+)@all$")
+	if id then
+		local node = findCategory(id, path)
+		return makeCategoryListing(id, path, (node and node.name or "Category") .. " (All)", "@all")
+	end
+	id, path = link:match("^cat@(%d+)@(.+)$")
+	if id then
+		local node = findCategory(id, path)
+		if node then
+			return makeCategoryNode(node)
+		end
+	end
+	error("Unknown listing link: " .. link)
+end
+
 return {
 	id = 1308639967,
 	name = "Hentai Foundry",
@@ -408,34 +561,19 @@ return {
 	-- Optional values to change
 	imageURL = "",
 	hasCloudFlare = false,
-	hasSearch = true,
 
 	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
-	-- Must have at least one value
-	listings = {
-		Listing("Nothing", false, function(data)
-			return {
-				NovelInfo {
-					title = "How to use this source",
-					link = "how",
-					imageURL = ""
-				}
-			}
-		end),
-	},
+	getListing = getListing,
 
 	-- Default functions that have to be set
 	getPassage = getPassage,
 	parseNovel = parseNovel,
-	search = search,
 
 	updateSetting = function(id, value)
 		settings[id] = value
 	end,
-
-	searchFilters = searchFilters(),
 
 	shrinkURL = shrinkURL,
 	expandURL = expandURL
