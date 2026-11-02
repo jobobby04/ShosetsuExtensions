@@ -464,6 +464,21 @@ local function findCategory(id, path)
 	return search(getCategoryTree())
 end
 
+--- @param nodes table[] @category nodes
+--- @return table[] @nodes with unique urls (id+path), first occurrence kept
+local function dedupeByURL(nodes)
+	local seen = {}
+	local result = {}
+	for _, n in ipairs(nodes) do
+		local key = n.id .. "@" .. n.path
+		if not seen[key] then
+			seen[key] = true
+			table.insert(result, n)
+		end
+	end
+	return result
+end
+
 --- @param id string
 --- @param path string
 --- @param name string
@@ -499,7 +514,7 @@ local function makeCategoryNode(node)
 		link = "cat@" .. node.id .. "@" .. node.path,
 		func = function()
 			local items = { makeCategoryListing(node.id, node.path, node.name .. " (All)", "@all") }
-			for _, child in ipairs(node.children) do
+			for _, child in ipairs(dedupeByURL(node.children)) do
 				table.insert(items, makeCategoryNode(child))
 			end
 			return items
@@ -535,7 +550,7 @@ local function getListing(link)
 			name = "",
 			link = "",
 			func = function()
-				local items = map(getCategoryTree(), function(n)
+				local items = map(dedupeByURL(getCategoryTree()), function(n)
 					return makeCategoryNode(n)
 				end)
 				table.insert(items, makeSearchListing())
