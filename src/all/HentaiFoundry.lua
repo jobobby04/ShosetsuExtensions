@@ -1,4 +1,4 @@
--- {"id":1308639967,"ver":"1.0.1","libVer":"1.0.0","author":"Jobobby04"}
+-- {"id":1308639967,"ver":"1.0.2","libVer":"1.0.0","author":"Jobobby04"}
 
 local baseURL = "https://www.hentai-foundry.com"
 local settings = {}
@@ -56,9 +56,17 @@ end
 --- @param element Element
 --- @return Element
 local function cleanupDocument(element)
-	element = tostring(element):gsub('<div', '<p'):gsub('</div', '</p'):gsub('<br>', '</p><p>')
-	element = Document(element):selectFirst('body')
-	return element
+	local html = tostring(element)
+	-- Don't wrap source that already has block elements, or we nest <p> in <p>
+	-- and the parser drops the passage.
+	local hasBlock = html:match('<p[ >]') ~= nil or html:match('<div[ >]') ~= nil
+	html = html:gsub('<br%s*/?>', '</p><p>')
+	html = html:gsub('<div[^>]*>', '<p>'):gsub('</div>', '</p>')
+	if not hasBlock then
+		html = '<p>' .. html .. '</p>'
+	end
+	html = html:gsub('<p>%s*</p>', '')
+	return Document(html):selectFirst('body')
 end
 
 --- @param chapterURL string
@@ -283,9 +291,9 @@ end
 local function search(filters)
 	local page = filters[PAGE]
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
-	if page == 1 and shrinkURL(url):match("/stories/user/%a+/%d+") then
-		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
-		local novel = ClientGetDocument(novelUrl):selectFirst(".titlebar > a")
+	if page == 1 and shrinkURL(url):match("/stories/user/%w+/%d+") then
+		local novelUrl = shrinkURL(url):gsub("/chapters.*$", ""):gsub("/$", "")
+		local novel = ClientGetDocument(expandURL(novelUrl)):selectFirst(".titlebar > a")
 		return {
 			NovelInfo {
 				title = novel:text(),
@@ -310,7 +318,7 @@ local function search(filters)
 		-- todo maybe close
 		local response = ClientRequest(POST("https://www.hentai-foundry.com/site/filters", DEFAULT_HEADERS(), formBody))
 
-		local document = ClientGetDocument(url .. "/page/" .. page)
+		local document = ClientGetDocument(expandURL(shrinkURL(url)) .. "/page/" .. page)
 		return map(document:select(".storyRow"), function(v)
 			return getNovel(v)
 		end)
