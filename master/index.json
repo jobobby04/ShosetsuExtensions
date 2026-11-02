@@ -146,9 +146,9 @@
 			"fileName": "MCStories",
 			"imageURL": "",
 			"lang": "en",
-			"ver": "1.0.2",
+			"ver": "1.0.3",
 			"libVer": "1.0.0",
-			"md5": "e6997005efaa60dd23192f6cdb27b11abd1b839878806aed47779a482293dd10",
+			"md5": "8a201086870af193a6cc7a272ce37c22f9aa5a46133ee63a58c26c94f84674a1",
 			"type": "LuaScript"
 		},
 		{
