@@ -1,4 +1,4 @@
--- {"id":1308639977,"ver":"1.0.7","libVer":"1.1.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
+-- {"id":1308639977,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
 
 local baseURL = "https://www.mcstories.com"
 local settings = {}
@@ -241,97 +241,278 @@ local function parseNovel(novelURL, loadChapters)
 	return info
 end
 
---- @param filters table @of applied filter values [QUERY] is the search query, may be empty
+--- Checkbox filters for the category codes, used for client-side filtering.
+--- @return Filter[]
+local function categoryFilters()
+	local filters = {}
+	for i = 1, #Tags do
+		table.insert(filters, CheckboxFilter(100 + (i - 1), Tags[i].name .. ": " .. Tags[i].value))
+	end
+	return filters
+end
+
+--- @param stories table[] @raw story data, each with a `codes` array
 --- @return NovelInfo[]
-local function search(filters)
-	local page = filters[PAGE]
-	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
-	if page == 1 and shrinkURL(url):match("index.html") then
-		local novelUrl = url:gsub("/$", "")
-		local novel = ClientGetDocument(novelUrl):selectFirst("#mcstories > .title")
-		return {
-			NovelInfo {
-				title = novel:text(),
-				link = shrinkURL(url),
-				imageURL = ""
-			}
-		}
+local function toNovelInfos(stories)
+	local result = {}
+	for _, s in ipairs(stories) do
+		local genres = {}
+		for _, code in ipairs(s.codes) do
+			table.insert(genres, mapTag(code))
+		end
+		table.insert(result, NovelInfo {
+			title = s.title,
+			link = s.link,
+			genres = genres,
+			authors = s.authors,
+			description = s.description,
+		})
 	end
+	return result
+end
 
-	if page > 1 then
-		return {}
+--- Keep only the stories that carry every selected category code.
+--- @param stories table[] @raw story data
+--- @param data table @filter values
+--- @return table[]
+local function filterByCodes(stories, data)
+	local selected = {}
+	for i = 1, #Tags do
+		if data[100 + (i - 1)] == true then
+			table.insert(selected, Tags[i].name)
+		end
 	end
-
-	local categoryNumber = tonumber(filters[2])
-	if categoryNumber > 0 then
-		local category = Tags[categoryNumber]
-		local document = ClientGetDocument("https://mcstories.com/Tags/" .. category.name .. ".html")
-		return map(document:select("tbody > tr"), function(v)
-			local items = v:select("td")
-			local tags = {}
-			for i in items:get(1):text():gmatch("%S+") do
-				table.insert(tags, mapTag(i))
+	if #selected == 0 then
+		return stories
+	end
+	local result = {}
+	for _, s in ipairs(stories) do
+		local match = true
+		for _, code in ipairs(selected) do
+			local has = false
+			for _, c in ipairs(s.codes) do
+				if c == code then
+					has = true
+					break
+				end
 			end
-			return NovelInfo {
-				title = items:get(0):select("a"):text(),
-				link = items:get(0):select("a"):attr("href"):gsub("%.%.", ""),
-				genres = tags
-			}
-		end)
+			if not has then
+				match = false
+				break
+			end
+		end
+		if match then
+			table.insert(result, s)
+		end
 	end
+	return result
+end
 
+--- @return table[] @raw "Whats New" story data
+local function fetchWhatsNew()
+	local document = ClientGetDocument("https://mcstories.com/WhatsNew.html")
+	local stories = {}
+	local elems = document:select("div.story")
+	for i = 0, elems:size() - 1 do
+		local v = elems:get(i)
+		local items = v:select("div")
+		local codes = {}
+		for code in items:get(2):text():match("%((.-)%)"):gmatch("%S+") do
+			table.insert(codes, code)
+		end
+		table.insert(stories, {
+			title = items:get(1):select("a"):text(),
+			link = "/" .. items:get(1):select("a"):attr("href"),
+			authors = { items:get(2):select("a"):text() },
+			description = v:selectFirst("div.synopsis"):text(),
+			codes = codes,
+		})
+	end
+	return stories
+end
+
+--- @param code string @category code
+--- @return table[] @raw category story data
+local function fetchCategory(code)
+	local document = ClientGetDocument("https://mcstories.com/Tags/" .. code .. ".html")
+	local stories = {}
+	local rows = document:select("tbody > tr")
+	for i = 0, rows:size() - 1 do
+		local v = rows:get(i)
+		local items = v:select("td")
+		local codes = {}
+		for c in items:get(1):text():gmatch("%S+") do
+			table.insert(codes, c)
+		end
+		table.insert(stories, {
+			title = items:get(0):select("a"):text(),
+			link = "/" .. items:get(0):select("a"):attr("href"):gsub("%.%.", ""),
+			codes = codes,
+		})
+	end
+	return stories
+end
+
+--- @return ListingItem
+local function whatsNewListing()
+	return ListingItem {
+		name = "Whats New",
+		link = "whatsNew",
+		isIncrementing = false,
+		func = function(data)
+			return toNovelInfos(fetchWhatsNew())
+		end,
+		search = function(data)
+			return toNovelInfos(filterByCodes(fetchWhatsNew(), data))
+		end,
+		searchFilters = categoryFilters(),
+	}
+end
+
+--- @param category table @{name, value}
+--- @return ListingItem
+local function categoryListing(category)
+	return ListingItem {
+		name = category.name .. ": " .. category.value,
+		link = "cat=" .. category.name,
+		isIncrementing = false,
+		func = function(data)
+			return toNovelInfos(fetchCategory(category.name))
+		end,
+		search = function(data)
+			return toNovelInfos(filterByCodes(fetchCategory(category.name), data))
+		end,
+		searchFilters = categoryFilters(),
+	}
+end
+
+--- @param data table @filter values
+--- @return NovelInfo[]
+local function svengaliSearch(data)
 	local searchTags = {}
-	for i, v in pairs(filters) do
+	for i, v in pairs(data) do
 		if i < 9999 and i > 2 and v == true then
 			table.insert(searchTags, i - 2)
 		end
 	end
-	if next(searchTags) ~= nil then
-		local searchResults = SvengaliGETDocument("https://www.gregariousfrog.com/svengali/servers/SearchOnTagsV2.php?tags=" .. table.concat(searchTags, ","))
-		return map(searchResults["Titles"], function(v)
-			local infoTable = {}
-			for substr in v:gmatch("[^%%]+") do
-				table.insert(infoTable, substr)
-			end
-			local tags
-			if #infoTable == 4 then
-				tags = { mapTag(infoTable[3]), infoTable[4] .. "% match" }
-			else
-				tags = { infoTable[3] .. "% match" }
-			end
-			return NovelInfo {
-				title = infoTable[1],
-				link = "/" .. infoTable[2] .. "/index.html",
-				genres = tags
-			}
-		end)
+	if next(searchTags) == nil then
+		return {}
 	end
-
-	return {}
+	local searchResults = SvengaliGETDocument("https://www.gregariousfrog.com/svengali/servers/SearchOnTagsV2.php?tags=" .. table.concat(searchTags, ","))
+	return map(searchResults["Titles"], function(v)
+		local infoTable = {}
+		for substr in v:gmatch("[^%%]+") do
+			table.insert(infoTable, substr)
+		end
+		local tags
+		if #infoTable == 4 then
+			tags = { mapTag(infoTable[3]), infoTable[4] .. "% match" }
+		else
+			tags = { infoTable[3] .. "% match" }
+		end
+		return NovelInfo {
+			title = infoTable[1],
+			link = "/" .. infoTable[2] .. "/index.html",
+			genres = tags
+		}
+	end)
 end
 
-
-local function searchFilters()
-	local categoryOptions = {
-		"None",
-	}
-	for i in pairs(Tags) do
-		table.insert(categoryOptions, Tags[i].value)
-	end
-
+--- @return ListingItem
+local function svengaliListing()
 	getSvengaliTagsIfNeeded()
-
-	local svengaliFilters = flattenToFilters(svengaliTags, 1)
-
-	return {
-		DropdownFilter(
-			2,
-			"Category",
-			categoryOptions
-		),
-		CheckboxFilter(-9999, "Below filters are ignored if Category is used"),
-		table.unpack(svengaliFilters)
+	return ListingItem {
+		name = "Svengali Tag Search",
+		link = "svengali",
+		isIncrementing = false,
+		func = function(data)
+			return {
+				NovelInfo {
+					title = "How to use Svengali Tag Search",
+					link = "how",
+					description = "Select one or more tags to search for stories.",
+				}
+			}
+		end,
+		search = svengaliSearch,
+		searchFilters = flattenToFilters(svengaliTags, 1),
 	}
+end
+
+--- @param data table @filter values, [QUERY] is the story url
+--- @return NovelInfo[]
+local function addByUrlSearch(data)
+	local url = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+	if not url:match("index.html") then
+		return {}
+	end
+	local novel = ClientGetDocument(url):selectFirst("#mcstories > .title")
+	return {
+		NovelInfo {
+			title = novel:text(),
+			link = shrinkURL(url),
+			imageURL = ""
+		}
+	}
+end
+
+--- @return ListingItem
+local function addByUrlListing()
+	return ListingItem {
+		name = "Add by URL",
+		link = "addByUrl",
+		isIncrementing = false,
+		func = function(data)
+			return {
+				NovelInfo {
+					title = "How to use Add by URL",
+					link = "how",
+					description = "Paste a MCStories story URL to add it.",
+				}
+			}
+		end,
+		search = addByUrlSearch,
+		searchIsIncrementing = false,
+	}
+end
+
+--- @param link string @"" for the root, otherwise a listing link
+--- @return ListingList|ListingItem
+local function getListing(link)
+	if link == "" then
+		return ListingList {
+			name = "MCStories",
+			link = "",
+			func = function()
+				local listings = {}
+				table.insert(listings, whatsNewListing())
+				for i = 1, #Tags do
+					table.insert(listings, categoryListing(Tags[i]))
+				end
+				table.insert(listings, svengaliListing())
+				table.insert(listings, addByUrlListing())
+				return listings
+			end
+		}
+	end
+	if link == "whatsNew" then
+		return whatsNewListing()
+	end
+	if link == "svengali" then
+		return svengaliListing()
+	end
+	if link == "addByUrl" then
+		return addByUrlListing()
+	end
+	local code = link:match("^cat=(.+)$")
+	if code then
+		for i = 1, #Tags do
+			if Tags[i].name == code then
+				return categoryListing(Tags[i])
+			end
+		end
+	end
+	return getListing("")
 end
 
 return {
@@ -342,42 +523,19 @@ return {
 	-- Optional values to change
 	imageURL = "",
 	hasCloudFlare = false,
-	hasSearch = true,
 
 	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
-	-- Must have at least one value
-	listings = {
-		Listing("Whats New", false, function(data)
-			local document = ClientGetDocument("https://mcstories.com/WhatsNew.html")
-			return map(document:select("div.story"), function(v)
-				local items = v:select("div")
-				local tags = {}
-				for i in items:get(2):text():match("%((.-)%)"):gmatch("%S+") do
-					table.insert(tags, mapTag(i))
-				end
-				return NovelInfo {
-					title = items:get(1):select("a"):text(),
-					link = "/" .. items:get(1):select("a"):attr("href"),
-					authors = { items:get(2):select("a"):text() },
-					description = v:selectFirst("div.synopsis"):text(),
-					genres = tags
-				}
-			end)
-		end),
-	},
+	getListing = getListing,
 
 	-- Default functions that have to be set
 	getPassage = getPassage,
 	parseNovel = parseNovel,
-	search = search,
 
 	updateSetting = function(id, value)
 		settings[id] = value
 	end,
-
-	searchFilters = searchFilters(),
 
 	shrinkURL = shrinkURL,
 	expandURL = expandURL
