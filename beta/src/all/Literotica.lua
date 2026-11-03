@@ -201,16 +201,80 @@ local function getNovel(document, novelUrl, mainInfo)
 	return info
 end
 
+local cachedCategories = nil
+
+--- Fetches the tag categories from the tags site. The dropdown is rendered
+--- twice (mobile + desktop), so entries are deduped by tagCategory. "All" is
+--- prepended as the no-category view.
+--- @return table[] @of {name: string, tagCategory: string}
+local function getCategories()
+	if cachedCategories ~= nil then
+		return cachedCategories
+	end
+	local categories = {
+		{ name = "All", tagCategory = "" },
+	}
+	local seen = {}
+	local document = ClientGetDocument("https://tags.literotica.com/")
+	local links = document:select("a[href$='-category-tags']")
+	for i = 0, links:size() - 1 do
+		local a = links:get(i)
+		local tagCategory = a:attr("href"):match("^/([^/]+)$")
+		if tagCategory and not seen[tagCategory] then
+			seen[tagCategory] = true
+			local name = a:text()
+			if name ~= "" then
+				table.insert(categories, {
+					name = name,
+					tagCategory = tagCategory,
+				})
+			end
+		end
+	end
+	cachedCategories = categories
+	return categories
+end
+
+--- @param category table @{name, tagCategory}
+--- @return NovelInfo
+local function howNovelInfo(category)
+	return NovelInfo({
+		title = category.name,
+		link = "how/" .. category.tagCategory,
+		description = "Enter at least one tag in the Tags filter to browse "
+			.. category.name .. " stories. No novels are shown until a tag is set.",
+		imageURL = "",
+	})
+end
+
+--- @return NovelInfo
+local function addByUrlHowInfo()
+	return NovelInfo({
+		title = "How to use Add by URL",
+		link = "how/addByUrl",
+		description = "Paste a Literotica story URL to add it.",
+		imageURL = "",
+	})
+end
+
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
 	local normalizedURL = shrinkURL(novelURL):gsub("^/+", ""):gsub("/+$", "")
-	if normalizedURL == "how" then
-		return NovelInfo({
-			title = "How to use this source",
-			description = 'You can use this source by:\n1. searching on the literotica.com website and inputting the url of the story in the search bar.\nOr you can search tags in a comma-delimited list like "oral,blowjob"',
-		})
+	if normalizedURL == "how" or normalizedURL:match("^how/") then
+		local slug = normalizedURL:match("^how/?(.*)$") or ""
+		if slug == "addByUrl" then
+			return addByUrlHowInfo()
+		end
+		local category = { name = "All", tagCategory = "" }
+		for _, c in ipairs(getCategories()) do
+			if c.tagCategory == slug then
+				category = c
+				break
+			end
+		end
+		return howNovelInfo(category)
 	end
 
 	local document = ClientGetDocument(expandURL(novelURL))
@@ -257,40 +321,6 @@ local function parseNovel(novelURL, loadChapters)
 	end
 
 	return info
-end
-
-local cachedCategories = nil
-
---- Fetches the tag categories from the tags site. The dropdown is rendered
---- twice (mobile + desktop), so entries are deduped by tagCategory. "All" is
---- prepended as the no-category view.
---- @return table[] @of {name: string, tagCategory: string}
-local function getCategories()
-	if cachedCategories ~= nil then
-		return cachedCategories
-	end
-	local categories = {
-		{ name = "All", tagCategory = "" },
-	}
-	local seen = {}
-	local document = ClientGetDocument("https://tags.literotica.com/")
-	local links = document:select("a[href$='-category-tags']")
-	for i = 0, links:size() - 1 do
-		local a = links:get(i)
-		local tagCategory = a:attr("href"):match("^/([^/]+)$")
-		if tagCategory and not seen[tagCategory] then
-			seen[tagCategory] = true
-			local name = a:text()
-			if name ~= "" then
-				table.insert(categories, {
-					name = name,
-					tagCategory = tagCategory,
-				})
-			end
-		end
-	end
-	cachedCategories = categories
-	return categories
 end
 
 -- Function to split a string by a delimiter
@@ -449,15 +479,7 @@ local function makeCategoryListing(category)
 		link = "cat=" .. category.tagCategory,
 		isIncrementing = false,
 		func = function()
-			return {
-				NovelInfo({
-					title = "How to use " .. category.name,
-					link = "how",
-					description = "Enter one or more comma-separated tags to search "
-						.. category.name .. " stories.",
-					imageURL = "",
-				}),
-			}
+			return { howNovelInfo(category) }
 		end,
 		search = function(data)
 			return searchCategory(category, data)
@@ -474,14 +496,7 @@ local function makeAddByUrlListing()
 		link = "addByUrl",
 		isIncrementing = false,
 		func = function()
-			return {
-				NovelInfo({
-					title = "How to use Add by URL",
-					link = "how",
-					description = "Paste a Literotica story URL to add it.",
-					imageURL = "",
-				}),
-			}
+			return { addByUrlHowInfo() }
 		end,
 		search = searchByURL,
 		searchIsIncrementing = false,
