@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.0.12","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -259,62 +259,39 @@ local function parseNovel(novelURL, loadChapters)
 	return info
 end
 
-local Categories = {
-	{ name = "All", tagCategory = "", category = "" },
-	{ name = "Anal", tagCategory = "anal-category-tags", category = "anal-sex-stories" },
-	{ name = "Audio", tagCategory = "audio-category-tags", category = "audio-sex-stories" },
-	{ name = "BDSM", tagCategory = "bdsm-category-tags", category = "bdsm-stories" },
-	{ name = "Chain Stories", tagCategory = "chain-stories-category-tags", category = "chain-stories" },
-	{ name = "Crossdressing", tagCategory = "crossdressing-category-tags", category = "crossdressing" },
-	{ name = "Erotic Couplings", tagCategory = "erotic-couplings-category-tags", category = "erotic-couplings" },
-	{ name = "Erotic Horror", tagCategory = "erotic-horror-category-tags", category = "erotic-horror" },
-	{
-		name = "Exhibitionist & Voyeur",
-		tagCategory = "exhibitionist-voyeur-category-tags",
-		category = "exhibitionist-voyeur",
-	},
-	{
-		name = "Fan Fiction & Celebrities",
-		tagCategory = "fan-fiction-celebrities-category-tags",
-		category = "celebrity-stories",
-	},
-	{ name = "Fetish", tagCategory = "fetish-category-tags", category = "fetish-stories" },
-	{ name = "First Time", tagCategory = "first-time-category-tags", category = "first-time-sex-stories" },
-	{ name = "Gay Male", tagCategory = "gay-male-category-tags", category = "gay-sex-stories" },
-	{ name = "Group Sex", tagCategory = "group-sex-category-tags", category = "group-sex-stories" },
-	{ name = "How To", tagCategory = "how-to-category-tags", category = "adult-how-to" },
-	{ name = "Humor & Satire", tagCategory = "humor-satire-category-tags", category = "adult-humor" },
-	{ name = "Illustrated", tagCategory = "illustrated-category-tags", category = "illustrated-erotic-fiction" },
-	{
-		name = "Interracial Love",
-		tagCategory = "interracial-love-category-tags",
-		category = "interracial-erotic-stories",
-	},
-	{ name = "Lesbian Sex", tagCategory = "lesbian-sex-category-tags", category = "lesbian-sex-stories" },
-	{ name = "Letters & Transcripts", tagCategory = "letters-transcripts-category-tags", category = "erotic-letters" },
-	{ name = "Loving Wives", tagCategory = "loving-wives-category-tags", category = "loving-wives" },
-	{ name = "Mature", tagCategory = "mature-category-tags", category = "mature-sex" },
-	{ name = "Mind Control", tagCategory = "mind-control-category-tags", category = "mind-control" },
-	{ name = "Non-English", tagCategory = "non-english-category-tags", category = "non-english-stories" },
-	{ name = "Non-Erotic", tagCategory = "non-erotic-category-tags", category = "non-erotic-stories" },
-	{ name = "NonHuman", tagCategory = "nonhuman-category-tags", category = "non-human-stories" },
-	{ name = "Novels and Novellas", tagCategory = "novels-and-novellas-category-tags", category = "erotic-novels" },
-	{
-		name = "Reluctance/NonConsent",
-		tagCategory = "reluctance-nonconsent-category-tags",
-		category = "non-consent-stories",
-	},
-	{ name = "Reviews & Essays", tagCategory = "reviews-essays-category-tags", category = "reviews-and-essays" },
-	{ name = "Romance", tagCategory = "romance-category-tags", category = "adult-romance" },
-	{ name = "Sci-Fi & Fantasy", tagCategory = "sci-fi-fantasy-category-tags", category = "science-fiction-fantasy" },
-	{ name = "Taboo/Incest", tagCategory = "taboo-incest-category-tags", category = "taboo-sex-stories" },
-	{
-		name = "Toys & Masturbation",
-		tagCategory = "toys-masturbation-category-tags",
-		category = "masturbation-stories",
-	},
-	{ name = "Transgender", tagCategory = "transgender-category-tags", category = "transgender" },
-}
+local cachedCategories = nil
+
+--- Fetches the tag categories from the tags site. The dropdown is rendered
+--- twice (mobile + desktop), so entries are deduped by tagCategory. "All" is
+--- prepended as the no-category view.
+--- @return table[] @of {name: string, tagCategory: string}
+local function getCategories()
+	if cachedCategories ~= nil then
+		return cachedCategories
+	end
+	local categories = {
+		{ name = "All", tagCategory = "" },
+	}
+	local seen = {}
+	local document = ClientGetDocument("https://tags.literotica.com/")
+	local links = document:select("a[href$='-category-tags']")
+	for i = 0, links:size() - 1 do
+		local a = links:get(i)
+		local tagCategory = a:attr("href"):match("^/([^/]+)$")
+		if tagCategory and not seen[tagCategory] then
+			seen[tagCategory] = true
+			local name = a:text()
+			if name ~= "" then
+				table.insert(categories, {
+					name = name,
+					tagCategory = tagCategory,
+				})
+			end
+		end
+	end
+	cachedCategories = categories
+	return categories
+end
 
 -- Function to split a string by a delimiter
 local function split(str, delimiter)
@@ -344,91 +321,111 @@ local WithinOptions = {
 	{ name = "1 Year", value = "year" },
 }
 
---- @param filters table @of applied filter values [QUERY] is the search query, may be empty
+--- @param document Document
 --- @return NovelInfo[]
-local function search(filters)
-	local page = filters[PAGE]
-	local url = filters[QUERY]:gsub("^%s*(.-)%s*$", "%1")
-	if shrinkURL(url):match("/s/%a+") then
-		if page ~= 1 then
-			return {}
-		end
-		local novelUrl = url:gsub("/$", "")
-		local novelDocument = ClientGetDocument(expandURL(novelUrl))
-		local novel = novelDocument:selectFirst("article[itemtype='https://schema.org/Article'] h1")
-		return {
-			NovelInfo({
-				title = novel and novel:text() or "",
-				link = shrinkURL(url),
-				imageURL = "",
-			}),
-		}
-	end
-
-	local query = filters[QUERY]
-	local tags = split(query, ",")
-	table.sort(tags)
-
-	if next(tags) then
-		local searchUrl = "https://tags.literotica.com/"
-		local category = Categories[tonumber(filters[2]) + 1]
-		if category and category.tagCategory ~= "" then
-			searchUrl = searchUrl .. category.tagCategory .. "/"
-		end
-		for i = 1, #tags do
-			if i == 1 then
-				searchUrl = searchUrl .. tags[i] .. "/"
-			elseif i == 2 then
-				searchUrl = searchUrl .. "?tag[]=" .. tags[i]
-			else
-				searchUrl = searchUrl .. "&tag[]=" .. tags[i]
-			end
-		end
-		if #tags >= 2 then
-			searchUrl = searchUrl .. "&page=" .. filters[PAGE]
-		else
-			searchUrl = searchUrl .. "?page=" .. filters[PAGE]
-		end
-		local sortBy = SortByOptions[tonumber(filters[3]) + 1]
-		if sortBy and sortBy.value ~= "" then
-			searchUrl = searchUrl .. "&sort_by=" .. sortBy.value
-		end
-		local within = WithinOptions[tonumber(filters[4]) + 1]
-		if within and within.value ~= "" then
-			searchUrl = searchUrl .. "&period=" .. within.value
-		end
-
-		local document = ClientGetDocument(searchUrl)
-
-		return map(document:select("article"), function(v)
-			local titleLink = v:selectFirst("a[href*='/s/']")
-			local description = v:selectFirst("p")
-			local author = v:selectFirst("a[href*='/authors/']")
-			local category = v:selectFirst("a[href*='/c/']")
-			local views = v:selectFirst("span[title=Views]")
-			local favorites = v:selectFirst("span[title=Favorites]")
-			local comments = v:selectFirst("span[title=Comments]")
-			return NovelInfo({
-				title = titleLink and titleLink:text() or "",
-				link = titleLink and shrinkURL(titleLink:attr("href")) or "",
-				description = description and description:text() or "",
-				authors = author and { author:text() } or {},
-				genres = category and { category:text() } or {},
-				viewCount = views and textToInteger(views:attr("data-value")) or 0,
-				favoriteCount = favorites and textToInteger(favorites:attr("data-value")) or 0,
-				commentCount = comments and textToInteger(comments:attr("data-value")) or 0,
-			})
-		end)
-	end
-
-	return {}
+local function parseStoryEntries(document)
+	return map(document:select("article"), function(v)
+		local titleLink = v:selectFirst("a[href*='/s/']")
+		local description = v:selectFirst("p")
+		local author = v:selectFirst("a[href*='/authors/']")
+		local category = v:selectFirst("a[href*='/c/']")
+		local views = v:selectFirst("span[title=Views]")
+		local favorites = v:selectFirst("span[title=Favorites]")
+		local comments = v:selectFirst("span[title=Comments]")
+		return NovelInfo({
+			title = titleLink and titleLink:text() or "",
+			link = titleLink and shrinkURL(titleLink:attr("href")) or "",
+			description = description and description:text() or "",
+			authors = author and { author:text() } or {},
+			genres = category and { category:text() } or {},
+			viewCount = views and textToInteger(views:attr("data-value")) or 0,
+			favoriteCount = favorites and textToInteger(favorites:attr("data-value")) or 0,
+			commentCount = comments and textToInteger(comments:attr("data-value")) or 0,
+		})
+	end)
 end
 
-local function searchFilters()
-	local categoryOptions = {}
-	for i = 1, #Categories do
-		table.insert(categoryOptions, Categories[i].name)
+--- @param category table @{name, tagCategory, category}
+--- @return string
+local function categoryBaseURL(category)
+	local url = "https://tags.literotica.com/"
+	if category.tagCategory ~= "" then
+		url = url .. category.tagCategory .. "/"
 	end
+	return url
+end
+
+--- @param input string @comma-delimited tags
+--- @return string[]
+local function parseTags(input)
+	local tags = {}
+	for _, tag1 in ipairs(split(input, ",")) do
+		local tag = trim(tag1)
+		if tag ~= "" then
+			table.insert(tags, tag)
+		end
+	end
+	table.sort(tags)
+	return tags
+end
+
+--- @param category table @{name, tagCategory, category}
+--- @param data table @contains [PAGE] and filter values ([2] tags, [3] sort, [4] within)
+--- @return NovelInfo[]
+local function searchCategory(category, data)
+	local tags = parseTags(data[2] or "")
+	if next(tags) == nil then
+		return {}
+	end
+
+	local searchUrl = categoryBaseURL(category)
+	for i = 1, #tags do
+		if i == 1 then
+			searchUrl = searchUrl .. tags[i] .. "/"
+		elseif i == 2 then
+			searchUrl = searchUrl .. "?tag[]=" .. tags[i]
+		else
+			searchUrl = searchUrl .. "&tag[]=" .. tags[i]
+		end
+	end
+	if #tags >= 2 then
+		searchUrl = searchUrl .. "&page=" .. data[PAGE]
+	else
+		searchUrl = searchUrl .. "?page=" .. data[PAGE]
+	end
+	local sortBy = SortByOptions[tonumber(data[3] or 0) + 1]
+	if sortBy and sortBy.value ~= "" then
+		searchUrl = searchUrl .. "&sort_by=" .. sortBy.value
+	end
+	local within = WithinOptions[tonumber(data[4] or 0) + 1]
+	if within and within.value ~= "" then
+		searchUrl = searchUrl .. "&period=" .. within.value
+	end
+
+	return parseStoryEntries(ClientGetDocument(searchUrl))
+end
+
+--- @param data table @contains [QUERY]
+--- @return NovelInfo[]
+local function searchByURL(data)
+	local url = (data[QUERY] or ""):gsub("^%s*(.-)%s*$", "%1")
+	if data[PAGE] ~= 1 or not shrinkURL(url):match("/s/%a+") then
+		return {}
+	end
+	local novelUrl = url:gsub("/$", "")
+	local novelDocument = ClientGetDocument(expandURL(novelUrl))
+	local novel = novelDocument:selectFirst("article[itemtype='https://schema.org/Article'] h1")
+	return {
+		NovelInfo({
+			title = novel and novel:text() or "",
+			link = shrinkURL(url),
+			imageURL = "",
+		}),
+	}
+end
+
+--- @return Filter[]
+local function categorySearchFilters()
 	local sortByOptions = {}
 	for i = 1, #SortByOptions do
 		table.insert(sortByOptions, SortByOptions[i].name)
@@ -437,12 +434,89 @@ local function searchFilters()
 	for i = 1, #WithinOptions do
 		table.insert(withinOptions, WithinOptions[i].name)
 	end
-
 	return {
-		DropdownFilter(2, "Category", categoryOptions),
+		TextFilter(2, "Tags"),
 		DropdownFilter(3, "Sort By", sortByOptions),
 		DropdownFilter(4, "Within", withinOptions),
 	}
+end
+
+--- @param category table @{name, tagCategory}
+--- @return ListingItem
+local function makeCategoryListing(category)
+	return ListingItem {
+		name = category.name,
+		link = "cat=" .. category.tagCategory,
+		isIncrementing = false,
+		func = function()
+			return {
+				NovelInfo({
+					title = "How to use " .. category.name,
+					link = "how",
+					description = "Enter one or more comma-separated tags to search "
+						.. category.name .. " stories.",
+					imageURL = "",
+				}),
+			}
+		end,
+		search = function(data)
+			return searchCategory(category, data)
+		end,
+		searchFilters = categorySearchFilters(),
+		searchIsIncrementing = false,
+	}
+end
+
+--- @return ListingItem
+local function makeAddByUrlListing()
+	return ListingItem {
+		name = "Add by URL",
+		link = "addByUrl",
+		isIncrementing = false,
+		func = function()
+			return {
+				NovelInfo({
+					title = "How to use Add by URL",
+					link = "how",
+					description = "Paste a Literotica story URL to add it.",
+					imageURL = "",
+				}),
+			}
+		end,
+		search = searchByURL,
+		searchIsIncrementing = false,
+	}
+end
+
+--- @param link string @"" for the root, otherwise "cat=<tagCategory>" or "addByUrl"
+--- @return ListingList|ListingItem
+local function getListing(link)
+	if link == "" then
+		return ListingList {
+			name = "Literotica",
+			link = "",
+			func = function()
+				local items = {}
+				for _, category in ipairs(getCategories()) do
+					table.insert(items, makeCategoryListing(category))
+				end
+				table.insert(items, makeAddByUrlListing())
+				return items
+			end,
+		}
+	end
+	if link == "addByUrl" then
+		return makeAddByUrlListing()
+	end
+	local slug = link:match("^cat=(.*)$")
+	if slug then
+		for _, category in ipairs(getCategories()) do
+			if category.tagCategory == slug then
+				return makeCategoryListing(category)
+			end
+		end
+	end
+	return getListing("")
 end
 
 return {
@@ -453,34 +527,19 @@ return {
 	-- Optional values to change
 	imageURL = "",
 	hasCloudFlare = false,
-	hasSearch = true,
 
 	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
-	-- Must have at least one value
-	listings = {
-		Listing("Nothing", false, function(data)
-			return {
-				NovelInfo({
-					title = "How to use this source",
-					link = "how",
-					imageURL = "",
-				}),
-			}
-		end),
-	},
+	getListing = getListing,
 
 	-- Default functions that have to be set
 	getPassage = getPassage,
 	parseNovel = parseNovel,
-	search = search,
 
 	updateSetting = function(id, value)
 		settings[id] = value
 	end,
-
-	searchFilters = searchFilters(),
 
 	shrinkURL = shrinkURL,
 	expandURL = expandURL,
