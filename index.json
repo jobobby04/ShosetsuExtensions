@@ -58,9 +58,9 @@
 			"fileName": "ArchiveOfOurOwn",
 			"imageURL": "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_icon.png",
 			"lang": "all",
-			"ver": "1.0.11",
+			"ver": "1.0.12",
 			"libVer": "1.1.0",
-			"md5": "ad3438b80b0529b014e8e7c4f69368a8e3a5944abc1dbca8d0280f5ad21fbcff",
+			"md5": "48535f7d0452e9a62675d3e0685992a56736a65c89e54d22b05bbcd59998738c",
 			"type": "LuaScript"
 		},
 		{
@@ -71,7 +71,7 @@
 			"lang": "all",
 			"ver": "1.1.0",
 			"libVer": "1.1.0",
-			"md5": "99420ac0d3fe979d446079a098c4657e9f92563bb34cd7caa8e6a4665dc8b13c",
+			"md5": "e25e718d2d288c4e07a9cf0bc901f7198631f253cc5eb5595b118ef18e0b7e05",
 			"type": "LuaScript"
 		},
 		{
@@ -93,7 +93,7 @@
 			"lang": "all",
 			"ver": "1.1.0",
 			"libVer": "1.1.0",
-			"md5": "0fef21d1055411b7cf1613b320f740f954c2acf98119c9c0b3de11934a5e1537",
+			"md5": "0a6785bb8b7ad2d709e055766a19f264a3444db64a3bfae996d1cc320f6a9503",
 			"type": "LuaScript"
 		},
 		{
@@ -148,7 +148,7 @@
 			"lang": "en",
 			"ver": "1.1.0",
 			"libVer": "1.1.0",
-			"md5": "1127f967593ca09b6154d71f1db7f516fb7a8002dbbff0acd1d450ef7f29cd40",
+			"md5": "06046aba8da7e6574bc8d0a456fb27c7d83ed3ee3009e1e172e54cf724b47b94",
 			"type": "LuaScript"
 		},
 		{
@@ -159,7 +159,7 @@
 			"lang": "en",
 			"ver": "1.1.0",
 			"libVer": "1.1.0",
-			"md5": "2498bae5bd2f256cfac34143d4cc0aad40b63a8a0e4360f172ff8546cf6227e6",
+			"md5": "9f68328afbd3a41464e21ef4fc981bfab339e9ae3b94140e7fff2fcbb6c58b02",
 			"type": "LuaScript"
 		}
 	],

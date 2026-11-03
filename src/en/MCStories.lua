@@ -169,15 +169,33 @@ local function mapTag(name)
 	return name
 end
 
+--- @return NovelInfo
+local function addByUrlHowInfo()
+	return NovelInfo {
+		title = "How to use Add by URL",
+		link = "how/addByUrl",
+		description = "Paste a MCStories story URL to add it."
+	}
+end
+
+--- @return NovelInfo
+local function svengaliHowInfo()
+	return NovelInfo {
+		title = "How to use Svengali Tag Search",
+		link = "how/svengali",
+		description = "Select one or more tags to search for stories."
+	}
+end
+
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
-	if novelURL:match("^how") then
-		return NovelInfo {
-			title = "How to use this source",
-			description = "You can use this source by:\n1. pasting the url of a story in the search bar\nOr selecting one or more tags in the search filters."
-		}
+	if novelURL == "how/addByUrl" then
+		return addByUrlHowInfo()
+	end
+	if novelURL == "how/svengali" then
+		return svengaliHowInfo()
 	end
 
 	local document = ClientGetDocument(expandURL(novelURL))
@@ -439,13 +457,7 @@ local function svengaliListing()
 		link = "svengali",
 		isIncrementing = false,
 		func = function(data)
-			return {
-				NovelInfo {
-					title = "How to use Svengali Tag Search",
-					link = "how",
-					description = "Select one or more tags to search for stories.",
-				}
-			}
+			return { svengaliHowInfo() }
 		end,
 		search = svengaliSearch,
 		searchFilters = flattenToFilters(svengaliTags, 1),
@@ -463,8 +475,7 @@ local function addByUrlSearch(data)
 	return {
 		NovelInfo {
 			title = novel:text(),
-			link = shrinkURL(url),
-			imageURL = ""
+			link = shrinkURL(url)
 		}
 	}
 end
@@ -476,13 +487,7 @@ local function addByUrlListing()
 		link = "addByUrl",
 		isIncrementing = false,
 		func = function(data)
-			return {
-				NovelInfo {
-					title = "How to use Add by URL",
-					link = "how",
-					description = "Paste a MCStories story URL to add it.",
-				}
-			}
+			return { addByUrlHowInfo() }
 		end,
 		search = addByUrlSearch,
 		searchIsIncrementing = false,
