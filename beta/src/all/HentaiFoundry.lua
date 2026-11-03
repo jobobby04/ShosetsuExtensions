@@ -137,15 +137,21 @@ local function getNovel(document)
 	}
 end
 
+--- @return NovelInfo
+local function addByUrlHowInfo()
+	return NovelInfo {
+		title = "How to use Add by URL",
+		link = "how/addByUrl",
+		description = "Paste a HentaiFoundry story URL to add it."
+	}
+end
+
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
-	if novelURL:match("^how") then
-		return NovelInfo {
-			title = "How to use this listing",
-			description = "Search a novel's URL to add it."
-		}
+	if novelURL == "how/addByUrl" then
+		return addByUrlHowInfo()
 	end
 
 	local document = ClientGetDocument(expandURL(novelURL))
@@ -314,7 +320,7 @@ end
 
 --- @param filters table
 --- @return NovelInfo[]
-local function searchByURL(filters)
+local function addByUrl(filters)
 	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 	if filters[PAGE] == 1 and shrinkURL(url):match("/stories/user/%w+/%d+") then
 		local novelUrl = shrinkURL(url):gsub("/chapters.*$", ""):gsub("/$", "")
@@ -322,8 +328,7 @@ local function searchByURL(filters)
 		return {
 			NovelInfo {
 				title = novel:text(),
-				link = novel:attr("href"),
-				imageURL = ""
+				link = novel:attr("href")
 			}
 		}
 	end
@@ -466,7 +471,7 @@ end
 
 --- @param nodes table[] @category nodes
 --- @return table[] @nodes with unique urls (id+path), first occurrence kept
-local function dedupeByURL(nodes)
+local function dedupeByUrl(nodes)
 	local seen = {}
 	local result = {}
 	for _, n in ipairs(nodes) do
@@ -514,7 +519,7 @@ local function makeCategoryNode(node)
 		link = "cat@" .. node.id .. "@" .. node.path,
 		func = function()
 			local items = { makeCategoryListing(node.id, node.path, node.name .. " (All)", "@all") }
-			for _, child in ipairs(dedupeByURL(node.children)) do
+			for _, child in ipairs(dedupeByUrl(node.children)) do
 				table.insert(items, makeCategoryNode(child))
 			end
 			return items
@@ -523,21 +528,15 @@ local function makeCategoryNode(node)
 end
 
 --- @return Listing
-local function makeSearchListing()
+local function makeAddByUrlListing()
 	return ListingItem {
 		name = "Add by URL",
-		link = "searchByURL",
+		link = "addByUrl",
 		isIncrementing = false,
 		func = function()
-			return {
-				NovelInfo {
-					title = "How to use this listing",
-					link = "how",
-					imageURL = ""
-				}
-			}
+			return { addByUrlHowInfo() }
 		end,
-		search = searchByURL,
+		search = addByUrl,
 		searchIsIncrementing = false
 	}
 end
@@ -550,16 +549,16 @@ local function getListing(link)
 			name = "",
 			link = "",
 			func = function()
-				local items = map(dedupeByURL(getCategoryTree()), function(n)
+				local items = map(dedupeByUrl(getCategoryTree()), function(n)
 					return makeCategoryNode(n)
 				end)
-				table.insert(items, makeSearchListing())
+				table.insert(items, makeAddByUrlListing())
 				return items
 			end
 		}
 	end
-	if link == "searchByURL" then
-	    return makeSearchListing()
+	if link == "addByUrl" then
+	    return makeAddByUrlListing()
 	end
 	local id, path = link:match("^cat@(%d+)@(.+)@all$")
 	if id then

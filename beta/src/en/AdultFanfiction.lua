@@ -139,16 +139,21 @@ local function startsWithPattern(mainString, startPattern)
 	return mainString:find("^" .. startPattern) == 1
 end
 
+--- @return NovelInfo
+local function addByUrlHowInfo()
+	return NovelInfo {
+		title = "How to use Add by URL",
+		link = "how/addByUrl",
+		description = "Paste an AdultFanFiction story URL to add it."
+	}
+end
+
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
-	if novelURL == "how" then
-		return NovelInfo {
-			title = "How to use this source",
-			description = "Paste a story URL into the search box of the \"Add by URL\" listing at the bottom of the list, e.g.\nhttps://anime.adult-fanfiction.org/story.php?no=12345\n\nThe story will be added so you can read it.",
-			link = "how"
-		}
+	if novelURL == "how/addByUrl" then
+		return addByUrlHowInfo()
 	end
 	local fullUrl = expandURL(novelURL)
 	local document = GETDocumentAdult(fullUrl)
@@ -321,7 +326,6 @@ local function parseStoryEntries(document, subdomain)
 		return NovelInfo {
 			title = title:text(),
 			link = shrinkURL(urlPrefix .. title:attr("href")),
-			imageURL = "",
 			description = desc,
 			authors = author and { author:text() } or {},
 			genres = genres,
@@ -623,20 +627,15 @@ local function makeAllStoriesListing(subdomain)
 	}
 end
 
+
 --- @return Listing
-local function makeHowListing()
+local function makeAddByUrlListing()
 	return ListingItem {
 		name = "Add by URL",
-		link = "how",
+		link = "addByUrl",
 		isIncrementing = false,
 		func = function()
-			return {
-				NovelInfo {
-					title = "How to use this source",
-					link = "how",
-					imageURL = ""
-				}
-			}
+			return { addByUrlHowInfo() }
 		end,
 		search = function(data)
 			return searchByURL(data)
@@ -673,13 +672,13 @@ local function getListing(link)
 				local items = map(getSubdomains(), function(v)
 					return makeSubdomainListing(v.subdomain, v.name)
 				end)
-				table.insert(items, makeHowListing())
+				table.insert(items, makeAddByUrlListing())
 				return items
 			end
 		}
 	end
-	if link == "how" then
-		return makeHowListing()
+	if link == "addByUrl" then
+		return makeAddByUrlListing()
 	end
 	-- "subdomain@cat=N@all" -> a leaf category's own stories
 	local subdomain, cat = link:match("^(.+)@cat=(%d+)@all$")

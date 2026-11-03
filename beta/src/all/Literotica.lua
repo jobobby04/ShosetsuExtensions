@@ -242,8 +242,7 @@ local function howNovelInfo(category)
 		title = category.name,
 		link = "how/" .. category.tagCategory,
 		description = "Enter at least one tag in the Tags filter to browse "
-			.. category.name .. " stories. No novels are shown until a tag is set.",
-		imageURL = "",
+			.. category.name .. " stories. No novels are shown until a tag is set."
 	})
 end
 
@@ -252,8 +251,7 @@ local function addByUrlHowInfo()
 	return NovelInfo({
 		title = "How to use Add by URL",
 		link = "how/addByUrl",
-		description = "Paste a Literotica story URL to add it.",
-		imageURL = "",
+		description = "Paste a Literotica story URL to add it."
 	})
 end
 
@@ -448,8 +446,7 @@ local function searchByURL(data)
 	return {
 		NovelInfo({
 			title = novel and novel:text() or "",
-			link = shrinkURL(url),
-			imageURL = "",
+			link = shrinkURL(url)
 		}),
 	}
 end

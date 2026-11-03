@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.11","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.12","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -122,15 +122,21 @@ local function readStatus(document)
 	return status
 end
 
+--- @return NovelInfo
+local function howInfo()
+	return NovelInfo {
+		title = "How to use this source",
+		link = "how",
+		description = "You can use this source by:\n1. searching on the ArchiveOfOurOwn.org website and inputting the url of the work in the search bar.\n2. Setting your queries on the ArchiveOfOurOwn.org website and copying the search to the search bar.\n3. Pasting the url of a series to browse all the works in it."
+	}
+end
+
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
-	if novelURL:match("^how") then
-		return NovelInfo {
-			title = "How to use this source v2",
-			description = "You can use this source by:\n1. searching on the ArchiveOfOurOwn.org website and inputting the url of the work in the search bar.\n2. Setting your queries on the ArchiveOfOurOwn.org website and copying the search to the search bar.\n3. Pasting the url of a series to browse all the works in it."
-		}
+	if novelURL == "how" then
+		return howInfo()
 	end
 
 	local document = ClientGetDocument(expandURL(novelURL) .. "?view_adult=true")
@@ -292,7 +298,6 @@ local function parseBrowseNovel(element)
 	return NovelInfo {
 		title = title:text(),
 		link = shrinkURL(title:attr("href")),
-		imageURL = "",
 		description = summary,
 		genres = genres,
 		status = status,
@@ -351,8 +356,7 @@ local function search(filters)
 		return {
 			NovelInfo {
 				title = novel:selectFirst(".title"):text(),
-				link = shrinkURL(novelUrl),
-				imageURL = ""
+				link = shrinkURL(novelUrl)
 			}
 		}
 	end
@@ -385,13 +389,7 @@ local function getUserGuide(filters)
 	end
 
 	if page ~= 1 then return {} end
-	return {
-		NovelInfo {
-			title = "How to use this source",
-			link = "how.v2",
-			imageURL = ""
-		}
-	}
+	return { howInfo() }
 end
 
 local function getLatestListing(filters)
