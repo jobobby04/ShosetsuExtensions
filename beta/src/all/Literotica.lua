@@ -1,4 +1,4 @@
--- {"id":1308639970,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639970,"ver":"1.1.1","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.literotica.com"
 local settings = {}
@@ -103,17 +103,26 @@ local function getPassage(chapterURL)
 	return pageOfElem(chap, true)
 end
 
+--- @param text string|nil
+--- @return integer
 local function textToInteger(text)
-	local number, unit = text:gsub(",", ""):match("(%d+%.?%d*)(%a*)")
-	number = tonumber(number)
-
-	if unit == "k" then
-		number = number * 1000
-	elseif unit == "m" or unit == "M" then
-		 number = number * 1000000
+	if type(text) ~= "string" then
+		return 0
 	end
-
-	return math.floor(number)
+	local cleaned = text:gsub("%s+", ""):gsub(",", "")
+	local number, unit = cleaned:match("^(%d+%.?%d*)(%a*)")
+	number = tonumber(number)
+	if number == nil then
+		return 0
+	end
+	local multiplier = 1
+	local u = unit:lower()
+	if u == "k" then
+		multiplier = 1000
+	elseif u == "m" then
+		multiplier = 1000000
+	end
+	return math.floor(number * multiplier)
 end
 
 local function getNovelInfoFromSeries(document)
@@ -232,6 +241,40 @@ local function getCategories()
 		end
 	end
 	cachedCategories = categories
+	return categories
+end
+
+local cachedSiteCategories = nil
+
+--- Fetches the site's story categories from the /stories index. Each category
+--- is a link with href="/c/<slug>" and a title attribute holding the name.
+--- @return table[] @of {name: string, slug: string}
+local function getSiteCategories()
+	if cachedSiteCategories ~= nil then
+		return cachedSiteCategories
+	end
+	local categories = {}
+	local seen = {}
+	local document = ClientGetDocument(baseURL .. "/stories")
+	local links = document:select("a[href^='/c/']")
+	for i = 0, links:size() - 1 do
+		local a = links:get(i)
+		local slug = a:attr("href"):match("^/c/([^/]+)$")
+		if slug and not seen[slug] then
+			seen[slug] = true
+			local name = a:attr("title")
+			if name == nil or name == "" then
+				name = a:text()
+			end
+			if name ~= "" then
+				table.insert(categories, {
+					name = name,
+					slug = slug,
+				})
+			end
+		end
+	end
+	cachedSiteCategories = categories
 	return categories
 end
 
@@ -373,6 +416,48 @@ local function parseStoryEntries(document)
 	end)
 end
 
+--- @param data table @contains [PAGE]
+--- @return NovelInfo[]
+local function browseNewStories(data)
+	local page = data[PAGE] or 1
+	local url = baseURL .. "/new/stories"
+	if page > 1 then
+		url = url .. "?page=" .. page
+	end
+	return parseStoryEntries(ClientGetDocument(url))
+end
+
+--- @param data table @contains [PAGE]
+--- @return NovelInfo[]
+local function browseTopStories(data)
+	if (data[PAGE] or 1) > 1 then
+		return {}
+	end
+	return parseStoryEntries(ClientGetDocument(baseURL .. "/top/stories"))
+end
+
+--- @param data table @contains [PAGE]
+--- @return NovelInfo[]
+local function browseFavorites(data)
+	local page = data[PAGE] or 1
+	local url = baseURL .. "/favorites/stories"
+	if page > 1 then
+		url = url .. "?page=" .. page
+	end
+	return parseStoryEntries(ClientGetDocument(url))
+end
+
+--- @param category table @{name, slug}
+--- @param data table @contains [PAGE]
+--- @return NovelInfo[]
+local function browseCategoryNew(category, data)
+	if (data[PAGE] or 1) > 1 then
+		return {}
+	end
+	local url = baseURL .. "/c/" .. category.slug .. "/new-" .. category.slug
+	return parseStoryEntries(ClientGetDocument(url))
+end
+
 --- @param category table @{name, tagCategory, category}
 --- @return string
 local function categoryBaseURL(category)
@@ -500,7 +585,80 @@ local function makeAddByUrlListing()
 	}
 end
 
---- @param link string @"" for the root, otherwise "cat=<tagCategory>" or "addByUrl"
+--- @return ListingItem
+local function makeNewStoriesListing()
+	return ListingItem {
+		name = "New Stories",
+		link = "newStories",
+		isIncrementing = true,
+		func = browseNewStories,
+	}
+end
+
+--- @return ListingItem
+local function makeTopStoriesListing()
+	return ListingItem {
+		name = "Top Stories",
+		link = "topStories",
+		isIncrementing = false,
+		func = browseTopStories,
+	}
+end
+
+--- @return ListingItem
+local function makeFavoritesListing()
+	return ListingItem {
+		name = "Favorites",
+		link = "favorites",
+		isIncrementing = false,
+		func = browseFavorites,
+	}
+end
+
+--- @param category table @{name, slug}
+--- @return ListingItem
+local function makeCategoryBrowseListing(category)
+	return ListingItem {
+		name = category.name,
+		link = "siteCat=" .. category.slug,
+		isIncrementing = true,
+		func = function(data)
+			return browseCategoryNew(category, data)
+		end,
+	}
+end
+
+--- @return ListingList
+local function makeCategoriesListing()
+	return ListingList {
+		name = "Categories",
+		link = "categories",
+		func = function()
+			local items = {}
+			for _, category in ipairs(getSiteCategories()) do
+				table.insert(items, makeCategoryBrowseListing(category))
+			end
+			return items
+		end,
+	}
+end
+
+--- @return ListingList
+local function makeCategoryTagsListing()
+	return ListingList {
+		name = "Tags",
+		link = "tags",
+		func = function()
+			local items = {}
+			for _, category in ipairs(getCategories()) do
+				table.insert(items, makeCategoryListing(category))
+			end
+			return items
+		end,
+	}
+end
+
+--- @param link string @"" for the root, otherwise a listing link
 --- @return ListingList|ListingItem
 local function getListing(link)
 	if link == "" then
@@ -509,16 +667,41 @@ local function getListing(link)
 			link = "",
 			func = function()
 				local items = {}
-				for _, category in ipairs(getCategories()) do
-					table.insert(items, makeCategoryListing(category))
-				end
+				table.insert(items, makeNewStoriesListing())
+				table.insert(items, makeTopStoriesListing())
+				table.insert(items, makeFavoritesListing())
+				table.insert(items, makeCategoriesListing())
+				table.insert(items, makeCategoryTagsListing())
 				table.insert(items, makeAddByUrlListing())
 				return items
 			end,
 		}
 	end
+	if link == "newStories" then
+		return makeNewStoriesListing()
+	end
+	if link == "topStories" then
+		return makeTopStoriesListing()
+	end
+	if link == "favorites" then
+		return makeFavoritesListing()
+	end
+	if link == "categories" then
+		return makeCategoriesListing()
+	end
+	if link == "tags" then
+		return makeCategoryTagsListing()
+	end
 	if link == "addByUrl" then
 		return makeAddByUrlListing()
+	end
+	local siteSlug = link:match("^siteCat=(.*)$")
+	if siteSlug then
+		for _, category in ipairs(getSiteCategories()) do
+			if category.slug == siteSlug then
+				return makeCategoryBrowseListing(category)
+			end
+		end
 	end
 	local slug = link:match("^cat=(.*)$")
 	if slug then
