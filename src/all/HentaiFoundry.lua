@@ -345,11 +345,11 @@ local function searchStories(query, page)
 	end)
 end
 
---- Applies the rating/sort filters to a category via the site's filter form.
---- @param catUrl string @relative category URL
+--- Posts the rating/sort filters to the site's filter form. The filter is
+--- session-based: it sets a cookie that the next story-list GET applies, so it
+--- works on any story listing (categories, popular, recent, user, search).
 --- @param filters table
---- @return NovelInfo[]
-local function filterCategory(catUrl, filters)
+local function applyFilters(filters)
 	local token = getToken()
 	if token == nil then
 		ClientGetDocument("https://www.hentai-foundry.com")
@@ -358,7 +358,22 @@ local function filterCategory(catUrl, filters)
 	local formBody = createFormBody(urldecode(token):match('"([^"]+)"'), filters)
 	local response = ClientRequest(POST("https://www.hentai-foundry.com/site/filters", DEFAULT_HEADERS(), formBody))
 	response:close()
-	return browseStoryList(catUrl, filters[PAGE])
+end
+
+--- @param listUrl string @relative story-list URL
+--- @param filters table
+--- @return NovelInfo[]
+local function filterStoryList(listUrl, filters)
+	applyFilters(filters)
+	return browseStoryList(listUrl, filters[PAGE])
+end
+
+--- @param query string
+--- @param filters table
+--- @return NovelInfo[]
+local function filterSearch(query, filters)
+	applyFilters(filters)
+	return searchStories(query, filters[PAGE])
 end
 
 --- @param filters table
@@ -542,7 +557,7 @@ local function makeCategoryListing(id, path, name, linkSuffix)
 			return browseStoryList(catUrl, data[PAGE])
 		end,
 		search = function(data)
-			return filterCategory(catUrl, data)
+			return filterStoryList(catUrl, data)
 		end,
 		searchFilters = searchFilters(),
 		searchIsIncrementing = true
@@ -592,7 +607,12 @@ local function makePopularListing()
 		isIncrementing = true,
 		func = function(data)
 			return browseStoryList("/stories/popular", data[PAGE])
-		end
+		end,
+		search = function(data)
+			return filterStoryList("/stories/popular", data)
+		end,
+		searchFilters = searchFilters(),
+		searchIsIncrementing = true
 	}
 end
 
@@ -626,7 +646,12 @@ local function makeRecentAllListing()
 		isIncrementing = true,
 		func = function(data)
 			return browseStoryList("/stories/recent/all", data[PAGE])
-		end
+		end,
+		search = function(data)
+			return filterStoryList("/stories/recent/all", data)
+		end,
+		searchFilters = searchFilters(),
+		searchIsIncrementing = true
 	}
 end
 
@@ -639,7 +664,12 @@ local function makeRecentDateListing(date)
 		isIncrementing = true,
 		func = function(data)
 			return browseStoryList("/stories/recent/" .. date, data[PAGE])
-		end
+		end,
+		search = function(data)
+			return filterStoryList("/stories/recent/" .. date, data)
+		end,
+		searchFilters = searchFilters(),
+		searchIsIncrementing = true
 	}
 end
 
@@ -674,8 +704,9 @@ local function makeUserStoriesListing()
 			if username == "" then
 				return {}
 			end
-			return browseStoryList("/stories/user/" .. username, data[PAGE])
+			return filterStoryList("/stories/user/" .. username, data)
 		end,
+		searchFilters = searchFilters(),
 		searchIsIncrementing = true
 	}
 end
@@ -695,8 +726,9 @@ local function makeSearchListing()
 			if query == "" then
 				return {}
 			end
-			return searchStories(query, data[PAGE])
+			return filterSearch(query, data)
 		end,
+		searchFilters = searchFilters(),
 		searchIsIncrementing = true
 	}
 end
