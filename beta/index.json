@@ -157,9 +157,9 @@
 			"fileName": "AdultFanfiction",
 			"imageURL": "",
 			"lang": "en",
-			"ver": "1.1.0",
+			"ver": "1.1.1",
 			"libVer": "1.1.0",
-			"md5": "9f68328afbd3a41464e21ef4fc981bfab339e9ae3b94140e7fff2fcbb6c58b02",
+			"md5": "25816cc860f0ea06894a2caf45bc53a28cf3093986a02ab6579cbc840a58405f",
 			"type": "LuaScript"
 		}
 	],
