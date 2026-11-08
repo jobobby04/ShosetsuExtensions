@@ -1,4 +1,4 @@
--- {"id":1308639967,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639967,"ver":"1.1.1","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.hentai-foundry.com"
 local settings = {}
@@ -146,12 +146,36 @@ local function addByUrlHowInfo()
 	}
 end
 
+--- @return NovelInfo
+local function userStoriesHowInfo()
+	return NovelInfo {
+		title = "How to use User Stories",
+		link = "how/userStories",
+		description = "Type a HentaiFoundry username to browse all of their stories."
+	}
+end
+
+--- @return NovelInfo
+local function searchHowInfo()
+	return NovelInfo {
+		title = "How to use Story Search",
+		link = "how/search",
+		description = "Type a search query to find stories by title, keywords, or description."
+	}
+end
+
 --- @param novelURL string
 --- @param loadChapters boolean
 --- @return NovelInfo
 local function parseNovel(novelURL, loadChapters)
 	if novelURL == "how/addByUrl" then
 		return addByUrlHowInfo()
+	end
+	if novelURL == "how/userStories" then
+		return userStoriesHowInfo()
+	end
+	if novelURL == "how/search" then
+		return searchHowInfo()
 	end
 
 	local document = ClientGetDocument(expandURL(novelURL))
@@ -282,6 +306,12 @@ local function urldecode(s)
 	return s
 end
 
+local function urlencode(s)
+	return (s:gsub("[^%w%-_%.~]", function(c)
+		return string.format("%%%02X", string.byte(c))
+	end))
+end
+
 local function getToken()
 	local cookies = HttpClient():cookieJar():loadForRequest(HttpUrl("https://www.hentai-foundry.com"))
 
@@ -292,11 +322,24 @@ local function getToken()
 	end
 end
 
---- @param catUrl string @relative category URL, e.g. "/categories/5/Misc/stories"
+--- Shared browse for paginated story lists.
+--- @param listUrl string @relative story-list URL, e.g. "/categories/5/Misc/stories"
 --- @param page number
 --- @return NovelInfo[]
-local function browseCategory(catUrl, page)
-	local document = ClientGetDocument(expandURL(catUrl) .. "/page/" .. page)
+local function browseStoryList(listUrl, page)
+	local document = ClientGetDocument(expandURL(listUrl) .. "/page/" .. page)
+	return map(document:select(".storyRow"), function(v)
+		return getNovel(v)
+	end)
+end
+
+--- Story text search. Paginated via a `page` query param (not a `/page/N` path).
+--- @param query string
+--- @param page number
+--- @return NovelInfo[]
+local function searchStories(query, page)
+	local url = expandURL("/search/stories") .. "?query=" .. urlencode(query) .. "&page=" .. page
+	local document = ClientGetDocument(url)
 	return map(document:select(".storyRow"), function(v)
 		return getNovel(v)
 	end)
@@ -315,7 +358,7 @@ local function filterCategory(catUrl, filters)
 	local formBody = createFormBody(urldecode(token):match('"([^"]+)"'), filters)
 	local response = ClientRequest(POST("https://www.hentai-foundry.com/site/filters", DEFAULT_HEADERS(), formBody))
 	response:close()
-	return browseCategory(catUrl, filters[PAGE])
+	return browseStoryList(catUrl, filters[PAGE])
 end
 
 --- @param filters table
@@ -496,7 +539,7 @@ local function makeCategoryListing(id, path, name, linkSuffix)
 		link = "cat@" .. id .. "@" .. path .. (linkSuffix or ""),
 		isIncrementing = true,
 		func = function(data)
-			return browseCategory(catUrl, data[PAGE])
+			return browseStoryList(catUrl, data[PAGE])
 		end,
 		search = function(data)
 			return filterCategory(catUrl, data)
@@ -541,7 +584,125 @@ local function makeAddByUrlListing()
 	}
 end
 
---- @param link string @"" for the root, "cat@<id>@<path>", or "cat@<id>@<path>@all"
+--- @return Listing
+local function makePopularListing()
+	return ListingItem {
+		name = "Popular Stories",
+		link = "popular",
+		isIncrementing = true,
+		func = function(data)
+			return browseStoryList("/stories/popular", data[PAGE])
+		end
+	}
+end
+
+local recentCalendar
+--- The site's "Recent" page is a calendar of the dates that have submissions
+--- (newest first). Fetch it once and cache the date list.
+--- @return table[] @entries {date, name} in newest-first order
+local function getRecentCalendar()
+	if recentCalendar then
+		return recentCalendar
+	end
+	local document = ClientGetDocument(expandURL("/stories/recent"))
+	local links = document:select("table.calendar a")
+	recentCalendar = {}
+	local seen = {}
+	for i = 0, links:size() - 1 do
+		local date = links:get(i):attr("href"):match("/stories/recent/([%d]+%-%d+%-%d+)$")
+		if date and not seen[date] then
+			seen[date] = true
+			table.insert(recentCalendar, { date = date, name = date })
+		end
+	end
+	return recentCalendar
+end
+
+--- @return Listing
+local function makeRecentAllListing()
+	return ListingItem {
+		name = "All (last 30 days)",
+		link = "recent@all",
+		isIncrementing = true,
+		func = function(data)
+			return browseStoryList("/stories/recent/all", data[PAGE])
+		end
+	}
+end
+
+--- @param date string @YYYY-MM-DD
+--- @return Listing
+local function makeRecentDateListing(date)
+	return ListingItem {
+		name = date,
+		link = "recent@" .. date,
+		isIncrementing = true,
+		func = function(data)
+			return browseStoryList("/stories/recent/" .. date, data[PAGE])
+		end
+	}
+end
+
+--- A group: an "All" item plus one item per date that has submissions.
+--- @return Listing
+local function makeRecentListing()
+	return ListingList {
+		name = "Recent Stories",
+		link = "recent",
+		func = function()
+			local items = { makeRecentAllListing() }
+			for _, entry in ipairs(getRecentCalendar()) do
+				table.insert(items, makeRecentDateListing(entry.date))
+			end
+			return items
+		end
+	}
+end
+
+--- Search-only: the user types a username, we browse that user's stories.
+--- @return Listing
+local function makeUserStoriesListing()
+	return ListingItem {
+		name = "User Stories",
+		link = "userStories",
+		isIncrementing = false,
+		func = function()
+			return { userStoriesHowInfo() }
+		end,
+		search = function(data)
+			local username = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+			if username == "" then
+				return {}
+			end
+			return browseStoryList("/stories/user/" .. username, data[PAGE])
+		end,
+		searchIsIncrementing = true
+	}
+end
+
+--- Search-only: the user types a text query, we run the site's story search.
+--- @return Listing
+local function makeSearchListing()
+	return ListingItem {
+		name = "Search Stories",
+		link = "search",
+		isIncrementing = false,
+		func = function()
+			return { searchHowInfo() }
+		end,
+		search = function(data)
+			local query = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+			if query == "" then
+				return {}
+			end
+			return searchStories(query, data[PAGE])
+		end,
+		searchIsIncrementing = true
+	}
+end
+
+--- @param link string @"" for the root, a fixed listing id ("popular", "recent",
+--- "search", "userStories", "addByUrl"), or "cat@<id>@<path>"/"cat@<id>@<path>@all"
 --- @return Listing
 local function getListing(link)
 	if link == "" then
@@ -549,16 +710,41 @@ local function getListing(link)
 			name = "",
 			link = "",
 			func = function()
-				local items = map(dedupeByUrl(getCategoryTree()), function(n)
-					return makeCategoryNode(n)
-				end)
+				local items = {
+					makePopularListing(),
+					makeRecentListing(),
+				}
+				for _, n in ipairs(dedupeByUrl(getCategoryTree())) do
+					table.insert(items, makeCategoryNode(n))
+				end
+				table.insert(items, makeSearchListing())
+				table.insert(items, makeUserStoriesListing())
 				table.insert(items, makeAddByUrlListing())
 				return items
 			end
 		}
 	end
+	if link == "popular" then
+		return makePopularListing()
+	end
+	if link == "recent" then
+		return makeRecentListing()
+	end
+	if link == "recent@all" then
+		return makeRecentAllListing()
+	end
+	local recentDate = link:match("^recent@([%d]+%-%d+%-%d+)$")
+	if recentDate then
+		return makeRecentDateListing(recentDate)
+	end
+	if link == "search" then
+		return makeSearchListing()
+	end
+	if link == "userStories" then
+		return makeUserStoriesListing()
+	end
 	if link == "addByUrl" then
-	    return makeAddByUrlListing()
+		return makeAddByUrlListing()
 	end
 	local id, path = link:match("^cat@(%d+)@(.+)@all$")
 	if id then
