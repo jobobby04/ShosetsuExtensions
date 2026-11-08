@@ -1,4 +1,4 @@
--- {"id":1308639978,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639978,"ver":"1.1.1","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.adult-fanfiction.org"
 local settings = {}
@@ -585,24 +585,25 @@ end
 --- @param name string?
 --- @return Listing
 local function makeCategoryListing(subdomain, cat, name)
+	local catUrl = "https://" .. subdomain .. ".adult-fanfiction.org/index.php?cat=" .. cat
 	return ListingList {
 		name = name or ("Category " .. cat),
 		link = subdomain .. "@cat=" .. cat,
 		func = function()
-			local document = GETDocumentAdult(
-				"https://" .. subdomain .. ".adult-fanfiction.org/index.php?cat=" .. cat
-			)
+			local document = GETDocumentAdult(catUrl)
 			local cards = document:select(".categories-grid .category-card a")
 			local items = {}
+			-- Only offer a browse item if this category has its own stories.
+			if document:select(".story-entry"):size() > 0 then
+				table.insert(items, makeCategoryLeaf(subdomain, cat, "All Stories"))
+			end
+			-- Recurse into any subcategories (the tree is as deep as the site's).
 			for i = 0, cards:size() - 1 do
 				local a = cards:get(i)
 				local subcat = a:attr("href"):match("cat=(%d+)")
-				if subcat then
-					table.insert(items, makeCategoryLeaf(subdomain, subcat, categoryName(a)))
+				if subcat and subcat ~= cat then
+					table.insert(items, makeCategoryListing(subdomain, subcat, categoryName(a)))
 				end
-			end
-			if #items == 0 then
-				table.insert(items, makeCategoryLeaf(subdomain, cat, name or ("Category " .. cat)))
 			end
 			return items
 		end
@@ -680,10 +681,10 @@ local function getListing(link)
 	if link == "addByUrl" then
 		return makeAddByUrlListing()
 	end
-	-- "subdomain@cat=N@all" -> a leaf category's own stories
+	-- "subdomain@cat=N@all" -> browse a category's own stories
 	local subdomain, cat = link:match("^(.+)@cat=(%d+)@all$")
 	if subdomain then
-		return makeCategoryLeaf(subdomain, cat, "Category " .. cat)
+		return makeCategoryLeaf(subdomain, cat, "All Stories")
 	end
 	-- "subdomain@all" -> the subdomain's "All Stories" listing
 	subdomain = link:match("^(.+)@all$")
