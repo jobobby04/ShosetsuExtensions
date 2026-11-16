@@ -58,9 +58,9 @@
 			"fileName": "ArchiveOfOurOwn",
 			"imageURL": "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_icon.png",
 			"lang": "all",
-			"ver": "1.0.13",
+			"ver": "1.0.14",
 			"libVer": "1.1.0",
-			"md5": "5b059d43e698504ff13ba57377970097657cef3d41dfa15eab3a4f4f169ad6e2",
+			"md5": "46d0a927a1d781da3732877bb18d05776896289b1b84ce9a2ba70b3ee557d515",
 			"type": "LuaScript"
 		},
 		{
