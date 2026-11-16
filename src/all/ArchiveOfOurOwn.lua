@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.15","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.16","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -598,33 +598,47 @@ end
 --- @return Filter[]
 local function browseFilters()
 	return {
-		DropdownFilter(FID_SORT_COLUMN, "Sort By", SORT_COLUMNS),
-		DropdownFilter(FID_SORT_DIRECTION, "Direction", { "Ascending", "Descending" }),
-		DropdownFilter(FID_RATING, "Rating", RATINGS),
-		RadioGroupFilter(FID_COMPLETE, "Completion", COMPLETIONS),
-		SwitchFilter(FID_SINGLE_CHAPTER, "Single Chapter"),
-		TriStateFilter(FID_CAT_GEN, "Gen"),
-		TriStateFilter(FID_CAT_FM, "F/M"),
-		TriStateFilter(FID_CAT_FF, "F/F"),
-		TriStateFilter(FID_CAT_MM, "M/M"),
-		TriStateFilter(FID_CAT_MULTI, "Multi"),
-		TriStateFilter(FID_CAT_OTHER, "Other"),
-		TriStateFilter(FID_WARN_NONE, "No Warnings"),
-		TriStateFilter(FID_WARN_VIOLENCE, "Graphic Violence"),
-		TriStateFilter(FID_WARN_DEATH, "Major Character Death"),
-		TriStateFilter(FID_WARN_NONCON, "Rape/Non-Con"),
-		TriStateFilter(FID_WARN_UNDERAGE, "Underage Sex"),
-		TriStateFilter(FID_WARN_CREATOR, "Creator Chose Not To Use"),
-		TextFilter(FID_WORD_COUNT_MIN, "Word Count Min"),
-		TextFilter(FID_WORD_COUNT_MAX, "Word Count Max"),
-		TextFilter(FID_TITLE, "Title"),
-		TextFilter(FID_CHARACTERS, "Characters"),
-		TextFilter(FID_RELATIONSHIPS, "Relationships"),
-		TextFilter(FID_FREEFORM, "Freeform"),
-		TextFilter(FID_MIN_HITS, "Min Hits"),
-		TextFilter(FID_MIN_KUDOS, "Min Kudos"),
-		TextFilter(FID_MIN_COMMENTS, "Min Comments"),
-		TextFilter(FID_MIN_BOOKMARKS, "Min Bookmarks"),
+		FilterGroup("Sorting", {
+			DropdownFilter(FID_SORT_COLUMN, "Sort By", SORT_COLUMNS),
+			DropdownFilter(FID_SORT_DIRECTION, "Direction", { "Ascending", "Descending" }),
+		}),
+		FilterGroup("Content", {
+			DropdownFilter(FID_RATING, "Rating", RATINGS),
+			RadioGroupFilter(FID_COMPLETE, "Completion", COMPLETIONS),
+			SwitchFilter(FID_SINGLE_CHAPTER, "Single Chapter"),
+		}),
+		FilterGroup("Categories", {
+			TriStateFilter(FID_CAT_GEN, "Gen"),
+			TriStateFilter(FID_CAT_FM, "F/M"),
+			TriStateFilter(FID_CAT_FF, "F/F"),
+			TriStateFilter(FID_CAT_MM, "M/M"),
+			TriStateFilter(FID_CAT_MULTI, "Multi"),
+			TriStateFilter(FID_CAT_OTHER, "Other"),
+		}),
+		FilterGroup("Warnings", {
+			TriStateFilter(FID_WARN_NONE, "No Warnings"),
+			TriStateFilter(FID_WARN_VIOLENCE, "Graphic Violence"),
+			TriStateFilter(FID_WARN_DEATH, "Major Character Death"),
+			TriStateFilter(FID_WARN_NONCON, "Rape/Non-Con"),
+			TriStateFilter(FID_WARN_UNDERAGE, "Underage Sex"),
+			TriStateFilter(FID_WARN_CREATOR, "Creator Chose Not To Use"),
+		}),
+		FilterGroup("Word Count", {
+			TextFilter(FID_WORD_COUNT_MIN, "Min"),
+			TextFilter(FID_WORD_COUNT_MAX, "Max"),
+		}),
+		FilterGroup("Tags", {
+			TextFilter(FID_TITLE, "Title"),
+			TextFilter(FID_CHARACTERS, "Characters"),
+			TextFilter(FID_RELATIONSHIPS, "Relationships"),
+			TextFilter(FID_FREEFORM, "Freeform"),
+		}),
+		FilterGroup("Stats", {
+			TextFilter(FID_MIN_HITS, "Min Hits"),
+			TextFilter(FID_MIN_KUDOS, "Min Kudos"),
+			TextFilter(FID_MIN_COMMENTS, "Min Comments"),
+			TextFilter(FID_MIN_BOOKMARKS, "Min Bookmarks"),
+		}),
 	}
 end
 
