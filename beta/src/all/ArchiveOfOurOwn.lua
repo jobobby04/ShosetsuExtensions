@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.13","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.14","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -672,8 +672,9 @@ end
 
 --- @param mediumSlug string
 --- @param fandomSlug string
+--- @param count integer|nil @optional work count, shown as a suffix
 --- @return ListingItem
-local function fandomItem(mediumSlug, fandomSlug)
+local function fandomItem(mediumSlug, fandomSlug, count)
 	local name = fandomSlug
 	local fandoms = fetchMediumFandoms(mediumSlug)
 	for i = 1, #fandoms do
@@ -681,6 +682,10 @@ local function fandomItem(mediumSlug, fandomSlug)
 			name = fandoms[i].name
 			break
 		end
+	end
+	if count ~= nil then
+		local formatted = tostring(count):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+		name = name .. " (" .. formatted .. ")"
 	end
 	return ListingItem {
 		name = name,
@@ -705,7 +710,7 @@ local function mediumByWorksGroup(mediumSlug)
 			end)
 			local items = {}
 			for i = 1, #fandoms do
-				table.insert(items, fandomItem(mediumSlug, fandoms[i].slug))
+				table.insert(items, fandomItem(mediumSlug, fandoms[i].slug, fandoms[i].count))
 			end
 			return items
 		end,
