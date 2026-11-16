@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.12","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.13","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -32,9 +32,6 @@ local function ClientGetDocument(url)
 end
 
 local DEFAULT_COVER = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_cover.webp"
-
--- Filter IDs
-local FID_AUTHOR = 2
 
 local function shrinkURL(url)
 	return url:gsub("^.-archiveofourown%.org", "")
@@ -127,7 +124,25 @@ local function howInfo()
 	return NovelInfo {
 		title = "How to use this source",
 		link = "how",
-		description = "You can use this source by:\n1. searching on the ArchiveOfOurOwn.org website and inputting the url of the work in the search bar.\n2. Setting your queries on the ArchiveOfOurOwn.org website and copying the search to the search bar.\n3. Pasting the url of a series to browse all the works in it."
+		description = "Search for works by title, tag, or keyword. For adding specific works or series by URL, use the Add by URL listing."
+	}
+end
+
+--- @return NovelInfo
+local function addByUrlHowInfo()
+	return NovelInfo {
+		title = "How to use Add by URL",
+		link = "how/addByUrl",
+		description = "Paste the URL of a work, series, or works listing from archiveofourown.org to add it.\nExample: https://archiveofourown.org/works/12345678"
+	}
+end
+
+--- @return NovelInfo
+local function authorHowInfo()
+	return NovelInfo {
+		title = "How to use Search by Author",
+		link = "how/author",
+		description = "Enter an author's username or pseud to browse all of their works.\nExample: boolger"
 	}
 end
 
@@ -137,6 +152,12 @@ end
 local function parseNovel(novelURL, loadChapters)
 	if novelURL == "how" then
 		return howInfo()
+	end
+	if novelURL == "how/addByUrl" then
+		return addByUrlHowInfo()
+	end
+	if novelURL == "how/author" then
+		return authorHowInfo()
 	end
 
 	local document = ClientGetDocument(expandURL(novelURL) .. "?view_adult=true")
@@ -328,27 +349,206 @@ local function urlEncode(str)
 	end))
 end
 
+--- Turns a human-readable count ("373691", "18,311,380", "1.42M", "3.4k", "")
+--- into an integer. Tolerates non-strings, empty and non-numeric input.
+--- @param value string|nil
+--- @return integer
+local function parseCount(value)
+	if type(value) ~= "string" then
+		return 0
+	end
+	local s = value:gsub("%s", ""):gsub(",", "")
+	if s == "" then
+		return 0
+	end
+	local num, unit = s:match("^(%d+%.?%d*)(%a*)")
+	if num == nil then
+		return 0
+	end
+	local n = tonumber(num)
+	if n == nil then
+		return 0
+	end
+	if unit == "k" or unit == "K" then
+		n = n * 1000
+	elseif unit == "m" or unit == "M" then
+		n = n * 1000000
+	end
+	return math.floor(n)
+end
+
+--- @param element Element @a fandom <li> in the /fandoms index
+--- @return table|nil @{name, slug, count}
+local function parseFandomLi(element)
+	local tagLink = element:selectFirst("a.tag")
+	if tagLink == nil then
+		return nil
+	end
+	local href = tagLink:attr("href")
+	local slug = href:match("/tags/(.+)/works$")
+	if slug == nil then
+		return nil
+	end
+	-- The work count is the last "(N)" in the li text; anchor to the end so a
+	-- bare year in the fandom name (e.g. "Show (2005)") is not mistaken for it.
+	local countText = element:text():match("%((%d+%.?%d*[kKmM]?)%)%s*$")
+	return {
+		name = tagLink:text(),
+		slug = slug,
+		count = parseCount(countText),
+	}
+end
+
+--- @type table[]|nil
+local fandomsCache = nil
+
+--- Fetches /fandoms once and caches the medium -> top-fandoms hierarchy.
+--- @return table[] @of {name, slug, fandoms = {name, slug, count}[]}
+local function fetchFandoms()
+	if fandomsCache ~= nil then
+		return fandomsCache
+	end
+	local document = ClientGetDocument(expandURL("/fandoms"))
+	local mediums = {}
+	local mediumElems = document:select("li.medium.listbox.group")
+	for i = 0, mediumElems:size() - 1 do
+		local mediumElem = mediumElems:get(i)
+		local mediumLink = mediumElem:selectFirst("h3.heading > a")
+		if mediumLink ~= nil then
+			local mediumSlug = mediumLink:attr("href"):match("/media/(.+)/fandoms$")
+			if mediumSlug ~= nil then
+				local fandoms = {}
+				local fandomElems = mediumElem:select("ol.index.group > li")
+				for j = 0, fandomElems:size() - 1 do
+					local fandom = parseFandomLi(fandomElems:get(j))
+					if fandom ~= nil then
+						table.insert(fandoms, fandom)
+					end
+				end
+				table.insert(mediums, {
+					name = mediumLink:text(),
+					slug = mediumSlug,
+					fandoms = fandoms,
+				})
+			end
+		end
+	end
+	fandomsCache = mediums
+	return mediums
+end
+
+--- @type table[]|nil
+local tagsCache = nil
+
+--- Fetches the /tags popular-tag cloud once and caches the tag list.
+--- @return table[] @of {name, slug}
+local function fetchTags()
+	if tagsCache ~= nil then
+		return tagsCache
+	end
+	local document = ClientGetDocument(expandURL("/tags"))
+	local tags = {}
+	local seen = {}
+	local tagElems = document:select("ul.tags.cloud li > a")
+	for i = 0, tagElems:size() - 1 do
+		local tagLink = tagElems:get(i)
+		local slug = tagLink:attr("href"):match("/tags/(.+)/works$")
+		if slug ~= nil and not seen[slug] then
+			seen[slug] = true
+			table.insert(tags, {
+				name = tagLink:text(),
+				slug = slug,
+			})
+		end
+	end
+	tagsCache = tags
+	return tags
+end
+
+--- @type table[string] @mediumSlug -> {letter, fandoms = {name, slug, count}[]}[]
+local mediumLettersCache = {}
+
+--- Fetches /media/<medium>/fandoms once per medium and caches the fandoms
+--- grouped by their first character (the page is already lettered).
+--- @param mediumSlug string
+--- @return table[] @of {letter, fandoms = {name, slug, count}[]}
+local function fetchMediumLetters(mediumSlug)
+	if mediumLettersCache[mediumSlug] ~= nil then
+		return mediumLettersCache[mediumSlug]
+	end
+	local document = ClientGetDocument(expandURL("/media/" .. mediumSlug .. "/fandoms"))
+	local letters = {}
+	local letterElems = document:select("li.letter.listbox.group")
+	for i = 0, letterElems:size() - 1 do
+		local letterElem = letterElems:get(i)
+		local letterHeading = letterElem:selectFirst("h3.heading")
+		if letterHeading ~= nil then
+			local letter = letterHeading:ownText():gsub("%s", "")
+			local fandoms = {}
+			local fandomElems = letterElem:select("ul.tags.index.group > li")
+			for j = 0, fandomElems:size() - 1 do
+				local fandom = parseFandomLi(fandomElems:get(j))
+				if fandom ~= nil then
+					table.insert(fandoms, fandom)
+				end
+			end
+			if #fandoms > 0 then
+				table.insert(letters, { letter = letter, fandoms = fandoms })
+			end
+		end
+	end
+	mediumLettersCache[mediumSlug] = letters
+	return letters
+end
+
+--- @type table[string] @mediumSlug -> {name, slug, count}[]
+local mediumFandomsCache = {}
+
+--- All fandoms in a medium, flattened across letters.
+--- @param mediumSlug string
+--- @return table[] @of {name, slug, count}
+local function fetchMediumFandoms(mediumSlug)
+	if mediumFandomsCache[mediumSlug] ~= nil then
+		return mediumFandomsCache[mediumSlug]
+	end
+	local letters = fetchMediumLetters(mediumSlug)
+	local fandoms = {}
+	for i = 1, #letters do
+		for j = 1, #letters[i].fandoms do
+			table.insert(fandoms, letters[i].fandoms[j])
+		end
+	end
+	mediumFandomsCache[mediumSlug] = fandoms
+	return fandoms
+end
+
+--- Fetches a paginated works listing and parses its story cards.
+--- @param url string @full works listing URL (no page param)
+--- @param page integer @1-based page
+--- @return NovelInfo[]
+local function browseWorks(url, page)
+	local document = ClientGetDocument(addPage(removePage(url), page))
+	return parseListing(document)
+end
+
 local function simpleSearch(filters)
 	local page = filters[PAGE]
 	local query = filters[QUERY]
-	local author = filters[FID_AUTHOR]
 
 	local newUrl = expandURL("/works/search"
 		.. "?page=" .. page
 		.. "&work_search[query]=" .. urlEncode(query)
-		.. "&work_search[creators]=" .. urlEncode(author)
 	)
 
 	local document = ClientGetDocument(newUrl)
 	return parseListing(document)
 end
 
---- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @return NovelInfo[]
-local function search(filters)
-	local page = filters[PAGE]
-	local url = filters[QUERY]:gsub('^%s*(.-)%s*$', '%1')
-
+--- Resolves a pasted work/series/listing URL to novels.
+--- @param url string
+--- @param page integer @1-based page
+--- @return NovelInfo[]|nil @nil when the input is not a recognizable URL
+local function resolveUrl(url, page)
 	-- handler URL to a specific work
 	if page == 1 and shrinkURL(url):match("/works/%d+") then
 		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
@@ -377,28 +577,324 @@ local function search(filters)
 		return parseListing(document)
 	end
 
-	-- handle searching
+	return nil
+end
+
+--- @param filters table @of applied filter values [QUERY] is the search query, may be empty
+--- @return NovelInfo[]
+local function search(filters)
 	return simpleSearch(filters)
 end
 
-local function getUserGuide(filters)
-	local page = filters[PAGE]
+--- Resolves a pasted work/series/listing URL to novels.
+--- @param data table @filter values, [QUERY] is the url
+--- @return NovelInfo[]
+local function addByUrlSearch(data)
+	local page = data[PAGE]
+	local url = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 
-	if filters[FID_AUTHOR] and filters[FID_AUTHOR] ~= "" then
-		return simpleSearch(filters)
+	local result = resolveUrl(url, page)
+	if result ~= nil then
+		return result
 	end
 
-	if page ~= 1 then return {} end
-	return { howInfo() }
+	return {}
 end
 
-local function getLatestListing(filters)
-	if filters[FID_AUTHOR] and filters[FID_AUTHOR] ~= "" then
-		return simpleSearch(filters)
-	end
+--- Searches works by author username/pseud.
+--- @param data table @filter values, [QUERY] is the author name
+--- @return NovelInfo[]
+local function authorSearch(data)
+	local page = data[PAGE]
+	local author = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 
-	filters[QUERY] = "https://archiveofourown.org/works"
-	return search(filters)
+	local newUrl = expandURL("/works/search"
+		.. "?page=" .. page
+		.. "&work_search[creators]=" .. urlEncode(author)
+	)
+
+	local document = ClientGetDocument(newUrl)
+	return parseListing(document)
+end
+
+--- @return ListingItem
+local function searchItem()
+	return ListingItem {
+		name = "Search",
+		link = "search",
+		isIncrementing = true,
+		func = function()
+			return { howInfo() }
+		end,
+		search = search,
+	}
+end
+
+--- @return ListingItem
+local function addByUrlItem()
+	return ListingItem {
+		name = "Add by URL",
+		link = "addByUrl",
+		isIncrementing = false,
+		func = function()
+			return { addByUrlHowInfo() }
+		end,
+		search = addByUrlSearch,
+		searchIsIncrementing = false,
+	}
+end
+
+--- @return ListingItem
+local function authorItem()
+	return ListingItem {
+		name = "Search by Author",
+		link = "author",
+		isIncrementing = true,
+		func = function()
+			return { authorHowInfo() }
+		end,
+		search = authorSearch,
+	}
+end
+
+--- @return ListingItem
+local function latestItem()
+	return ListingItem {
+		name = "Latest Works",
+		link = "latest",
+		isIncrementing = false,
+		func = function()
+			local document = ClientGetDocument(expandURL("/works"))
+			return parseListing(document)
+		end,
+	}
+end
+
+--- @param mediumSlug string
+--- @param fandomSlug string
+--- @return ListingItem
+local function fandomItem(mediumSlug, fandomSlug)
+	local name = fandomSlug
+	local fandoms = fetchMediumFandoms(mediumSlug)
+	for i = 1, #fandoms do
+		if fandoms[i].slug == fandomSlug then
+			name = fandoms[i].name
+			break
+		end
+	end
+	return ListingItem {
+		name = name,
+		link = "fandom@" .. mediumSlug .. "@@" .. fandomSlug,
+		isIncrementing = true,
+		func = function(data)
+			return browseWorks(expandURL("/tags/" .. fandomSlug .. "/works"), data[PAGE])
+		end,
+	}
+end
+
+--- @param mediumSlug string
+--- @return ListingList
+local function mediumByWorksGroup(mediumSlug)
+	return ListingList {
+		name = "By Works",
+		link = "fandom@" .. mediumSlug .. "@works",
+		func = function()
+			local fandoms = fetchMediumFandoms(mediumSlug)
+			table.sort(fandoms, function(a, b)
+				return a.count > b.count
+			end)
+			local items = {}
+			for i = 1, #fandoms do
+				table.insert(items, fandomItem(mediumSlug, fandoms[i].slug))
+			end
+			return items
+		end,
+	}
+end
+
+--- @param mediumSlug string
+--- @param letter string
+--- @return ListingList
+local function mediumLetterGroup(mediumSlug, letter)
+	return ListingList {
+		name = letter,
+		link = "fandom@" .. mediumSlug .. "@az@" .. letter,
+		func = function()
+			local items = {}
+			local letters = fetchMediumLetters(mediumSlug)
+			for i = 1, #letters do
+				if letters[i].letter == letter then
+					for j = 1, #letters[i].fandoms do
+						table.insert(items, fandomItem(mediumSlug, letters[i].fandoms[j].slug))
+					end
+					break
+				end
+			end
+			return items
+		end,
+	}
+end
+
+--- @param mediumSlug string
+--- @return ListingList
+local function mediumAZGroup(mediumSlug)
+	return ListingList {
+		name = "A-Z",
+		link = "fandom@" .. mediumSlug .. "@az",
+		func = function()
+			local items = {}
+			local letters = fetchMediumLetters(mediumSlug)
+			for i = 1, #letters do
+				table.insert(items, mediumLetterGroup(mediumSlug, letters[i].letter))
+			end
+			return items
+		end,
+	}
+end
+
+--- @param mediumSlug string
+--- @return ListingList
+local function mediumGroup(mediumSlug)
+	return ListingList {
+		name = (function()
+			local fandoms = fetchFandoms()
+			for i = 1, #fandoms do
+				if fandoms[i].slug == mediumSlug then
+					return fandoms[i].name
+				end
+			end
+			return mediumSlug
+		end)(),
+		link = "fandom@" .. mediumSlug,
+		func = function()
+			return {
+				mediumByWorksGroup(mediumSlug),
+				mediumAZGroup(mediumSlug),
+			}
+		end,
+	}
+end
+
+--- @return ListingList
+local function fandomsGroup()
+	return ListingList {
+		name = "Browse by Fandom",
+		link = "fandoms",
+		func = function()
+			local items = {}
+			local fandoms = fetchFandoms()
+			for i = 1, #fandoms do
+				table.insert(items, mediumGroup(fandoms[i].slug))
+			end
+			return items
+		end,
+	}
+end
+
+--- @param tagSlug string
+--- @return ListingItem
+local function tagItem(tagSlug)
+	local name = tagSlug
+	local tags = fetchTags()
+	for i = 1, #tags do
+		if tags[i].slug == tagSlug then
+			name = tags[i].name
+			break
+		end
+	end
+	return ListingItem {
+		name = name,
+		link = "tag@" .. tagSlug,
+		isIncrementing = true,
+		func = function(data)
+			return browseWorks(expandURL("/tags/" .. tagSlug .. "/works"), data[PAGE])
+		end,
+	}
+end
+
+--- @return ListingList
+local function tagsGroup()
+	return ListingList {
+		name = "Popular Tags",
+		link = "tags",
+		func = function()
+			local items = {}
+			local tags = fetchTags()
+			for i = 1, #tags do
+				table.insert(items, tagItem(tags[i].slug))
+			end
+			return items
+		end,
+	}
+end
+
+--- @return ListingList
+local function rootList()
+	return ListingList {
+		name = "Archive of Our Own",
+		link = "",
+		func = function()
+			return {
+				searchItem(),
+				addByUrlItem(),
+				authorItem(),
+				latestItem(),
+				fandomsGroup(),
+				tagsGroup(),
+			}
+		end,
+	}
+end
+
+--- @param link string @"" for the root, otherwise a listing link
+--- @return ListingList|ListingItem
+local function getListing(link)
+	if link == "" then
+		return rootList()
+	end
+	if link == "search" then
+		return searchItem()
+	end
+	if link == "addByUrl" then
+		return addByUrlItem()
+	end
+	if link == "author" then
+		return authorItem()
+	end
+	if link == "latest" then
+		return latestItem()
+	end
+	if link == "fandoms" then
+		return fandomsGroup()
+	end
+	if link == "tags" then
+		return tagsGroup()
+	end
+	local mediumSlug, fandomSlug = link:match("^fandom@([^@]+)@@([^@]+)$")
+	if mediumSlug ~= nil then
+		return fandomItem(mediumSlug, fandomSlug)
+	end
+	local mediumSlug, letter = link:match("^fandom@([^@]+)@az@(.+)$")
+	if mediumSlug ~= nil then
+		return mediumLetterGroup(mediumSlug, letter)
+	end
+	local mediumSlugAz = link:match("^fandom@([^@]+)@az$")
+	if mediumSlugAz ~= nil then
+		return mediumAZGroup(mediumSlugAz)
+	end
+	local mediumSlugWorks = link:match("^fandom@([^@]+)@works$")
+	if mediumSlugWorks ~= nil then
+		return mediumByWorksGroup(mediumSlugWorks)
+	end
+	local mediumSlugOnly = link:match("^fandom@([^@]+)$")
+	if mediumSlugOnly ~= nil then
+		return mediumGroup(mediumSlugOnly)
+	end
+	local tagSlug = link:match("^tag@([^@]+)$")
+	if tagSlug ~= nil then
+		return tagItem(tagSlug)
+	end
+	return rootList()
 end
 
 return {
@@ -409,25 +905,16 @@ return {
 	-- Optional values to change
 	imageURL = "https://jobobby04.github.io/ShosetsuExtensions/master/icons/ao3_icon.png",
 	hasCloudFlare = true,
-	hasSearch = true,
 
 	---@diagnostic disable-next-line: undefined-global
 	chapterType = ChapterType.HTML,
 
-	-- Must have at least one value
-	listings = {
-		Listing("User Guide", true, getUserGuide),
-		Listing("Latest", true, getLatestListing)
-	},
+	getListing = getListing,
 
 	-- Default functions that have to be set
 	getPassage = getPassage,
 	parseNovel = parseNovel,
-	search = search,
 
-	searchFilters = {
-		TextFilter(FID_AUTHOR, "Author")
-	},
 	settings = {
 		SwitchFilter(1, "Remove all Justify attributes"),
 		SwitchFilter(2, "Add cover (may include spoilers)"),
