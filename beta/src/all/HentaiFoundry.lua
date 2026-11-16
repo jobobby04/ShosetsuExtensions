@@ -1,4 +1,4 @@
--- {"id":1308639967,"ver":"1.1.1","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639967,"ver":"1.1.2","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://www.hentai-foundry.com"
 local settings = {}
@@ -259,7 +259,9 @@ local function createFormBody(token, filters)
 	local scat = filters[18]
 	local incest = filters[19]
 	local rape = filters[20]
-	local sortBy = filters[21]
+	-- `filters[21]` is nil when no sort is set (e.g. the default-filter path
+	-- before the user has touched the setting); fall back to the first option.
+	local sortBy = filters[21] or 0
 	for index, value in pairs(FilterOrderOption) do
 		if sortBy == index - 1 then
 			sortBy = value.value
@@ -360,6 +362,28 @@ local function applyFilters(filters)
 	response:close()
 end
 
+--- Builds a filters table from the configured default-filter settings, so the
+--- same `createFormBody` logic applies to both user search filters and the
+--- defaults applied before each listing. Unset values fall back to the
+--- `createFormBody` defaults (Explicit ratings, no content flags).
+--- @return table
+local function defaultFilters()
+	local filters = {}
+	for id = 2, 21 do
+		filters[id] = settings[id]
+	end
+	return filters
+end
+
+--- Applies the configured default filters, then browses a paginated story list.
+--- @param listUrl string @relative story-list URL
+--- @param page number
+--- @return NovelInfo[]
+local function browseStoryListWithDefaults(listUrl, page)
+	applyFilters(defaultFilters())
+	return browseStoryList(listUrl, page)
+end
+
 --- @param listUrl string @relative story-list URL
 --- @param filters table
 --- @return NovelInfo[]
@@ -408,7 +432,7 @@ local function CreateCheckboxFilterEnabled(id, name)
 	return filter
 end
 
-local function searchFilters()
+local function buildFilterControls()
 	local orderOptions = {}
 	for _, option in pairs(FilterOrderOption) do
 		table.insert(orderOptions, option.name)
@@ -554,12 +578,12 @@ local function makeCategoryListing(id, path, name, linkSuffix)
 		link = "cat@" .. id .. "@" .. path .. (linkSuffix or ""),
 		isIncrementing = true,
 		func = function(data)
-			return browseStoryList(catUrl, data[PAGE])
+			return browseStoryListWithDefaults(catUrl, data[PAGE])
 		end,
 		search = function(data)
 			return filterStoryList(catUrl, data)
 		end,
-		searchFilters = searchFilters(),
+		searchFilters = buildFilterControls(),
 		searchIsIncrementing = true
 	}
 end
@@ -606,12 +630,12 @@ local function makePopularListing()
 		link = "popular",
 		isIncrementing = true,
 		func = function(data)
-			return browseStoryList("/stories/popular", data[PAGE])
+			return browseStoryListWithDefaults("/stories/popular", data[PAGE])
 		end,
 		search = function(data)
 			return filterStoryList("/stories/popular", data)
 		end,
-		searchFilters = searchFilters(),
+		searchFilters = buildFilterControls(),
 		searchIsIncrementing = true
 	}
 end
@@ -645,12 +669,12 @@ local function makeRecentAllListing()
 		link = "recent@all",
 		isIncrementing = true,
 		func = function(data)
-			return browseStoryList("/stories/recent/all", data[PAGE])
+			return browseStoryListWithDefaults("/stories/recent/all", data[PAGE])
 		end,
 		search = function(data)
 			return filterStoryList("/stories/recent/all", data)
 		end,
-		searchFilters = searchFilters(),
+		searchFilters = buildFilterControls(),
 		searchIsIncrementing = true
 	}
 end
@@ -663,12 +687,12 @@ local function makeRecentDateListing(date)
 		link = "recent@" .. date,
 		isIncrementing = true,
 		func = function(data)
-			return browseStoryList("/stories/recent/" .. date, data[PAGE])
+			return browseStoryListWithDefaults("/stories/recent/" .. date, data[PAGE])
 		end,
 		search = function(data)
 			return filterStoryList("/stories/recent/" .. date, data)
 		end,
-		searchFilters = searchFilters(),
+		searchFilters = buildFilterControls(),
 		searchIsIncrementing = true
 	}
 end
@@ -706,7 +730,7 @@ local function makeUserStoriesListing()
 			end
 			return filterStoryList("/stories/user/" .. username, data)
 		end,
-		searchFilters = searchFilters(),
+		searchFilters = buildFilterControls(),
 		searchIsIncrementing = true
 	}
 end
@@ -728,7 +752,7 @@ local function makeSearchListing()
 			end
 			return filterSearch(query, data)
 		end,
-		searchFilters = searchFilters(),
+		searchFilters = buildFilterControls(),
 		searchIsIncrementing = true
 	}
 end
@@ -810,6 +834,9 @@ return {
 	-- Default functions that have to be set
 	getPassage = getPassage,
 	parseNovel = parseNovel,
+
+	-- Default values for the story-list filters, applied before each listing.
+	settings = buildFilterControls(),
 
 	updateSetting = function(id, value)
 		settings[id] = value

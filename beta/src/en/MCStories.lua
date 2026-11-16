@@ -1,4 +1,4 @@
--- {"id":1308639977,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
+-- {"id":1308639977,"ver":"1.1.1","libVer":"1.1.0","author":"Jobobby04","dep":["dkjson>=1.0.1"]}
 
 local baseURL = "https://www.mcstories.com"
 local settings = {}
@@ -339,6 +339,25 @@ local function filterByCodes(stories, data)
 	return result
 end
 
+--- Keep only the stories whose title contains the query (case-insensitive).
+--- @param stories table[] @raw story data
+--- @param data table @filter values
+--- @return table[]
+local function filterByName(stories, data)
+	local query = data[QUERY]
+	if query == nil or query == "" then
+		return stories
+	end
+	local lowerQuery = query:lower()
+	local result = {}
+	for _, s in ipairs(stories) do
+		if s.title:lower():find(lowerQuery, 1, true) then
+			table.insert(result, s)
+		end
+	end
+	return result
+end
+
 --- @return table[] @raw "Whats New" story data
 local function fetchWhatsNew()
 	local document = ClientGetDocument("https://mcstories.com/WhatsNew.html")
@@ -394,7 +413,7 @@ local function whatsNewListing()
 			return toNovelInfos(fetchWhatsNew())
 		end,
 		search = function(data)
-			return toNovelInfos(filterByCodes(fetchWhatsNew(), data))
+			return toNovelInfos(filterByName(filterByCodes(fetchWhatsNew(), data), data))
 		end,
 		searchFilters = categoryFilters(),
 	}
@@ -411,7 +430,7 @@ local function categoryListing(category)
 			return toNovelInfos(fetchCategory(category.name))
 		end,
 		search = function(data)
-			return toNovelInfos(filterByCodes(fetchCategory(category.name), data))
+			return toNovelInfos(filterByName(filterByCodes(fetchCategory(category.name), data), data))
 		end,
 		searchFilters = categoryFilters(),
 	}

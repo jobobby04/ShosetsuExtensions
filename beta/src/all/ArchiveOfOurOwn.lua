@@ -1,7 +1,71 @@
--- {"id":1308639966,"ver":"1.0.14","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.15","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
+
+-- Filter IDs
+local FID_SORT_COLUMN = 2
+local FID_SORT_DIRECTION = 3
+local FID_RATING = 4
+local FID_COMPLETE = 5
+local FID_SINGLE_CHAPTER = 6
+local FID_CAT_GEN = 10
+local FID_CAT_FM = 11
+local FID_CAT_FF = 12
+local FID_CAT_MM = 13
+local FID_CAT_MULTI = 14
+local FID_CAT_OTHER = 15
+
+-- Sort column choices (index 0 = no param)
+local SORT_COLUMNS = {
+	"Relevance", "Creator", "Title", "Date Posted", "Date Updated",
+	"Word Count", "Hits", "Kudos", "Comments", "Bookmarks",
+}
+local SORT_COLUMN_VALUES = {
+	"", "authors_to_sort_on", "title_to_sort_on", "created_at", "revised_at",
+	"word_count", "hits", "kudos_count", "comments_count", "bookmarks_count",
+}
+
+local RATINGS = { "Any", "Not Rated", "General Audiences", "Teen And Up", "Mature", "Explicit" }
+local RATING_VALUES = { "", "9", "10", "11", "12", "13" }
+
+local COMPLETIONS = { "All", "Complete", "Incomplete" }
+local COMPLETE_VALUES = { "", "T", "F" }
+
+local CATEGORY_IDS = {
+	[FID_CAT_GEN] = "21",
+	[FID_CAT_FM] = "22",
+	[FID_CAT_FF] = "116",
+	[FID_CAT_MM] = "23",
+	[FID_CAT_MULTI] = "2246",
+	[FID_CAT_OTHER] = "24",
+}
+
+local FID_WARN_NONE = 16
+local FID_WARN_VIOLENCE = 17
+local FID_WARN_DEATH = 18
+local FID_WARN_NONCON = 19
+local FID_WARN_UNDERAGE = 20
+local FID_WARN_CREATOR = 21
+local FID_WORD_COUNT_MIN = 22
+local FID_WORD_COUNT_MAX = 23
+local FID_TITLE = 24
+local FID_CHARACTERS = 25
+local FID_RELATIONSHIPS = 26
+local FID_FREEFORM = 27
+local FID_MIN_HITS = 28
+local FID_MIN_KUDOS = 29
+local FID_MIN_COMMENTS = 30
+local FID_MIN_BOOKMARKS = 31
+
+local WARNING_IDS = {
+	[FID_WARN_NONE] = "16",
+	[FID_WARN_VIOLENCE] = "17",
+	[FID_WARN_DEATH] = "18",
+	[FID_WARN_NONCON] = "19",
+	[FID_WARN_UNDERAGE] = "20",
+	[FID_WARN_CREATOR] = "14",
+}
 
 ---@type OkHttpClient
 local client = HttpClientBuilder()
@@ -531,16 +595,125 @@ local function browseWorks(url, page)
 	return parseListing(document)
 end
 
+--- @return Filter[]
+local function browseFilters()
+	return {
+		DropdownFilter(FID_SORT_COLUMN, "Sort By", SORT_COLUMNS),
+		DropdownFilter(FID_SORT_DIRECTION, "Direction", { "Ascending", "Descending" }),
+		DropdownFilter(FID_RATING, "Rating", RATINGS),
+		RadioGroupFilter(FID_COMPLETE, "Completion", COMPLETIONS),
+		SwitchFilter(FID_SINGLE_CHAPTER, "Single Chapter"),
+		TriStateFilter(FID_CAT_GEN, "Gen"),
+		TriStateFilter(FID_CAT_FM, "F/M"),
+		TriStateFilter(FID_CAT_FF, "F/F"),
+		TriStateFilter(FID_CAT_MM, "M/M"),
+		TriStateFilter(FID_CAT_MULTI, "Multi"),
+		TriStateFilter(FID_CAT_OTHER, "Other"),
+		TriStateFilter(FID_WARN_NONE, "No Warnings"),
+		TriStateFilter(FID_WARN_VIOLENCE, "Graphic Violence"),
+		TriStateFilter(FID_WARN_DEATH, "Major Character Death"),
+		TriStateFilter(FID_WARN_NONCON, "Rape/Non-Con"),
+		TriStateFilter(FID_WARN_UNDERAGE, "Underage Sex"),
+		TriStateFilter(FID_WARN_CREATOR, "Creator Chose Not To Use"),
+		TextFilter(FID_WORD_COUNT_MIN, "Word Count Min"),
+		TextFilter(FID_WORD_COUNT_MAX, "Word Count Max"),
+		TextFilter(FID_TITLE, "Title"),
+		TextFilter(FID_CHARACTERS, "Characters"),
+		TextFilter(FID_RELATIONSHIPS, "Relationships"),
+		TextFilter(FID_FREEFORM, "Freeform"),
+		TextFilter(FID_MIN_HITS, "Min Hits"),
+		TextFilter(FID_MIN_KUDOS, "Min Kudos"),
+		TextFilter(FID_MIN_COMMENTS, "Min Comments"),
+		TextFilter(FID_MIN_BOOKMARKS, "Min Bookmarks"),
+	}
+end
+
+--- Appends AO3 work_search filter params to a URL.
+--- @param data table @filter values from the search function
+--- @param baseUrl string @base URL to append params to
+--- @return string
+local function applyFilters(data, baseUrl)
+	local params = {}
+
+	local sortCol = data[FID_SORT_COLUMN]
+	if sortCol and sortCol > 0 then
+		table.insert(params, "work_search[sort_column]=" .. SORT_COLUMN_VALUES[sortCol + 1])
+	end
+
+	local sortDir = data[FID_SORT_DIRECTION]
+	if sortDir then
+		table.insert(params, "work_search[sort_direction]=" .. (sortDir == 0 and "asc" or "desc"))
+	end
+
+	local rating = data[FID_RATING]
+	if rating and rating > 0 then
+		table.insert(params, "work_search[rating_ids][]=" .. RATING_VALUES[rating + 1])
+	end
+
+	local complete = data[FID_COMPLETE]
+	if complete and complete > 0 then
+		table.insert(params, "work_search[complete]=" .. COMPLETE_VALUES[complete + 1])
+	end
+
+	if data[FID_SINGLE_CHAPTER] then
+		table.insert(params, "work_search[single_chapter]=1")
+	end
+
+	for fid, ao3Id in pairs(CATEGORY_IDS) do
+		if data[fid] == 1 then
+			table.insert(params, "work_search[category_ids][]=" .. ao3Id)
+		end
+	end
+
+	for fid, ao3Id in pairs(WARNING_IDS) do
+		if data[fid] == 1 then
+			table.insert(params, "work_search[archive_warning_ids][]=" .. ao3Id)
+		end
+	end
+
+	local wcMin = data[FID_WORD_COUNT_MIN]
+	local wcMax = data[FID_WORD_COUNT_MAX]
+	if wcMin and wcMin ~= "" then
+		local range = wcMin
+		if wcMax and wcMax ~= "" then
+			range = range .. "-" .. wcMax
+		end
+		table.insert(params, "work_search[word_count]=" .. range)
+	elseif wcMax and wcMax ~= "" then
+		table.insert(params, "work_search[word_count]=0-" .. wcMax)
+	end
+
+	local textParams = {
+		{ FID_TITLE, "title" },
+		{ FID_CHARACTERS, "character_names" },
+		{ FID_RELATIONSHIPS, "relationship_names" },
+		{ FID_FREEFORM, "freeform_names" },
+		{ FID_MIN_HITS, "hits" },
+		{ FID_MIN_KUDOS, "kudos_count" },
+		{ FID_MIN_COMMENTS, "comments_count" },
+		{ FID_MIN_BOOKMARKS, "bookmarks_count" },
+	}
+	for i = 1, #textParams do
+		local val = data[textParams[i][1]]
+		if val and val ~= "" then
+			table.insert(params, "work_search[" .. textParams[i][2] .. "]=" .. urlEncode(val))
+		end
+	end
+
+	if #params == 0 then
+		return baseUrl
+	end
+	local sep = baseUrl:match("[?]") and "&" or "?"
+	return baseUrl .. sep .. table.concat(params, "&")
+end
+
 local function simpleSearch(filters)
 	local page = filters[PAGE]
 	local query = filters[QUERY]
 
-	local newUrl = expandURL("/works/search"
-		.. "?page=" .. page
-		.. "&work_search[query]=" .. urlEncode(query)
-	)
-
-	local document = ClientGetDocument(newUrl)
+	local baseUrl = expandURL("/works/search?work_search[query]=" .. urlEncode(query))
+	local newUrl = applyFilters(filters, baseUrl)
+	local document = ClientGetDocument(addPage(newUrl, page))
 	return parseListing(document)
 end
 
@@ -608,12 +781,9 @@ local function authorSearch(data)
 	local page = data[PAGE]
 	local author = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 
-	local newUrl = expandURL("/works/search"
-		.. "?page=" .. page
-		.. "&work_search[creators]=" .. urlEncode(author)
-	)
-
-	local document = ClientGetDocument(newUrl)
+	local baseUrl = expandURL("/works/search?work_search[creators]=" .. urlEncode(author))
+	local newUrl = applyFilters(data, baseUrl)
+	local document = ClientGetDocument(addPage(newUrl, page))
 	return parseListing(document)
 end
 
@@ -627,6 +797,7 @@ local function searchItem()
 			return { howInfo() }
 		end,
 		search = search,
+		searchFilters = browseFilters(),
 	}
 end
 
@@ -654,6 +825,7 @@ local function authorItem()
 			return { authorHowInfo() }
 		end,
 		search = authorSearch,
+		searchFilters = browseFilters(),
 	}
 end
 
@@ -662,11 +834,15 @@ local function latestItem()
 	return ListingItem {
 		name = "Latest Works",
 		link = "latest",
-		isIncrementing = false,
-		func = function()
-			local document = ClientGetDocument(expandURL("/works"))
-			return parseListing(document)
+		isIncrementing = true,
+		func = function(data)
+			return browseWorks(expandURL("/works"), data[PAGE])
 		end,
+		search = function(data)
+			local newUrl = applyFilters(data, expandURL("/works"))
+			return browseWorks(newUrl, data[PAGE])
+		end,
+		searchFilters = browseFilters(),
 	}
 end
 
@@ -694,6 +870,11 @@ local function fandomItem(mediumSlug, fandomSlug, count)
 		func = function(data)
 			return browseWorks(expandURL("/tags/" .. fandomSlug .. "/works"), data[PAGE])
 		end,
+		search = function(data)
+			local newUrl = applyFilters(data, expandURL("/tags/" .. fandomSlug .. "/works"))
+			return browseWorks(newUrl, data[PAGE])
+		end,
+		searchFilters = browseFilters(),
 	}
 end
 
@@ -814,6 +995,11 @@ local function tagItem(tagSlug)
 		func = function(data)
 			return browseWorks(expandURL("/tags/" .. tagSlug .. "/works"), data[PAGE])
 		end,
+		search = function(data)
+			local newUrl = applyFilters(data, expandURL("/tags/" .. tagSlug .. "/works"))
+			return browseWorks(newUrl, data[PAGE])
+		end,
+		searchFilters = browseFilters(),
 	}
 end
 
