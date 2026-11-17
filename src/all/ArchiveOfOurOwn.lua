@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.17","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.18","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -1387,17 +1387,68 @@ local function addByUrlSearch(data)
 	return {}
 end
 
---- Searches works by author username/pseud.
---- @param data table @filter values, [QUERY] is the author name
+--- Resolves a pasted AO3 user/pseud URL to its /works listing path.
+--- @param query string
+--- @return string|nil @e.g. "/users/X/pseuds/Y/works" or "/users/X/works"
+local function authorWorksUrl(query)
+	-- Pseud URL: /users/<user>/pseuds/<pseud>[/works]
+	local user, pseud = query:match("^https?://archiveofourown%.org/users/([^/]+)/pseuds/([^/]+)")
+	if user == nil then
+		user, pseud = query:match("^/users/([^/]+)/pseuds/([^/]+)")
+	end
+	if user ~= nil then
+		return "/users/" .. user .. "/pseuds/" .. pseud .. "/works"
+	end
+	-- User URL with /works
+	local u = query:match("^https?://archiveofourown%.org/users/([^/]+)/works$")
+	if u == nil then
+		u = query:match("^/users/([^/]+)/works$")
+	end
+	if u ~= nil then
+		return "/users/" .. u .. "/works"
+	end
+	-- User URL without /works (profile page)
+	u = query:match("^https?://archiveofourown%.org/users/([^/]+)$")
+	if u == nil then
+		u = query:match("^/users/([^/]+)$")
+	end
+	if u ~= nil then
+		return "/users/" .. u .. "/works"
+	end
+	return nil
+end
+
+--- Searches works by author username/pseud, or resolves a pasted
+--- /users/<user>[/works] or /users/<user>/pseuds/<pseud>[/works] URL to that
+--- user/pseud's works listing.
+--- @param data table @filter values, [QUERY] is the author name or user/pseud URL
 --- @return NovelInfo[]
 local function authorSearch(data)
 	local page = data[PAGE]
-	local author = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+	local query = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 
-	local baseUrl = expandURL("/works/search?work_search[creators]=" .. urlEncode(author))
+	-- A pasted user/pseud URL (with or without the /works suffix): resolve it to
+	-- the /works listing directly, since that is the paginated works page.
+	local worksUrl = authorWorksUrl(query)
+	if worksUrl ~= nil then
+		return browseWorks(expandURL(worksUrl), page)
+	end
+
+	local baseUrl = expandURL("/works/search?work_search[creators]=" .. urlEncode(query))
 	local newUrl = applySearchFilters(data, baseUrl)
 	local document = ClientGetDocument(addPage(newUrl, page))
 	return parseListing(document)
+end
+
+--- @param infoFunc fun():NovelInfo @returns the "how to use" placeholder
+--- @return fun(data:table):NovelInfo[] @the placeholder on page 1, empty after
+local function infoFunc(infoFunc)
+	return function(data)
+		if (data[PAGE] or 1) > 1 then
+			return {}
+		end
+		return { infoFunc() }
+	end
 end
 
 --- @return ListingItem
@@ -1406,9 +1457,7 @@ local function searchItem()
 		name = "Search",
 		link = "search",
 		isIncrementing = true,
-		func = function()
-			return { howInfo() }
-		end,
+		func = infoFunc(howInfo),
 		search = search,
 		searchFilters = searchFilters(),
 	}
@@ -1420,9 +1469,7 @@ local function addByUrlItem()
 		name = "Add by URL",
 		link = "addByUrl",
 		isIncrementing = false,
-		func = function()
-			return { addByUrlHowInfo() }
-		end,
+		func = infoFunc(addByUrlHowInfo),
 		search = addByUrlSearch,
 		searchIsIncrementing = false,
 	}
@@ -1434,9 +1481,7 @@ local function authorItem()
 		name = "Search by Author",
 		link = "author",
 		isIncrementing = true,
-		func = function()
-			return { authorHowInfo() }
-		end,
+		func = infoFunc(authorHowInfo),
 		search = authorSearch,
 		searchFilters = searchFilters(),
 	}
