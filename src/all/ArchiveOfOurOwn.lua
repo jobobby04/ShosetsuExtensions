@@ -653,7 +653,7 @@ local function authorHowInfo()
 	return NovelInfo {
 		title = "How to use Search by Author",
 		link = "how/author",
-		description = "Enter an author's username or pseud to browse all of their works.\nExample: boolger"
+		description = "Enter an author's username or pseud to browse all of their works.\nExample: someauthor\n\nYou can also paste a user or pseud URL directly:\nhttps://archiveofourown.org/users/someauthor/works\nhttps://archiveofourown.org/users/someauthor/pseuds/somepseud"
 	}
 end
 
