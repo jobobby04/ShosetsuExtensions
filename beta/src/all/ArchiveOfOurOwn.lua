@@ -1,70 +1,517 @@
--- {"id":1308639966,"ver":"1.0.16","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.0.17","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
 
--- Filter IDs
-local FID_SORT_COLUMN = 2
-local FID_SORT_DIRECTION = 3
-local FID_RATING = 4
-local FID_COMPLETE = 5
-local FID_SINGLE_CHAPTER = 6
-local FID_CAT_GEN = 10
-local FID_CAT_FM = 11
-local FID_CAT_FF = 12
-local FID_CAT_MM = 13
-local FID_CAT_MULTI = 14
-local FID_CAT_OTHER = 15
-
--- Sort column choices (index 0 = no param)
-local SORT_COLUMNS = {
-	"Relevance", "Creator", "Title", "Date Posted", "Date Updated",
+-- Shared choices
+-- Browse sort: defaults to Date Updated (matches AO3 browse pages)
+local B_SORT_COLUMNS = {
+	"Date Updated", "Date Posted", "Creator", "Title",
 	"Word Count", "Hits", "Kudos", "Comments", "Bookmarks",
 }
-local SORT_COLUMN_VALUES = {
-	"", "authors_to_sort_on", "title_to_sort_on", "created_at", "revised_at",
+local B_SORT_COLUMN_VALUES = {
+	"revised_at", "created_at", "authors_to_sort_on", "title_to_sort_on",
 	"word_count", "hits", "kudos_count", "comments_count", "bookmarks_count",
 }
+-- Search sort: defaults to Best Match / relevance (matches AO3 search)
+local S_SORT_COLUMNS = {
+	"Best Match", "Creator", "Title", "Date Posted", "Date Updated",
+	"Word Count", "Hits", "Kudos", "Comments", "Bookmarks",
+}
+local S_SORT_COLUMN_VALUES = {
+	"_score", "authors_to_sort_on", "title_to_sort_on", "created_at", "revised_at",
+	"word_count", "hits", "kudos_count", "comments_count", "bookmarks_count",
+}
+local COMPLETIONS = { "All", "Complete", "Incomplete" }
+local COMPLETE_VALUES = { "", "T", "F" }
+
+-- Browse page filter IDs (/works, /tags/.../works)
+local FID_B_SORT = 2
+local FID_B_COMPLETE = 3
+local FID_B_CROSSOVER = 4
+local FID_B_WORDS_FROM = 5
+local FID_B_WORDS_TO = 6
+local FID_B_DATE_FROM = 7
+local FID_B_DATE_TO = 8
+local FID_B_QUERY = 9
+local FID_B_LANGUAGE = 10
+-- Include tags
+local FID_B_INC_RATING = 11
+local FID_B_INC_WARN_CREATOR = 12
+local FID_B_INC_WARN_NONE = 13
+local FID_B_INC_WARN_VIOLENCE = 14
+local FID_B_INC_WARN_DEATH = 15
+local FID_B_INC_WARN_NONCON = 16
+local FID_B_INC_WARN_UNDERAGE = 17
+local FID_B_INC_CAT_GEN = 18
+local FID_B_INC_CAT_FM = 19
+local FID_B_INC_CAT_MM = 20
+local FID_B_INC_CAT_FF = 21
+local FID_B_INC_CAT_MULTI = 22
+local FID_B_INC_CAT_OTHER = 23
+local FID_B_INC_OTHER_TAGS = 24
+-- Exclude tags
+local FID_B_EXC_RATING_NOTRATED = 25
+local FID_B_EXC_RATING_GA = 26
+local FID_B_EXC_RATING_T = 27
+local FID_B_EXC_RATING_M = 28
+local FID_B_EXC_RATING_E = 29
+local FID_B_EXC_WARN_CREATOR = 30
+local FID_B_EXC_WARN_NONE = 31
+local FID_B_EXC_WARN_VIOLENCE = 32
+local FID_B_EXC_WARN_DEATH = 33
+local FID_B_EXC_WARN_NONCON = 34
+local FID_B_EXC_WARN_UNDERAGE = 35
+local FID_B_EXC_CAT_GEN = 36
+local FID_B_EXC_CAT_FM = 37
+local FID_B_EXC_CAT_MM = 38
+local FID_B_EXC_CAT_FF = 39
+local FID_B_EXC_CAT_MULTI = 40
+local FID_B_EXC_CAT_OTHER = 41
+local FID_B_EXC_OTHER_TAGS = 42
+
+-- Crossovers is a 3-way radio on the browse form (include / exclude / only)
+local B_CROSSOVER_CHOICES = { "Include crossovers", "Exclude crossovers", "Show only crossovers" }
+local B_CROSSOVER_VALUES = { "", "F", "T" }
+
+-- Include Ratings is a single-select radio on the browse form
+local B_INC_RATING_CHOICES = { "Not Rated", "General Audiences", "Teen And Up", "Mature", "Explicit" }
+local B_INC_RATING_IDS = { "9", "10", "11", "12", "13" }
+
+-- Checkbox filter id -> AO3 tag id. Include and exclude share the same ids.
+local B_INC_WARNING_IDS = {
+	[FID_B_INC_WARN_CREATOR] = "14",
+	[FID_B_INC_WARN_NONE] = "16",
+	[FID_B_INC_WARN_VIOLENCE] = "17",
+	[FID_B_INC_WARN_DEATH] = "18",
+	[FID_B_INC_WARN_NONCON] = "19",
+	[FID_B_INC_WARN_UNDERAGE] = "20",
+}
+local B_EXC_WARNING_IDS = {
+	[FID_B_EXC_WARN_CREATOR] = "14",
+	[FID_B_EXC_WARN_NONE] = "16",
+	[FID_B_EXC_WARN_VIOLENCE] = "17",
+	[FID_B_EXC_WARN_DEATH] = "18",
+	[FID_B_EXC_WARN_NONCON] = "19",
+	[FID_B_EXC_WARN_UNDERAGE] = "20",
+}
+local B_INC_CATEGORY_IDS = {
+	[FID_B_INC_CAT_GEN] = "21",
+	[FID_B_INC_CAT_FM] = "22",
+	[FID_B_INC_CAT_MM] = "23",
+	[FID_B_INC_CAT_FF] = "116",
+	[FID_B_INC_CAT_MULTI] = "2246",
+	[FID_B_INC_CAT_OTHER] = "24",
+}
+local B_EXC_CATEGORY_IDS = {
+	[FID_B_EXC_CAT_GEN] = "21",
+	[FID_B_EXC_CAT_FM] = "22",
+	[FID_B_EXC_CAT_MM] = "23",
+	[FID_B_EXC_CAT_FF] = "116",
+	[FID_B_EXC_CAT_MULTI] = "2246",
+	[FID_B_EXC_CAT_OTHER] = "24",
+}
+local B_EXC_RATING_IDS = {
+	[FID_B_EXC_RATING_NOTRATED] = "9",
+	[FID_B_EXC_RATING_GA] = "10",
+	[FID_B_EXC_RATING_T] = "11",
+	[FID_B_EXC_RATING_M] = "12",
+	[FID_B_EXC_RATING_E] = "13",
+}
+
+local B_LANGUAGE_CHOICES = {
+"Any",
+	"af Soomaali",
+	"Afrikaans",
+	"𒀝𒅗𒁺𒌑",
+	"العربية",
+	"American Sign Language",
+	"𓂋𓏺𓈖 𓆎𓅓𓏏𓊖",
+	"Ἑλληνικὴ φωνή",
+	"Anishinaabemowin",
+	"ܐܪܡܝܐ | ארמיא",
+	"հայերեն",
+	"asturianu",
+	"Aynu itak | アイヌ イタㇰ",
+	"Azərbaycan dili | آذربایجان دیلی",
+	"Bahasa Indonesia",
+	"Bahasa Malaysia",
+	"Български",
+	"বাংলা",
+	"Basa Jawa",
+	"ᮘᮞ ᮞᮥᮔ᮪ᮓ | Basa Sunda",
+	"Башҡорт теле",
+	"беларуская",
+	"Boarisch",
+	"Bosanski",
+	"Brezhoneg",
+	"British Sign Language",
+	"Буряад хэлэн | ᠪᠤᠷᠢᠶᠠᠳ ᠮᠣᠩᠭᠣᠯ ᠬᠡᠯᠡ",
+	"Català",
+	"Cebuano",
+	"Čeština",
+	"Chinuk Wawa",
+	"Чӑваш чӗлхи",
+	"Creolese",
+	"Cymraeg",
+	"Dansk",
+	"Deutsch",
+	"ދިވެހި,",
+	"eesti keel",
+	"Ελληνικά",
+	"𒅴𒂠",
+	"Eald Englisċ",
+	"English",
+	"Español",
+	"Esperanto",
+	"Euskara",
+	"فارسی",
+	"Filipino",
+	"Finuʼ Chamorro",
+	"Vlaams Nederlands",
+	"Français",
+	"Friisk",
+	"Frysk",
+	"Furlan",
+	"Gaeilge",
+	"Gàidhlig",
+	"Galego",
+	"𐌲𐌿𐍄𐌹𐍃𐌺𐌰",
+	"한국어",
+	"Hausa | هَرْشَن هَوْسَ",
+	"हिन्दी",
+	"Hmoob dawb",
+	"Hrvatski",
+	"ʻŌlelo Hawaiʻi",
+	"Interlingua",
+	"isiZulu",
+	"Íslenska",
+	"Italiano",
+	"עברית",
+	"Kalaallisut",
+	"Хальмг Өөрдин келн",
+	"Kanienʼkéha",
+	"ಕನ್ನಡ",
+	"ქართული",
+	"Kernewek",
+	"ភាសាខ្មែរ",
+	"Khuzdul",
+	"Kiswahili",
+	"kreyòl ayisyen",
+	"Kurdî | کوردی",
+	"Кыргызча",
+	"Ladino / לאדינו",
+	"Langue des signes québécoise",
+	"Latviešu valoda",
+	"Lëtzebuergesch",
+	"Lietuvių kalba",
+	"Lingua latina",
+	"Magyar",
+	"македонски",
+	"മലയാളം",
+	"Malti",
+	"ᠮᠠᠨᠵᡠ ᡤᡳᠰᡠᠨ",
+	"Mando'a",
+	"मराठी",
+	"Mi'kmaq",
+	"Middel Englisch",
+	"Mikisúkî",
+	"Moob leeg",
+	"ᠮᠣᠩᠭᠣᠯ ᠪᠢᠴᠢᠭ᠌ | Монгол Кирилл үсэг",
+	"မြန်မာဘာသာ",
+	"Lìʼfya leNaʼvi",
+	"Nāhuatl",
+	"Nawat",
+	"Nederlands",
+	"日本語",
+	"Norsk",
+	"Нохчийн мотт",
+	"O’odham Ñiok",
+	"لسان عثمانى",
+	"پښتو",
+	"Pennsilfaanisch Deitsch",
+	"Plattdüütsch",
+	"Polski",
+	"Português brasileiro",
+	"Português europeu",
+	"Pulaar",
+	"ਪੰਜਾਬੀ",
+	"qazaqşa | қазақша",
+	"Quenya",
+	"Română",
+	"RRomani Ćhib",
+	"Русский",
+	"Sámi",
+	"саха тыла",
+	"Scots",
+	"Shqip",
+	"Sindarin",
+	"සිංහල",
+	"Slovenčina",
+	"Slovenščina",
+	"Slověnьskъ Językъ",
+	"Sprēkō Þiudiskō",
+	"Српски",
+	"suomi",
+	"Svenska",
+	"தமிழ்",
+	"te reo Māori",
+	"తెలుగు",
+	"ትግርኛ",
+	"ไทย",
+	"Thermian",
+	"བོད་སྐད་",
+	"Tiếng Việt",
+	"ϯⲙⲉⲧⲣⲉⲙⲛ̀ⲭⲏⲙⲓ",
+	"tlhIngan-Hol",
+	"Tok Pisin",
+	"toki pona",
+	"Trinidadian Creole",
+	"τσακώνικα",
+	"ᏣᎳᎩ ᎦᏬᏂᎯᏍᏗ",
+	"Türkçe",
+	"Українська",
+	"Unangam Tunuu",
+	"Uncategorized Constructed Languages",
+	"اُردُو",
+	"ئۇيغۇر تىلى",
+	"O'zbekcha",
+	"Volapük",
+	"Walon",
+	"יידיש",
+	"maayaʼ tʼàan",
+	"къырымтатар тили | qırımtatar tili",
+	"татар теле",
+	"Эрзянь кель",
+	"አማርኛ",
+	"中文-吴语",
+	"中文-客家话",
+	"中文-广东话 粵語",
+	"中文-普通话 國語",
+	"中文-闽南话 臺語",
+}
+
+local B_LANGUAGE_VALUES = {
+"",
+	"so",
+	"afr",
+	"akk",
+	"ar",
+	"ase",
+	"egy",
+	"grc",
+	"oji",
+	"arc",
+	"hy",
+	"ast",
+	"ain",
+	"azj",
+	"id",
+	"ms",
+	"bg",
+	"bn",
+	"jv",
+	"sun",
+	"ba",
+	"be",
+	"bar",
+	"bos",
+	"br",
+	"bfi",
+	"bua",
+	"ca",
+	"ceb",
+	"cs",
+	"chn",
+	"chv",
+	"gyn",
+	"cy",
+	"da",
+	"de",
+	"div",
+	"et",
+	"el",
+	"sux",
+	"ang",
+	"en",
+	"es",
+	"eo",
+	"eu",
+	"fa",
+	"fil",
+	"cha",
+	"nld",
+	"fr",
+	"frr",
+	"fry",
+	"fur",
+	"ga",
+	"gd",
+	"gl",
+	"got",
+	"ko",
+	"hau",
+	"hi",
+	"mww",
+	"hr",
+	"haw",
+	"ia",
+	"zu",
+	"is",
+	"it",
+	"he",
+	"kal",
+	"xal",
+	"moh",
+	"kan",
+	"kat",
+	"cor",
+	"khm",
+	"qkz",
+	"sw",
+	"ht",
+	"ku",
+	"kir",
+	"lad",
+	"fcs",
+	"lv",
+	"lb",
+	"lt",
+	"la",
+	"hu",
+	"mk",
+	"ml",
+	"mt",
+	"mnc",
+	"qmd",
+	"mr",
+	"mic",
+	"enm",
+	"mik",
+	"hnj",
+	"mon",
+	"my",
+	"qnv",
+	"nah",
+	"ppl",
+	"nl",
+	"ja",
+	"no",
+	"ce",
+	"ood",
+	"ota",
+	"ps",
+	"pdc",
+	"nds",
+	"pl",
+	"ptBR",
+	"ptPT",
+	"fuc",
+	"pa",
+	"kaz",
+	"qya",
+	"ro",
+	"rom",
+	"ru",
+	"smi",
+	"sah",
+	"sco",
+	"sq",
+	"sjn",
+	"si",
+	"sk",
+	"slv",
+	"sla",
+	"gem",
+	"sr",
+	"fi",
+	"sv",
+	"ta",
+	"mri",
+	"tel",
+	"tir",
+	"th",
+	"tqx",
+	"bod",
+	"vi",
+	"cop",
+	"tlh",
+	"tpi",
+	"tok",
+	"trf",
+	"tsd",
+	"chr",
+	"tr",
+	"uk",
+	"ale",
+	"qlq",
+	"urd",
+	"uig",
+	"uzb",
+	"vol",
+	"wln",
+	"yi",
+	"yua",
+	"crh",
+	"tat",
+	"myv",
+	"amh",
+	"wuu",
+	"hak",
+	"yue",
+	"zh",
+	"nan",
+}
+
+-- Search page filter IDs (/works/search)
+local FID_S_SORT = 2
+local FID_S_SORT_DIR = 3
+local FID_S_RATING = 4
+local FID_S_COMPLETE = 5
+local FID_S_CROSSOVER = 6
+local FID_S_SINGLE_CHAPTER = 7
+local FID_S_WORD_COUNT = 8
+local FID_S_CAT_GEN = 10
+local FID_S_CAT_FM = 11
+local FID_S_CAT_FF = 12
+local FID_S_CAT_MM = 13
+local FID_S_CAT_MULTI = 14
+local FID_S_CAT_OTHER = 15
+local FID_S_WARN_NONE = 16
+local FID_S_WARN_VIOLENCE = 17
+local FID_S_WARN_DEATH = 18
+local FID_S_WARN_NONCON = 19
+local FID_S_WARN_UNDERAGE = 20
+local FID_S_WARN_CREATOR = 21
+local FID_S_TITLE = 22
+local FID_S_CHARACTERS = 23
+local FID_S_RELATIONSHIPS = 24
+local FID_S_FREEFORM = 25
+local FID_S_FANDOM = 26
+local FID_S_MIN_HITS = 27
+local FID_S_MIN_KUDOS = 28
+local FID_S_MIN_COMMENTS = 29
+local FID_S_MIN_BOOKMARKS = 30
 
 local RATINGS = { "Any", "Not Rated", "General Audiences", "Teen And Up", "Mature", "Explicit" }
 local RATING_VALUES = { "", "9", "10", "11", "12", "13" }
 
-local COMPLETIONS = { "All", "Complete", "Incomplete" }
-local COMPLETE_VALUES = { "", "T", "F" }
-
-local CATEGORY_IDS = {
-	[FID_CAT_GEN] = "21",
-	[FID_CAT_FM] = "22",
-	[FID_CAT_FF] = "116",
-	[FID_CAT_MM] = "23",
-	[FID_CAT_MULTI] = "2246",
-	[FID_CAT_OTHER] = "24",
+local S_CATEGORY_IDS = {
+	[FID_S_CAT_GEN] = "21",
+	[FID_S_CAT_FM] = "22",
+	[FID_S_CAT_FF] = "116",
+	[FID_S_CAT_MM] = "23",
+	[FID_S_CAT_MULTI] = "2246",
+	[FID_S_CAT_OTHER] = "24",
 }
 
-local FID_WARN_NONE = 16
-local FID_WARN_VIOLENCE = 17
-local FID_WARN_DEATH = 18
-local FID_WARN_NONCON = 19
-local FID_WARN_UNDERAGE = 20
-local FID_WARN_CREATOR = 21
-local FID_WORD_COUNT_MIN = 22
-local FID_WORD_COUNT_MAX = 23
-local FID_TITLE = 24
-local FID_CHARACTERS = 25
-local FID_RELATIONSHIPS = 26
-local FID_FREEFORM = 27
-local FID_MIN_HITS = 28
-local FID_MIN_KUDOS = 29
-local FID_MIN_COMMENTS = 30
-local FID_MIN_BOOKMARKS = 31
-
-local WARNING_IDS = {
-	[FID_WARN_NONE] = "16",
-	[FID_WARN_VIOLENCE] = "17",
-	[FID_WARN_DEATH] = "18",
-	[FID_WARN_NONCON] = "19",
-	[FID_WARN_UNDERAGE] = "20",
-	[FID_WARN_CREATOR] = "14",
+local S_WARNING_IDS = {
+	[FID_S_WARN_NONE] = "16",
+	[FID_S_WARN_VIOLENCE] = "17",
+	[FID_S_WARN_DEATH] = "18",
+	[FID_S_WARN_NONCON] = "19",
+	[FID_S_WARN_UNDERAGE] = "20",
+	[FID_S_WARN_CREATOR] = "14",
 }
 
 ---@type OkHttpClient
@@ -595,130 +1042,282 @@ local function browseWorks(url, page)
 	return parseListing(document)
 end
 
---- @return Filter[]
+--- Validates that a string is a non-negative integer, raises an error if not.
+--- @param value string
+--- @param fieldName string @display name for the error message
+--- @return integer
+local function validateNonNegInt(value, fieldName)
+	local n = tonumber(value)
+	if n == nil or n < 0 or n ~= math.floor(n) then
+		error(fieldName .. " must be a whole number, got: " .. value)
+	end
+	return n
+end
+
+--- Appends params to a URL, using ? or & as appropriate.
+--- @param baseUrl string
+--- @param params string[]
+--- @return string
+local function appendParams(baseUrl, params)
+	local sep = baseUrl:match("[?]") and "&" or "?"
+	return baseUrl .. sep .. table.concat(params, "&")
+end
+
+--- @return Filter[] @filters for the browse page (/works, /tags/.../works)
 local function browseFilters()
 	return {
-		FilterGroup("Sorting", {
-			DropdownFilter(FID_SORT_COLUMN, "Sort By", SORT_COLUMNS),
-			DropdownFilter(FID_SORT_DIRECTION, "Direction", { "Ascending", "Descending" }),
+		DropdownFilter(FID_B_SORT, "Sort By", B_SORT_COLUMNS),
+		FilterGroup("Include", {
+			RadioGroupFilter(FID_B_INC_RATING, "Ratings", B_INC_RATING_CHOICES),
+			FilterGroup("Warnings", {
+				CheckboxFilter(FID_B_INC_WARN_CREATOR, "Creator Chose Not To Use"),
+				CheckboxFilter(FID_B_INC_WARN_NONE, "No Archive Warnings"),
+				CheckboxFilter(FID_B_INC_WARN_VIOLENCE, "Graphic Violence"),
+				CheckboxFilter(FID_B_INC_WARN_DEATH, "Major Character Death"),
+				CheckboxFilter(FID_B_INC_WARN_NONCON, "Rape/Non-Con"),
+				CheckboxFilter(FID_B_INC_WARN_UNDERAGE, "Underage Sex"),
+			}),
+			FilterGroup("Categories", {
+				CheckboxFilter(FID_B_INC_CAT_GEN, "Gen"),
+				CheckboxFilter(FID_B_INC_CAT_FM, "F/M"),
+				CheckboxFilter(FID_B_INC_CAT_MM, "M/M"),
+				CheckboxFilter(FID_B_INC_CAT_FF, "F/F"),
+				CheckboxFilter(FID_B_INC_CAT_MULTI, "Multi"),
+				CheckboxFilter(FID_B_INC_CAT_OTHER, "Other"),
+			}),
+			TextFilter(FID_B_INC_OTHER_TAGS, "Other tags to include"),
 		}),
-		FilterGroup("Content", {
-			DropdownFilter(FID_RATING, "Rating", RATINGS),
-			RadioGroupFilter(FID_COMPLETE, "Completion", COMPLETIONS),
-			SwitchFilter(FID_SINGLE_CHAPTER, "Single Chapter"),
+		FilterGroup("Exclude", {
+			FilterGroup("Ratings", {
+				CheckboxFilter(FID_B_EXC_RATING_NOTRATED, "Not Rated"),
+				CheckboxFilter(FID_B_EXC_RATING_GA, "General Audiences"),
+				CheckboxFilter(FID_B_EXC_RATING_T, "Teen And Up"),
+				CheckboxFilter(FID_B_EXC_RATING_M, "Mature"),
+				CheckboxFilter(FID_B_EXC_RATING_E, "Explicit"),
+			}),
+			FilterGroup("Warnings", {
+				CheckboxFilter(FID_B_EXC_WARN_CREATOR, "Creator Chose Not To Use"),
+				CheckboxFilter(FID_B_EXC_WARN_NONE, "No Archive Warnings"),
+				CheckboxFilter(FID_B_EXC_WARN_VIOLENCE, "Graphic Violence"),
+				CheckboxFilter(FID_B_EXC_WARN_DEATH, "Major Character Death"),
+				CheckboxFilter(FID_B_EXC_WARN_NONCON, "Rape/Non-Con"),
+				CheckboxFilter(FID_B_EXC_WARN_UNDERAGE, "Underage Sex"),
+			}),
+			FilterGroup("Categories", {
+				CheckboxFilter(FID_B_EXC_CAT_GEN, "Gen"),
+				CheckboxFilter(FID_B_EXC_CAT_FM, "F/M"),
+				CheckboxFilter(FID_B_EXC_CAT_MM, "M/M"),
+				CheckboxFilter(FID_B_EXC_CAT_FF, "F/F"),
+				CheckboxFilter(FID_B_EXC_CAT_MULTI, "Multi"),
+				CheckboxFilter(FID_B_EXC_CAT_OTHER, "Other"),
+			}),
+			TextFilter(FID_B_EXC_OTHER_TAGS, "Other tags to exclude"),
 		}),
-		FilterGroup("Categories", {
-			TriStateFilter(FID_CAT_GEN, "Gen"),
-			TriStateFilter(FID_CAT_FM, "F/M"),
-			TriStateFilter(FID_CAT_FF, "F/F"),
-			TriStateFilter(FID_CAT_MM, "M/M"),
-			TriStateFilter(FID_CAT_MULTI, "Multi"),
-			TriStateFilter(FID_CAT_OTHER, "Other"),
-		}),
-		FilterGroup("Warnings", {
-			TriStateFilter(FID_WARN_NONE, "No Warnings"),
-			TriStateFilter(FID_WARN_VIOLENCE, "Graphic Violence"),
-			TriStateFilter(FID_WARN_DEATH, "Major Character Death"),
-			TriStateFilter(FID_WARN_NONCON, "Rape/Non-Con"),
-			TriStateFilter(FID_WARN_UNDERAGE, "Underage Sex"),
-			TriStateFilter(FID_WARN_CREATOR, "Creator Chose Not To Use"),
-		}),
-		FilterGroup("Word Count", {
-			TextFilter(FID_WORD_COUNT_MIN, "Min"),
-			TextFilter(FID_WORD_COUNT_MAX, "Max"),
-		}),
-		FilterGroup("Tags", {
-			TextFilter(FID_TITLE, "Title"),
-			TextFilter(FID_CHARACTERS, "Characters"),
-			TextFilter(FID_RELATIONSHIPS, "Relationships"),
-			TextFilter(FID_FREEFORM, "Freeform"),
-		}),
-		FilterGroup("Stats", {
-			TextFilter(FID_MIN_HITS, "Min Hits"),
-			TextFilter(FID_MIN_KUDOS, "Min Kudos"),
-			TextFilter(FID_MIN_COMMENTS, "Min Comments"),
-			TextFilter(FID_MIN_BOOKMARKS, "Min Bookmarks"),
+		FilterGroup("More Options", {
+			RadioGroupFilter(FID_B_CROSSOVER, "Crossovers", B_CROSSOVER_CHOICES),
+			RadioGroupFilter(FID_B_COMPLETE, "Completion", COMPLETIONS),
+			FilterGroup("Word Count", {
+				TextFilter(FID_B_WORDS_FROM, "Min"),
+				TextFilter(FID_B_WORDS_TO, "Max"),
+			}),
+			FilterGroup("Date Updated", {
+				TextFilter(FID_B_DATE_FROM, "From"),
+				TextFilter(FID_B_DATE_TO, "To"),
+			}),
+			TextFilter(FID_B_QUERY, "Search within results"),
+			DropdownFilter(FID_B_LANGUAGE, "Language", B_LANGUAGE_CHOICES),
 		}),
 	}
 end
 
---- Appends AO3 work_search filter params to a URL.
---- @param data table @filter values from the search function
---- @param baseUrl string @base URL to append params to
+--- Applies browse-page filters to a URL.
+--- @param data table @filter values
+--- @param baseUrl string
 --- @return string
-local function applyFilters(data, baseUrl)
+local function applyBrowseFilters(data, baseUrl)
 	local params = {}
 
-	local sortCol = data[FID_SORT_COLUMN]
-	if sortCol and sortCol > 0 then
-		table.insert(params, "work_search[sort_column]=" .. SORT_COLUMN_VALUES[sortCol + 1])
-	end
+	local sortCol = data[FID_B_SORT] or 0
+	table.insert(params, "work_search[sort_column]=" .. B_SORT_COLUMN_VALUES[sortCol + 1])
 
-	local sortDir = data[FID_SORT_DIRECTION]
-	if sortDir then
-		table.insert(params, "work_search[sort_direction]=" .. (sortDir == 0 and "asc" or "desc"))
+	-- Include tags. Array params are only sent when at least one is set; the
+	-- "other tags" text field is always sent (empty when unset), like AO3.
+	local incRating = data[FID_B_INC_RATING]
+	if incRating and incRating > 0 then
+		table.insert(params, "include_work_search[rating_ids][]=" .. B_INC_RATING_IDS[incRating + 1])
 	end
+	for fid, ao3Id in pairs(B_INC_WARNING_IDS) do
+		if data[fid] then
+			table.insert(params, "include_work_search[archive_warning_ids][]=" .. ao3Id)
+		end
+	end
+	for fid, ao3Id in pairs(B_INC_CATEGORY_IDS) do
+		if data[fid] then
+			table.insert(params, "include_work_search[category_ids][]=" .. ao3Id)
+		end
+	end
+	local incOther = data[FID_B_INC_OTHER_TAGS]
+	table.insert(params, "work_search[other_tag_names]=" .. (incOther and incOther ~= "" and urlEncode(incOther) or ""))
 
-	local rating = data[FID_RATING]
+	-- Exclude tags
+	for fid, ao3Id in pairs(B_EXC_RATING_IDS) do
+		if data[fid] then
+			table.insert(params, "exclude_work_search[rating_ids][]=" .. ao3Id)
+		end
+	end
+	for fid, ao3Id in pairs(B_EXC_WARNING_IDS) do
+		if data[fid] then
+			table.insert(params, "exclude_work_search[archive_warning_ids][]=" .. ao3Id)
+		end
+	end
+	for fid, ao3Id in pairs(B_EXC_CATEGORY_IDS) do
+		if data[fid] then
+			table.insert(params, "exclude_work_search[category_ids][]=" .. ao3Id)
+		end
+	end
+	local excOther = data[FID_B_EXC_OTHER_TAGS]
+	table.insert(params, "work_search[excluded_tag_names]=" .. (excOther and excOther ~= "" and urlEncode(excOther) or ""))
+
+	-- More options
+	local crossover = data[FID_B_CROSSOVER] or 0
+	table.insert(params, "work_search[crossover]=" .. B_CROSSOVER_VALUES[crossover + 1])
+
+	local complete = data[FID_B_COMPLETE]
+	table.insert(params, "work_search[complete]=" .. (complete and complete > 0 and COMPLETE_VALUES[complete + 1] or ""))
+
+	local wFrom = data[FID_B_WORDS_FROM]
+	table.insert(params, "work_search[words_from]=" .. (wFrom and wFrom ~= "" and tostring(validateNonNegInt(wFrom, "Word Count Min")) or ""))
+
+	local wTo = data[FID_B_WORDS_TO]
+	table.insert(params, "work_search[words_to]=" .. (wTo and wTo ~= "" and tostring(validateNonNegInt(wTo, "Word Count Max")) or ""))
+
+	local dFrom = data[FID_B_DATE_FROM]
+	table.insert(params, "work_search[date_from]=" .. (dFrom and dFrom ~= "" and urlEncode(dFrom) or ""))
+
+	local dTo = data[FID_B_DATE_TO]
+	table.insert(params, "work_search[date_to]=" .. (dTo and dTo ~= "" and urlEncode(dTo) or ""))
+
+	local query = data[FID_B_QUERY]
+	table.insert(params, "work_search[query]=" .. (query and query ~= "" and urlEncode(query) or ""))
+
+	local lang = data[FID_B_LANGUAGE] or 0
+	table.insert(params, "work_search[language_id]=" .. B_LANGUAGE_VALUES[lang + 1])
+
+	return appendParams(baseUrl, params)
+end
+
+--- @return Filter[] @filters for the search page (/works/search)
+local function searchFilters()
+	return {
+		DropdownFilter(FID_S_SORT, "Sort By", S_SORT_COLUMNS),
+		DropdownFilter(FID_S_SORT_DIR, "Direction", { "Ascending", "Descending" }),
+		FilterGroup("Content", {
+			DropdownFilter(FID_S_RATING, "Rating", RATINGS),
+			RadioGroupFilter(FID_S_COMPLETE, "Completion", COMPLETIONS),
+			SwitchFilter(FID_S_CROSSOVER, "Exclude Crossovers"),
+			SwitchFilter(FID_S_SINGLE_CHAPTER, "Single Chapter"),
+		}),
+		FilterGroup("Categories", {
+			TriStateFilter(FID_S_CAT_GEN, "Gen"),
+			TriStateFilter(FID_S_CAT_FM, "F/M"),
+			TriStateFilter(FID_S_CAT_FF, "F/F"),
+			TriStateFilter(FID_S_CAT_MM, "M/M"),
+			TriStateFilter(FID_S_CAT_MULTI, "Multi"),
+			TriStateFilter(FID_S_CAT_OTHER, "Other"),
+		}),
+		FilterGroup("Warnings", {
+			TriStateFilter(FID_S_WARN_NONE, "No Warnings"),
+			TriStateFilter(FID_S_WARN_VIOLENCE, "Graphic Violence"),
+			TriStateFilter(FID_S_WARN_DEATH, "Major Character Death"),
+			TriStateFilter(FID_S_WARN_NONCON, "Rape/Non-Con"),
+			TriStateFilter(FID_S_WARN_UNDERAGE, "Underage Sex"),
+			TriStateFilter(FID_S_WARN_CREATOR, "Creator Chose Not To Use"),
+		}),
+		TextFilter(FID_S_WORD_COUNT, "Word Count (min-max)"),
+		FilterGroup("Tags", {
+			TextFilter(FID_S_TITLE, "Title"),
+			TextFilter(FID_S_FANDOM, "Fandom"),
+			TextFilter(FID_S_CHARACTERS, "Characters"),
+			TextFilter(FID_S_RELATIONSHIPS, "Relationships"),
+			TextFilter(FID_S_FREEFORM, "Freeform"),
+		}),
+		FilterGroup("Stats", {
+			TextFilter(FID_S_MIN_HITS, "Min Hits"),
+			TextFilter(FID_S_MIN_KUDOS, "Min Kudos"),
+			TextFilter(FID_S_MIN_COMMENTS, "Min Comments"),
+			TextFilter(FID_S_MIN_BOOKMARKS, "Min Bookmarks"),
+		}),
+	}
+end
+
+--- Applies search-page filters to a URL.
+--- @param data table @filter values
+--- @param baseUrl string
+--- @return string
+local function applySearchFilters(data, baseUrl)
+	local params = {}
+
+	local sortCol = data[FID_S_SORT] or 0
+	table.insert(params, "work_search[sort_column]=" .. S_SORT_COLUMN_VALUES[sortCol + 1])
+
+	local sortDir = data[FID_S_SORT_DIR]
+	table.insert(params, "work_search[sort_direction]=" .. (sortDir and sortDir > 0 and "desc" or "asc"))
+
+	local rating = data[FID_S_RATING]
 	if rating and rating > 0 then
 		table.insert(params, "work_search[rating_ids][]=" .. RATING_VALUES[rating + 1])
 	end
 
-	local complete = data[FID_COMPLETE]
-	if complete and complete > 0 then
-		table.insert(params, "work_search[complete]=" .. COMPLETE_VALUES[complete + 1])
-	end
+	local complete = data[FID_S_COMPLETE]
+	table.insert(params, "work_search[complete]=" .. (complete and complete > 0 and COMPLETE_VALUES[complete + 1] or ""))
 
-	if data[FID_SINGLE_CHAPTER] then
-		table.insert(params, "work_search[single_chapter]=1")
-	end
+	table.insert(params, "work_search[crossover]=" .. (data[FID_S_CROSSOVER] and "F" or ""))
 
-	for fid, ao3Id in pairs(CATEGORY_IDS) do
+	table.insert(params, "work_search[single_chapter]=" .. (data[FID_S_SINGLE_CHAPTER] and "1" or "0"))
+
+	local wc = data[FID_S_WORD_COUNT]
+	table.insert(params, "work_search[word_count]=" .. (wc and wc ~= "" and urlEncode(wc) or ""))
+
+	for fid, ao3Id in pairs(S_CATEGORY_IDS) do
 		if data[fid] == 1 then
 			table.insert(params, "work_search[category_ids][]=" .. ao3Id)
 		end
 	end
 
-	for fid, ao3Id in pairs(WARNING_IDS) do
+	for fid, ao3Id in pairs(S_WARNING_IDS) do
 		if data[fid] == 1 then
 			table.insert(params, "work_search[archive_warning_ids][]=" .. ao3Id)
 		end
 	end
 
-	local wcMin = data[FID_WORD_COUNT_MIN]
-	local wcMax = data[FID_WORD_COUNT_MAX]
-	if wcMin and wcMin ~= "" then
-		local range = wcMin
-		if wcMax and wcMax ~= "" then
-			range = range .. "-" .. wcMax
-		end
-		table.insert(params, "work_search[word_count]=" .. range)
-	elseif wcMax and wcMax ~= "" then
-		table.insert(params, "work_search[word_count]=0-" .. wcMax)
-	end
-
 	local textParams = {
-		{ FID_TITLE, "title" },
-		{ FID_CHARACTERS, "character_names" },
-		{ FID_RELATIONSHIPS, "relationship_names" },
-		{ FID_FREEFORM, "freeform_names" },
-		{ FID_MIN_HITS, "hits" },
-		{ FID_MIN_KUDOS, "kudos_count" },
-		{ FID_MIN_COMMENTS, "comments_count" },
-		{ FID_MIN_BOOKMARKS, "bookmarks_count" },
+		{ FID_S_TITLE, "title" },
+		{ FID_S_FANDOM, "fandom_names" },
+		{ FID_S_CHARACTERS, "character_names" },
+		{ FID_S_RELATIONSHIPS, "relationship_names" },
+		{ FID_S_FREEFORM, "freeform_names" },
 	}
 	for i = 1, #textParams do
 		local val = data[textParams[i][1]]
-		if val and val ~= "" then
-			table.insert(params, "work_search[" .. textParams[i][2] .. "]=" .. urlEncode(val))
-		end
+		table.insert(params, "work_search[" .. textParams[i][2] .. "]=" .. (val and val ~= "" and urlEncode(val) or ""))
 	end
 
-	if #params == 0 then
-		return baseUrl
+	local minParams = {
+		{ FID_S_MIN_HITS, "hits", "Min Hits" },
+		{ FID_S_MIN_KUDOS, "kudos_count", "Min Kudos" },
+		{ FID_S_MIN_COMMENTS, "comments_count", "Min Comments" },
+		{ FID_S_MIN_BOOKMARKS, "bookmarks_count", "Min Bookmarks" },
+	}
+	for i = 1, #minParams do
+		local val = data[minParams[i][1]]
+		local n = ""
+		if val and val ~= "" then
+			n = tostring(validateNonNegInt(val, minParams[i][3]))
+		end
+		table.insert(params, "work_search[" .. minParams[i][2] .. "]=" .. n)
 	end
-	local sep = baseUrl:match("[?]") and "&" or "?"
-	return baseUrl .. sep .. table.concat(params, "&")
+
+	return appendParams(baseUrl, params)
 end
 
 local function simpleSearch(filters)
@@ -726,7 +1325,7 @@ local function simpleSearch(filters)
 	local query = filters[QUERY]
 
 	local baseUrl = expandURL("/works/search?work_search[query]=" .. urlEncode(query))
-	local newUrl = applyFilters(filters, baseUrl)
+	local newUrl = applySearchFilters(filters, baseUrl)
 	local document = ClientGetDocument(addPage(newUrl, page))
 	return parseListing(document)
 end
@@ -796,7 +1395,7 @@ local function authorSearch(data)
 	local author = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
 
 	local baseUrl = expandURL("/works/search?work_search[creators]=" .. urlEncode(author))
-	local newUrl = applyFilters(data, baseUrl)
+	local newUrl = applySearchFilters(data, baseUrl)
 	local document = ClientGetDocument(addPage(newUrl, page))
 	return parseListing(document)
 end
@@ -811,7 +1410,7 @@ local function searchItem()
 			return { howInfo() }
 		end,
 		search = search,
-		searchFilters = browseFilters(),
+		searchFilters = searchFilters(),
 	}
 end
 
@@ -839,7 +1438,7 @@ local function authorItem()
 			return { authorHowInfo() }
 		end,
 		search = authorSearch,
-		searchFilters = browseFilters(),
+		searchFilters = searchFilters(),
 	}
 end
 
@@ -853,7 +1452,7 @@ local function latestItem()
 			return browseWorks(expandURL("/works"), data[PAGE])
 		end,
 		search = function(data)
-			local newUrl = applyFilters(data, expandURL("/works"))
+			local newUrl = applyBrowseFilters(data, expandURL("/works"))
 			return browseWorks(newUrl, data[PAGE])
 		end,
 		searchFilters = browseFilters(),
@@ -885,7 +1484,7 @@ local function fandomItem(mediumSlug, fandomSlug, count)
 			return browseWorks(expandURL("/tags/" .. fandomSlug .. "/works"), data[PAGE])
 		end,
 		search = function(data)
-			local newUrl = applyFilters(data, expandURL("/tags/" .. fandomSlug .. "/works"))
+			local newUrl = applyBrowseFilters(data, expandURL("/tags/" .. fandomSlug .. "/works"))
 			return browseWorks(newUrl, data[PAGE])
 		end,
 		searchFilters = browseFilters(),
@@ -1010,7 +1609,7 @@ local function tagItem(tagSlug)
 			return browseWorks(expandURL("/tags/" .. tagSlug .. "/works"), data[PAGE])
 		end,
 		search = function(data)
-			local newUrl = applyFilters(data, expandURL("/tags/" .. tagSlug .. "/works"))
+			local newUrl = applyBrowseFilters(data, expandURL("/tags/" .. tagSlug .. "/works"))
 			return browseWorks(newUrl, data[PAGE])
 		end,
 		searchFilters = browseFilters(),
