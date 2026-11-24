@@ -1,4 +1,4 @@
--- {"id":1308639966,"ver":"1.0.18","libVer":"1.1.0","author":"Jobobby04"}
+-- {"id":1308639966,"ver":"1.1.0","libVer":"1.1.0","author":"Jobobby04"}
 
 local baseURL = "https://archiveofourown.org"
 local settings = {}
@@ -640,20 +640,11 @@ local function howInfo()
 end
 
 --- @return NovelInfo
-local function addByUrlHowInfo()
+local function searchByUrlHowInfo()
 	return NovelInfo {
-		title = "How to use Add by URL",
-		link = "how/addByUrl",
-		description = "Paste the URL of a work, series, or works listing from archiveofourown.org to add it.\nExample: https://archiveofourown.org/works/12345678"
-	}
-end
-
---- @return NovelInfo
-local function authorHowInfo()
-	return NovelInfo {
-		title = "How to use Search by Author",
-		link = "how/author",
-		description = "Enter an author's username or pseud to browse all of their works.\nExample: someauthor\n\nYou can also paste a user or pseud URL directly:\nhttps://archiveofourown.org/users/someauthor/works\nhttps://archiveofourown.org/users/someauthor/pseuds/somepseud"
+		title = "How to use Search by URL",
+		link = "how/searchByUrl",
+		description = "Paste any archiveofourown.org URL to add it.\n\nWork: https://archiveofourown.org/works/12345678\nSeries: https://archiveofourown.org/series/12345678\nWorks listing: https://archiveofourown.org/works\nAuthor: https://archiveofourown.org/users/someauthor\nAuthor pseud: https://archiveofourown.org/users/someauthor/pseuds/somepseud"
 	}
 end
 
@@ -664,11 +655,8 @@ local function parseNovel(novelURL, loadChapters)
 	if novelURL == "how" then
 		return howInfo()
 	end
-	if novelURL == "how/addByUrl" then
-		return addByUrlHowInfo()
-	end
-	if novelURL == "how/author" then
-		return authorHowInfo()
+	if novelURL == "how/searchByUrl" then
+		return searchByUrlHowInfo()
 	end
 
 	local document = ClientGetDocument(expandURL(novelURL) .. "?view_adult=true")
@@ -1330,63 +1318,6 @@ local function simpleSearch(filters)
 	return parseListing(document)
 end
 
---- Resolves a pasted work/series/listing URL to novels.
---- @param url string
---- @param page integer @1-based page
---- @return NovelInfo[]|nil @nil when the input is not a recognizable URL
-local function resolveUrl(url, page)
-	-- handler URL to a specific work
-	if page == 1 and shrinkURL(url):match("/works/%d+") then
-		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
-		local novel = ClientGetDocument(novelUrl)
-		return {
-			NovelInfo {
-				title = novel:selectFirst(".title"):text(),
-				link = shrinkURL(novelUrl)
-			}
-		}
-	end
-
-	-- handle /works and /tags/.+/works listings
-	if shrinkURL(url):match("/works") then
-		local newUrl = addPage(removePage(url), page)
-		local document = ClientGetDocument(newUrl)
-
-		return parseListing(document)
-	end
-
-	-- handle /series listings
-	if shrinkURL(url):match("/series/%d+") then
-		local newUrl = addPage(removePage(url), page)
-		local document = ClientGetDocument(newUrl)
-
-		return parseListing(document)
-	end
-
-	return nil
-end
-
---- @param filters table @of applied filter values [QUERY] is the search query, may be empty
---- @return NovelInfo[]
-local function search(filters)
-	return simpleSearch(filters)
-end
-
---- Resolves a pasted work/series/listing URL to novels.
---- @param data table @filter values, [QUERY] is the url
---- @return NovelInfo[]
-local function addByUrlSearch(data)
-	local page = data[PAGE]
-	local url = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
-
-	local result = resolveUrl(url, page)
-	if result ~= nil then
-		return result
-	end
-
-	return {}
-end
-
 --- Resolves a pasted AO3 user/pseud URL to its /works listing path.
 --- @param query string
 --- @return string|nil @e.g. "/users/X/pseuds/Y/works" or "/users/X/works"
@@ -1418,26 +1349,67 @@ local function authorWorksUrl(query)
 	return nil
 end
 
---- Searches works by author username/pseud, or resolves a pasted
---- /users/<user>[/works] or /users/<user>/pseuds/<pseud>[/works] URL to that
---- user/pseud's works listing.
---- @param data table @filter values, [QUERY] is the author name or user/pseud URL
---- @return NovelInfo[]
-local function authorSearch(data)
-	local page = data[PAGE]
-	local query = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+--- Resolves a pasted work/series/listing URL to novels.
+--- @param url string
+--- @param page integer @1-based page
+--- @return NovelInfo[]|nil @nil when the input is not a recognizable URL
+local function resolveUrl(url, page)
+	-- handler URL to a specific work
+	if page == 1 and shrinkURL(url):match("/works/%d+") then
+		local novelUrl = url:gsub("/chapters.*$", ""):gsub("/$", "")
+		local novel = ClientGetDocument(novelUrl)
+		return {
+			NovelInfo {
+				title = novel:selectFirst(".title"):text(),
+				link = shrinkURL(novelUrl)
+			}
+		}
+	end
 
-	-- A pasted user/pseud URL (with or without the /works suffix): resolve it to
-	-- the /works listing directly, since that is the paginated works page.
-	local worksUrl = authorWorksUrl(query)
+	-- handle author/pseud URLs: /users/X[/works] or /users/X/pseuds/Y[/works]
+	local worksUrl = authorWorksUrl(url)
 	if worksUrl ~= nil then
 		return browseWorks(expandURL(worksUrl), page)
 	end
 
-	local baseUrl = expandURL("/works/search?work_search[creators]=" .. urlEncode(query))
-	local newUrl = applySearchFilters(data, baseUrl)
-	local document = ClientGetDocument(addPage(newUrl, page))
-	return parseListing(document)
+	-- handle /works and /tags/.+/works listings
+	if shrinkURL(url):match("/works") then
+		local newUrl = addPage(removePage(url), page)
+		local document = ClientGetDocument(newUrl)
+
+		return parseListing(document)
+	end
+
+	-- handle /series listings
+	if shrinkURL(url):match("/series/%d+") then
+		local newUrl = addPage(removePage(url), page)
+		local document = ClientGetDocument(newUrl)
+
+		return parseListing(document)
+	end
+
+	return nil
+end
+
+--- @param filters table @of applied filter values [QUERY] is the search query, may be empty
+--- @return NovelInfo[]
+local function search(filters)
+	return simpleSearch(filters)
+end
+
+--- Resolves a pasted work/series/listing URL to novels.
+--- @param data table @filter values, [QUERY] is the url
+--- @return NovelInfo[]
+local function searchByUrlSearch(data)
+	local page = data[PAGE]
+	local url = data[QUERY]:gsub('^%s*(.-)%s*$', '%1')
+
+	local result = resolveUrl(url, page)
+	if result ~= nil then
+		return result
+	end
+
+	return {}
 end
 
 --- @param infoFunc fun():NovelInfo @returns the "how to use" placeholder
@@ -1464,26 +1436,14 @@ local function searchItem()
 end
 
 --- @return ListingItem
-local function addByUrlItem()
+local function searchByUrlItem()
 	return ListingItem {
-		name = "Add by URL",
-		link = "addByUrl",
-		isIncrementing = false,
-		func = infoFunc(addByUrlHowInfo),
-		search = addByUrlSearch,
-		searchIsIncrementing = false,
-	}
-end
-
---- @return ListingItem
-local function authorItem()
-	return ListingItem {
-		name = "Search by Author",
-		link = "author",
+		name = "Search by URL",
+		link = "searchByUrl",
 		isIncrementing = true,
-		func = infoFunc(authorHowInfo),
-		search = authorSearch,
-		searchFilters = searchFilters(),
+		func = infoFunc(searchByUrlHowInfo),
+		search = searchByUrlSearch,
+		searchIsIncrementing = true,
 	}
 end
 
@@ -1685,8 +1645,7 @@ local function rootList()
 		func = function()
 			return {
 				searchItem(),
-				addByUrlItem(),
-				authorItem(),
+				searchByUrlItem(),
 				latestItem(),
 				fandomsGroup(),
 				tagsGroup(),
@@ -1704,11 +1663,8 @@ local function getListing(link)
 	if link == "search" then
 		return searchItem()
 	end
-	if link == "addByUrl" then
-		return addByUrlItem()
-	end
-	if link == "author" then
-		return authorItem()
+	if link == "searchByUrl" then
+		return searchByUrlItem()
 	end
 	if link == "latest" then
 		return latestItem()
